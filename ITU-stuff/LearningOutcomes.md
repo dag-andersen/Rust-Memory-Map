@@ -43,6 +43,3 @@ The method is experimental. We will design, implement and evaluate a prototype.
 ## What will be handed in
 A report containing system design, results and discussion.
 
-# Bachelor Report
-
-

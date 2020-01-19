@@ -7,6 +7,8 @@ on:
 
 jobs:
   merge_markdown:
+    runs-on: ubuntu-latest
     name: Merge Markdown 
     steps:
-      - run: cat ./ITU-stuff/LearningGoals.md > README.md
+      - name: Merging
+        run: cat ./ITU-stuff/LearningOutcomes.md ./ITU-stuff/Report.md > README.md
