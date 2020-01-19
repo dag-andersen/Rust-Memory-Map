@@ -1,0 +1,12 @@
+name: Merge Markdown
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  merge_markdown:
+    name: Merge Markdown 
+    steps:
+      - run: cat ./ITU-stuff/LearningGoals.md > README.md

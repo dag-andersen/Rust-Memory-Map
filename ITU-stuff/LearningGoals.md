@@ -1,0 +1,12 @@
+# After the course the student should be able to:
+- Learn a modern low-level programming language 
+- Learn how to lay out a data structure in ram
+- Make the program get data from a static source
+- Make the program respond to get requests in reasonable time.
+- Organize, plan, and carry out solo work in a a solo group.
+- Identify, define and delimit a problem in software development (i.e., prepare a problem statement);
+- Identify and analyze relevant options, such as tools, technologies, data structures and algorithms
+- Compare the relevant options for the application at hand, selecting the most suited ones based on their theoretical and practical performance.
+- Combine the selected options, develop them further, and apply them to achieve a complete solution;
+- Systematically test the product (i.e, black box test several modules, white box test at least one critical piece of code);
+- Reflect on the realized product and other aspects related to the project, (e.g., comparing the tasks planned with tasks actually completed, reflecting on the time estimates for each new feature or bugfix);
