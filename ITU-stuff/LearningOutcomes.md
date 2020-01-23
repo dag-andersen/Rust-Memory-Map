@@ -1,4 +1,4 @@
-# Designing/implementing/evaluating an external map in Rust on modern hardware
+# External map in Rust on modern hardware
 
 ### Links
 - https://pitlab.itu.dk/projects/howto/proposal/?fbclid=IwAR1rY8bk2KcebZcBcP3XVQzNHNPF3HLmfTjECzSCkiZSA8_EZniwLMThWU8
