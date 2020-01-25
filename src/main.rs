@@ -1,4 +1,7 @@
 
+const mapPath : &str = "testdata/db.txt";
+const sourcePath : &str = "testdata/set1.txt";
+
 use std;
 use std::io::{BufRead, BufReader};
 use std::collections::HashMap;
@@ -18,9 +21,15 @@ struct Node {
 }
 
 fn main() {
+    run();
+}
+
+fn run() {
+    fs::remove_file(mapPath);
+
     let mut mmap = get_memmap();
 
-    let buffer = get_buffer("testdata/set1.txt");
+    let buffer = get_buffer(sourcePath);
 
     let mut shifter = 0;
 
@@ -33,14 +42,30 @@ fn main() {
         let max = v[1];
         let com = v[2];
 
-        placeItem(& mut mmap,& mut shifter,&com,&min,&max);
+        place_item(& mut mmap, & mut shifter, &com, &min, &max);
     }
-
-    let test = &mmap[0..100];
-    print!("{}", std::str::from_utf8(test).unwrap());
 }
 
-fn placeItem(
+fn get_item(ip: &str) -> usize {
+
+    let mmap = get_memmap();
+    let byteMap = &mmap[0..100];
+    let s = std::str::from_utf8(byteMap).unwrap();
+    print!("{}", s);
+    s.find(ip).expect("didnt find")
+}
+
+#[test]
+fn get_works() {
+    run();
+
+    let offset = 27;
+    assert_eq!(offset+0, get_item("Net"));
+    assert_eq!(offset+3, get_item("com"));
+    assert_eq!(offset+19, get_item("Hans"));
+}
+
+fn place_item(
     mmap: & mut MmapMut,
     offset: & mut usize,
     com: &str,
@@ -71,15 +96,11 @@ fn get_buffer(name: &str) -> BufReader<std::fs::File> {
 fn get_memmap() -> MmapMut {
     const SIZE: u64 = 128 * 128;
 
-    let path = "testdata/db.txt";
-
-    fs::remove_file(path);
-
     let mut file = OpenOptions::new()
         .read(true)
         .write(true)
         .create(true)
-        .open(path)
+        .open(mapPath)
         .expect("Unable to open file");
 
     file.seek(SeekFrom::Start(SIZE)).unwrap();
