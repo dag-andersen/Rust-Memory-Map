@@ -4,6 +4,7 @@ const nodeSize : usize = std::mem::size_of::<Node>();
 
 use std;
 use std::io::{BufRead, BufReader};
+use std::ops::Add;
 use std::collections::HashMap;
 use memmap::{MmapMut, MmapOptions};
 use bytes::str::ByteStr;
@@ -11,6 +12,8 @@ use std::io::Read;
 use std::{fs::{OpenOptions, File}, io::{Seek, SeekFrom, Write}, os::unix::prelude::AsRawFd, ptr, fs, mem};
 use std::convert::TryInto;
 use bytes::MutBuf;
+use regex::bytes::Regex;
+use std::borrow::Borrow;
 
 struct Node {
     //size: u32,
@@ -35,6 +38,10 @@ pub unsafe fn bytes_to_typed<T>(slice: &[u8]) -> &T {
 
 fn node_to_bytes(node: &Node) -> &[u8] { unsafe { any_as_u8_slice(node) } }
 
+fn main() {
+    run();
+}
+
 fn run() {
     fs::remove_file(mapPath);
 
@@ -47,6 +54,19 @@ fn run() {
     for (_, line) in buffer.lines().enumerate() {
         let l = line.unwrap();
         if l.is_empty() { continue; }
+
+        let ipRegex = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap();
+        let nameRegex = Regex::new(r"\b([A-z]|[A-z]\s)+[A-z]\b").unwrap();
+        let minIp = ipRegex.find(l.as_bytes()).expect("didnt find min ip");
+        let maxIp = ipRegex.find_at(l.as_bytes(),minIp.end()).expect("didnt find max ip");
+        let name = nameRegex.find_at(l.as_bytes(),maxIp.end()).expect("didnt find name");
+
+
+        //let s = std::str::from_utf8(&minIp.as_bytes()).unwrap();
+        //print!("{}", s);
+
+
+
         let v: Vec<&str> = l.split(' ').collect();
 
         let min = v[0];
@@ -77,9 +97,9 @@ fn place_item(
     *offset += bytes.len();
 }
 
-fn get_items<'a>(mmap: &'a MmapMut, ord: &str) -> &'a Node {
-    //let byteMap = &mmap[..];
-    let byteMap = unsafe { std::slice::from_raw_parts(mmap.as_ptr(), nodeSize) };
+fn get_items<'a>(mmap: &'a MmapMut, offset: usize) -> &'a Node {
+    let byteMap = &mmap[offset..(offset+nodeSize)];
+    //let byteMap = unsafe { std::slice::from_raw_parts(&mmap+offset, nodeSize) };
     let node = node_from_bytes(&byteMap);
     //print_map(&mmap);
     println!("første dims: {:?}", &byteMap);
@@ -149,7 +169,19 @@ fn get_works() {
 
 
     let offset = 27;
-    let getnode = get_items(&mmap, "Net");
+    let getnode = get_items(&mmap, 0);
     println!("mmap: {:?}", &mmap[0..40]);
     assert_eq!(getnode.name, 20)
 }
+
+#[test]
+fn testtest() {
+    let string = b"195.249.336.433 195.249.336.433 Hans Hansens Hus";
+    let r = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})|(\w+\s?)+").unwrap();
+    let test = r.find(string).unwrap();
+    let s = std::str::from_utf8( &string[test.range()]).unwrap();
+    print!("{}", s);
+}
+
+//(\d{1,3}[.]){3}(\d{1,3})|(\w+\s?)+
+//(\d{1,3}[.]){3}(\d{1,3})\s
