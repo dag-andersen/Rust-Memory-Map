@@ -1,7 +1,7 @@
 # General
 
 ## Project title (Danish):	
-Designing/implementing/evaluating an external map in Rust on modern hardware
+Design/implementer/evaluer et external map i Rust på moderne hardware
 ## Project title (English):	
 Designing/implementing/evaluating an external map in Rust on modern hardware
 ## Liability:	
@@ -17,7 +17,7 @@ Danish
 - Design/implement/evaluate a persistent log and key-value store in Rust on modern hardware
 
 ## Method:	
-The method is experimental. We will design, implement and evaluate a prototype.
+The method is experimental. I will design, implement and evaluate a prototype.
 
 ## What will be handed in:	
 A report containing system design, results and discussion.
@@ -30,7 +30,8 @@ Dag Bjerre Andersen (daga@itu.dk)
 ## Enrolment:	
 BSc programme, Software Development	
 ## Relevant qualifications:	
-The only experince i have with low-level programming is the assignments from course Operativ systems and C.
+Almost no experience in Rust.
+Passed all courses for SWU 1-5 semester.
 ##Responsible Board of Studies:	
 Board of Studies ITU	
 ## Project type:	
