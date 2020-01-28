@@ -11,7 +11,7 @@ use bytes::str::ByteStr;
 use std::io::Read;
 use std::{fs::{OpenOptions, File}, io::{Seek, SeekFrom, Write}, os::unix::prelude::AsRawFd, ptr, fs, mem};
 use std::convert::TryInto;
-use bytes::MutBuf;
+use bytes::{MutBuf, ToBytes};
 use regex::bytes::Regex;
 use std::borrow::Borrow;
 use std::cmp::min;
@@ -56,54 +56,44 @@ fn run(scr: &str) {
         let l = line.unwrap();
         if l.is_empty() { continue; }
 
-        let ipRegex = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap();
-        let nameRegex = Regex::new(r"\b([A-z]|[A-z]\s)+[A-z]\b").unwrap();
-        let minIp = ipRegex.find(l.as_bytes()).expect("didnt find min ip");
-        let maxIp = ipRegex.find_at(l.as_bytes(),minIp.end()).expect("didnt find max ip");
-        let name = nameRegex.find_at(l.as_bytes(),maxIp.end()).expect("didnt find name");
+        let ipRegex = get_ip_regex();
+        let nameRegex = get_name_regex();
+        let min_ip_match = ipRegex.find(l.as_bytes()).expect("didnt find min ip");
+        let max_ip_match = ipRegex.find_at(l.as_bytes(),min_ip_match.end()).expect("didnt find max ip");
+        let name_match = nameRegex.find_at(l.as_bytes(),max_ip_match.end()).expect("didnt find name");
 
-        println!("min:{}- max:{}- name:{}", &l[minIp.range()], &l[maxIp.range()], &l[name.range()]);
+        println!("min:{}- max:{}- name:{}", &l[min_ip_match.range()], &l[max_ip_match.range()], &l[name_match.range()]);
 
         let mut a: [u8; 32] = Default::default();
-        insertArrayInArray(& mut a,name.as_bytes());
+        insert_array_in_array(& mut a, name_match.as_bytes());
 
-
-        //let test = std::str::from_utf8(&a).unwrap();
-        //println!("crazy test: {}",test);
-
-        //let len = cmp::min(a.len(), asdf);
-        //bytes::copy_memory(a.mut_slice_to(len), &name.as_bytes()[0..4].slice_to(len));
-
-        //let strrr = String::from(l);
-        //strrr.s
-
-        //a.copy_from_slice(&name.as_bytes()[..(min(10,length-1))]);
-        //let minNumber = u32::from_be_bytes(a);
-        //println!("test:{}", minNumber);
-
-        //let test = std::str::from_utf8(&a).unwrap();
-        //println!("crazy test: {}",test);
-
-
-        let v: Vec<&str> = l.split(' ').collect();
-
-        let min = v[0];
-        let max = v[1];
-        let com = v[2];
+        let min_ip = get_u32_for_ip(&l[min_ip_match.range()]);
+        let max_ip = get_u32_for_ip(&l[max_ip_match.range()]);
 
         let node = Node {
-            min_ip: 20,
-            max_ip: 20,
+            min_ip,
+            max_ip,
             name: a,
         };
 
         place_item(& mut mmap, & mut shifter, &node);
+
     }
 
     print_map(&mmap);
 }
 
-fn insertArrayInArray(one: & mut [u8; 32], two: &[u8])  {
+fn get_u32_for_ip(v: &str ) -> u32 {
+    let v: Vec<&str> = v.split('.').collect();
+    let mut minArray: [u8; 4] = Default::default();
+    for i in 0..v.len() { minArray[i] = v[i].parse().unwrap(); }
+    //println!("IP?{}.{}.{}.{}",minArray[0],minArray[1],minArray[2],minArray[3]);
+    u32::from_be_bytes(minArray)
+}
+fn get_ip_regex() -> Regex { Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap() }
+fn get_name_regex() -> Regex { Regex::new(r"\b([A-z]|[A-z]\s)+[A-z]\b").unwrap() }
+
+fn insert_array_in_array(one: & mut [u8; 32], two: &[u8])  {
     for (place, data) in one.iter_mut().zip(two.iter()) {
         *place = *data
     }
@@ -161,7 +151,7 @@ fn place_item_and_get() {
     let mut mmap = get_memmap();
 
     let mut name: [u8; 32] = Default::default();
-    insertArrayInArray(& mut name,"name".as_bytes());
+    insert_array_in_array(& mut name, "name".as_bytes());
 
     let node = Node {
         min_ip: 20,
@@ -180,3 +170,20 @@ fn place_item_and_get() {
 
 //(\d{1,3}[.]){3}(\d{1,3})|(\w+\s?)+
 //(\d{1,3}[.]){3}(\d{1,3})\s
+//let minNumber = u32::from_be_bytes(a);
+
+//let test = std::str::from_utf8(&a).unwrap();
+//println!("crazy test: {}",test);
+
+//let len = cmp::min(a.len(), asdf);
+//bytes::copy_memory(a.mut_slice_to(len), &name.as_bytes()[0..4].slice_to(len));
+
+//let strrr = String::from(l);
+//strrr.s
+
+//a.copy_from_slice(&name.as_bytes()[..(min(10,length-1))]);
+//let minNumber = u32::from_be_bytes(a);
+//println!("test:{}", minNumber);
+
+//let test = std::str::from_utf8(&a).unwrap();
+//println!("crazy test: {}",test);
