@@ -14,14 +14,15 @@ use std::convert::TryInto;
 use bytes::MutBuf;
 use regex::bytes::Regex;
 use std::borrow::Borrow;
+use std::cmp::min;
+use core::cmp;
 
 struct Node {
-    //size: u32,
     min_ip: u32,
     max_ip: u32,
-    //    left: u128,
+//    left: u128,
 //    right: u128,
-    name: u32,
+    name: [u8; 32],
 }
 
 unsafe fn any_as_u8_slice<T: Sized>(p: &T) -> &[u8] {
@@ -39,15 +40,15 @@ pub unsafe fn bytes_to_typed<T>(slice: &[u8]) -> &T {
 fn node_to_bytes(node: &Node) -> &[u8] { unsafe { any_as_u8_slice(node) } }
 
 fn main() {
-    run();
+    run(sourcePath);
 }
 
-fn run() {
+fn run(scr: &str) {
     fs::remove_file(mapPath);
 
     let mut mmap = get_memmap();
 
-    let buffer = get_buffer(sourcePath);
+    let buffer = get_buffer(scr);
 
     let mut shifter = 0;
 
@@ -61,10 +62,27 @@ fn run() {
         let maxIp = ipRegex.find_at(l.as_bytes(),minIp.end()).expect("didnt find max ip");
         let name = nameRegex.find_at(l.as_bytes(),maxIp.end()).expect("didnt find name");
 
+        println!("min:{}- max:{}- name:{}", &l[minIp.range()], &l[maxIp.range()], &l[name.range()]);
 
-        //let s = std::str::from_utf8(&minIp.as_bytes()).unwrap();
-        //print!("{}", s);
+        let mut a: [u8; 32] = Default::default();
+        insertArrayInArray(& mut a,name.as_bytes());
 
+
+        //let test = std::str::from_utf8(&a).unwrap();
+        //println!("crazy test: {}",test);
+
+        //let len = cmp::min(a.len(), asdf);
+        //bytes::copy_memory(a.mut_slice_to(len), &name.as_bytes()[0..4].slice_to(len));
+
+        //let strrr = String::from(l);
+        //strrr.s
+
+        //a.copy_from_slice(&name.as_bytes()[..(min(10,length-1))]);
+        //let minNumber = u32::from_be_bytes(a);
+        //println!("test:{}", minNumber);
+
+        //let test = std::str::from_utf8(&a).unwrap();
+        //println!("crazy test: {}",test);
 
 
         let v: Vec<&str> = l.split(' ').collect();
@@ -76,13 +94,19 @@ fn run() {
         let node = Node {
             min_ip: 20,
             max_ip: 20,
-            name: 20,
+            name: a,
         };
 
         place_item(& mut mmap, & mut shifter, &node);
     }
 
     print_map(&mmap);
+}
+
+fn insertArrayInArray(one: & mut [u8; 32], two: &[u8])  {
+    for (place, data) in one.iter_mut().zip(two.iter()) {
+        *place = *data
+    }
 }
 
 fn place_item(
@@ -92,8 +116,8 @@ fn place_item(
 ) {
     let bytes = node_to_bytes(node);
     mmap[*offset..(*offset+bytes.len())].copy_from_slice(bytes);
-    println!("offset:{} {:?}", *offset, bytes);
-    println!("mmap: {:?}", &mmap[0..40]);
+    //println!("offset:{} {:?}", *offset, bytes);
+    //println!("mmap: {:?}", &mmap[0..40]);
     *offset += bytes.len();
 }
 
@@ -102,7 +126,7 @@ fn get_items<'a>(mmap: &'a MmapMut, offset: usize) -> &'a Node {
     //let byteMap = unsafe { std::slice::from_raw_parts(&mmap+offset, nodeSize) };
     let node = node_from_bytes(&byteMap);
     //print_map(&mmap);
-    println!("første dims: {:?}", &byteMap);
+    //println!("første dims: {:?}", &byteMap);
     &node
 }
 
@@ -132,55 +156,26 @@ fn get_memmap() -> MmapMut {
 
 
 #[test]
-fn node_to_from_bytes() {
-    //let test = "a".as_bytes();
-
-    //let lort = u32::from_be_bytes(test);
-
-    let col = Node { min_ip: 10, max_ip: 20, name: 20 };
-    let bytes = unsafe { any_as_u8_slice(&col) };
-    println!("{:?}", bytes);
-    println!("{}", bytes.len());
-    assert_eq!(bytes, [10, 0, 0, 0, 20, 0, 0, 0, 20, 0, 0, 0]);
-    let node = node_from_bytes(bytes);
-    assert_eq!(20, node.name)
-}
-
-
-#[test]
-fn get_works() {
-    assert!(true);
-    println!("hej");
+fn place_item_and_get() {
     fs::remove_file(mapPath);
     let mut mmap = get_memmap();
-    println!("hej");
 
-    assert!(true);
+    let mut name: [u8; 32] = Default::default();
+    insertArrayInArray(& mut name,"name".as_bytes());
 
     let node = Node {
         min_ip: 20,
         max_ip: 20,
-        name: 20,
+        name: name,
     };
 
-    println!("{:?}", node_to_bytes(&node));
-
     place_item(& mut mmap, &mut 0, &node);
-
-
-    let offset = 27;
     let getnode = get_items(&mmap, 0);
-    println!("mmap: {:?}", &mmap[0..40]);
-    assert_eq!(getnode.name, 20)
-}
+    let left = std::str::from_utf8(&name).unwrap();
+    let right = std::str::from_utf8(&getnode.name).unwrap();
 
-#[test]
-fn testtest() {
-    let string = b"195.249.336.433 195.249.336.433 Hans Hansens Hus";
-    let r = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})|(\w+\s?)+").unwrap();
-    let test = r.find(string).unwrap();
-    let s = std::str::from_utf8( &string[test.range()]).unwrap();
-    print!("{}", s);
+    println!("left: {} -- right: {}",left, right );
+    assert_eq!(left,right)
 }
 
 //(\d{1,3}[.]){3}(\d{1,3})|(\w+\s?)+
