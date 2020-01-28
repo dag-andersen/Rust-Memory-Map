@@ -1,6 +1,6 @@
-const mapPath : &str = "testdata/db.txt";
-const sourcePath : &str = "testdata/set1.txt";
-const nodeSize : usize = std::mem::size_of::<Node>();
+const MAP_PATH: &str = "testdata/db.txt";
+const SOURCE_PATH: &str = "testdata/set1.txt";
+const NODE_SIZE : usize = std::mem::size_of::<Node>();
 
 use std;
 use std::io::{BufRead, BufReader};
@@ -40,11 +40,11 @@ pub unsafe fn bytes_to_typed<T>(slice: &[u8]) -> &T {
 fn node_to_bytes(node: &Node) -> &[u8] { unsafe { any_as_u8_slice(node) } }
 
 fn main() {
-    run(sourcePath);
+    run(SOURCE_PATH);
 }
 
 fn run(scr: &str) {
-    fs::remove_file(mapPath);
+    fs::remove_file(MAP_PATH);
 
     let mut mmap = get_memmap();
 
@@ -53,45 +53,48 @@ fn run(scr: &str) {
     let mut shifter = 0;
 
     for (_, line) in buffer.lines().enumerate() {
+        if line.is_err() { continue }
         let l = line.unwrap();
         if l.is_empty() { continue; }
 
-        let ipRegex = get_ip_regex();
-        let nameRegex = get_name_regex();
-        let min_ip_match = ipRegex.find(l.as_bytes()).expect("didnt find min ip");
-        let max_ip_match = ipRegex.find_at(l.as_bytes(),min_ip_match.end()).expect("didnt find max ip");
-        let name_match = nameRegex.find_at(l.as_bytes(),max_ip_match.end()).expect("didnt find name");
+        let node = get_node_for_line(l);
+        if node.is_none() { continue }
 
-        println!("min:{}- max:{}- name:{}", &l[min_ip_match.range()], &l[max_ip_match.range()], &l[name_match.range()]);
-
-        let mut a: [u8; 32] = Default::default();
-        insert_array_in_array(& mut a, name_match.as_bytes());
-
-        let min_ip = get_u32_for_ip(&l[min_ip_match.range()]);
-        let max_ip = get_u32_for_ip(&l[max_ip_match.range()]);
-
-        let node = Node {
-            min_ip,
-            max_ip,
-            name: a,
-        };
-
-        place_item(& mut mmap, & mut shifter, &node);
-
+        place_item(& mut mmap, & mut shifter, &node.unwrap());
     }
-
-    print_map(&mmap);
 }
 
-fn get_u32_for_ip(v: &str ) -> u32 {
+fn get_node_for_line(l: String) -> Option<Node> {
+    let ipRegex = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap();
+    let nameRegex = Regex::new(r"\b([A-z]|[A-z]\s)+[A-z]\b").unwrap();
+    let min_ip_match = ipRegex.find(l.as_bytes()).expect("didnt find min ip");
+    let max_ip_match = ipRegex.find_at(l.as_bytes(),min_ip_match.end())?;
+    let name_match = nameRegex.find_at(l.as_bytes(),max_ip_match.end())?;
+
+    println!("min:{}- max:{}- name:{}", &l[min_ip_match.range()], &l[max_ip_match.range()], &l[name_match.range()]);
+
+    let mut name: [u8; 32] = Default::default();
+    insert_array_in_array(& mut name, name_match.as_bytes());
+
+    let min_ip = get_u32_for_ip(&l[min_ip_match.range()])?;
+    let max_ip = get_u32_for_ip(&l[max_ip_match.range()])?;
+
+    Some(Node { min_ip, max_ip, name, })
+}
+
+fn get_u32_for_ip(v: &str ) -> Option<u32> {
     let v: Vec<&str> = v.split('.').collect();
+    if v.len() < 4 { return None }
     let mut minArray: [u8; 4] = Default::default();
-    for i in 0..v.len() { minArray[i] = v[i].parse().unwrap(); }
+    for i in 0..v.len() {
+        minArray[i] = match v[i].parse() {
+            Ok(n) => n,
+            Err(e) => return None
+        }
+    }
     //println!("IP?{}.{}.{}.{}",minArray[0],minArray[1],minArray[2],minArray[3]);
-    u32::from_be_bytes(minArray)
+    Some(u32::from_be_bytes(minArray))
 }
-fn get_ip_regex() -> Regex { Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap() }
-fn get_name_regex() -> Regex { Regex::new(r"\b([A-z]|[A-z]\s)+[A-z]\b").unwrap() }
 
 fn insert_array_in_array(one: & mut [u8; 32], two: &[u8])  {
     for (place, data) in one.iter_mut().zip(two.iter()) {
@@ -112,21 +115,16 @@ fn place_item(
 }
 
 fn get_items<'a>(mmap: &'a MmapMut, offset: usize) -> &'a Node {
-    let byteMap = &mmap[offset..(offset+nodeSize)];
-    //let byteMap = unsafe { std::slice::from_raw_parts(&mmap+offset, nodeSize) };
+    let byteMap = &mmap[offset..(offset+NODE_SIZE)];
+    //let byteMap = unsafe { std::slice::from_raw_parts(&mmap+offset, NODE_SIZE) };
     let node = node_from_bytes(&byteMap);
     //print_map(&mmap);
     //println!("første dims: {:?}", &byteMap);
     &node
 }
 
-fn print_map(map: &[u8]) {
-    let s = std::str::from_utf8(map).unwrap();
-    print!("{}", s);
-}
-
-fn get_buffer(name: &str) -> BufReader<std::fs::File> {
-    BufReader::new(File::open(name).expect("could not find file"))
+fn get_buffer(file: &str) -> BufReader<std::fs::File> {
+    BufReader::new(File::open(file).expect("could not find file"))
 }
 
 fn get_memmap() -> MmapMut {
@@ -135,7 +133,7 @@ fn get_memmap() -> MmapMut {
         .read(true)
         .write(true)
         .create(true)
-        .open(mapPath)
+        .open(MAP_PATH)
         .expect("Unable to open file");
     file.seek(SeekFrom::Start(SIZE)).unwrap();
     file.write_all(&[0]).unwrap();
@@ -144,11 +142,31 @@ fn get_memmap() -> MmapMut {
     mmap
 }
 
+#[test]
+fn test_get_ip_for_line() {
+    let ip_str = "0.0.0.132";
+    let ip_u32 = get_u32_for_ip(&ip_str);
+    assert!(ip_u32.is_some());
+    assert_eq!(ip_u32.unwrap(),132);
+
+    let ip_str = "0.0.1.1";
+    let ip_u32 = get_u32_for_ip(&ip_str);
+    assert!(ip_u32.is_some());
+    assert_eq!(ip_u32.unwrap(),257);
+
+    let ip_str = "0.0.0.300";
+    let ip_u32 = get_u32_for_ip(&ip_str);
+    assert!(ip_u32.is_none());
+
+    let ip_str = "0.1.1";
+    let ip_u32 = get_u32_for_ip(&ip_str);
+    assert!(ip_u32.is_none());
+}
+
 
 #[test]
-fn place_item_and_get() {
-    fs::remove_file(mapPath);
-    let mut mmap = get_memmap();
+fn test_place_item_and_get() {
+    fs::remove_file(MAP_PATH);
 
     let mut name: [u8; 32] = Default::default();
     insert_array_in_array(& mut name, "name".as_bytes());
@@ -159,13 +177,59 @@ fn place_item_and_get() {
         name: name,
     };
 
-    place_item(& mut mmap, &mut 0, &node);
-    let getnode = get_items(&mmap, 0);
+    let mut firstMap = get_memmap();
+    place_item(& mut firstMap, &mut 0, &node);
+
+    let mut anotherMap = get_memmap();
+    let getnode = get_items(&anotherMap, 0);
+
     let left = std::str::from_utf8(&name).unwrap();
     let right = std::str::from_utf8(&getnode.name).unwrap();
 
-    println!("left: {} -- right: {}",left, right );
-    assert_eq!(left,right)
+    assert_eq!(left, right);
+}
+
+#[test]
+fn test_correct_layering() {
+    fs::remove_file(MAP_PATH);
+
+    let mut name: [u8; 32] = Default::default();
+    insert_array_in_array(& mut name, "name".as_bytes());
+
+    let node = Node { min_ip: 20, max_ip: 20, name: name, };
+
+    let mut firstMap = get_memmap();
+    place_item(& mut firstMap, &mut 0, &node);
+    place_item(& mut firstMap, &mut NODE_SIZE, &node);
+
+    let mut anotherMap = get_memmap();
+    let getnode = get_items(&anotherMap, NODE_SIZE);
+
+    let left = std::str::from_utf8(&name).unwrap();
+    let right = std::str::from_utf8(&getnode.name).unwrap();
+    assert_eq!(left, right);
+}
+
+#[test]
+#[should_panic]
+fn test_correct_layering_panic() {
+    fs::remove_file(MAP_PATH);
+
+    let mut name: [u8; 32] = Default::default();
+    insert_array_in_array(& mut name, "name".as_bytes());
+
+    let node = Node { min_ip: 20, max_ip: 20, name: name, };
+
+    let mut firstMap = get_memmap();
+    place_item(& mut firstMap, &mut 0, &node);
+
+    let mut anotherMap = get_memmap();
+    //get something that doesnt exists
+    let getnode = get_items(&anotherMap, NODE_SIZE);
+
+    let left = std::str::from_utf8(&name).unwrap();
+    let right = std::str::from_utf8(&getnode.name).unwrap();
+    assert_eq!(left, right);
 }
 
 //(\d{1,3}[.]){3}(\d{1,3})|(\w+\s?)+
