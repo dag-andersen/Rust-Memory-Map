@@ -20,8 +20,8 @@ use core::cmp;
 struct Node {
     min_ip: u32,
     max_ip: u32,
-//    left: u128,
-//    right: u128,
+    left: usize,
+    right: usize,
     name: [u8; 32],
 }
 
@@ -79,7 +79,7 @@ fn get_node_for_line(l: String) -> Option<Node> {
     let min_ip = get_u32_for_ip(&l[min_ip_match.range()])?;
     let max_ip = get_u32_for_ip(&l[max_ip_match.range()])?;
 
-    Some(Node { min_ip, max_ip, name, })
+    Some(Node { min_ip, max_ip, left: 0, right: 0, name, })
 }
 
 fn get_u32_for_ip(v: &str ) -> Option<u32> {
@@ -121,6 +121,17 @@ fn get_items<'a>(mmap: &'a MmapMut, offset: usize) -> &'a Node {
     //print_map(&mmap);
     //println!("første dims: {:?}", &byteMap);
     &node
+}
+
+fn find_node(ip: u32) -> Option<[u8; 32]> {
+    let mut counter: usize = 0;
+    let mut mmap = get_memmap();
+    while counter < 50 {
+        let node = get_items(&mmap, NODE_SIZE*counter);
+        if node.min_ip < ip && ip < node.max_ip { return Some(node.name) }
+        counter += 1;
+    }
+    None
 }
 
 fn get_buffer(file: &str) -> BufReader<std::fs::File> {
@@ -165,6 +176,31 @@ fn test_get_ip_for_line() {
 
 
 #[test]
+fn test_find() {
+    fs::remove_file(MAP_PATH);
+
+    let mut name: [u8; 32] = Default::default();
+    insert_array_in_array(& mut name, "name".as_bytes());
+
+    let min_ip = 20;
+    let max_ip = 40;
+
+    let node1 = Node { min_ip, max_ip: 0, left: 0, right: 0, name: Default::default(), };
+    let node2 = Node { min_ip, max_ip: 40, left: 0, right: 0, name, };
+    let node3 = Node { min_ip, max_ip: 0, left: 0, right: 0, name: Default::default(), };
+
+    let mut firstMap = get_memmap();
+    place_item(& mut firstMap, &mut 0, &node1);
+    place_item(& mut firstMap, &mut NODE_SIZE, &node2);
+    place_item(& mut firstMap, &mut (NODE_SIZE*2), &node3);
+
+    let mut anotherMap = get_memmap();
+    let gottenName = find_node((min_ip+max_ip)/2).unwrap();
+
+    assert_eq!(gottenName, name);
+}
+
+#[test]
 fn test_place_item_and_get() {
     fs::remove_file(MAP_PATH);
 
@@ -174,6 +210,8 @@ fn test_place_item_and_get() {
     let node = Node {
         min_ip: 20,
         max_ip: 20,
+        left: 0,
+        right: 0,
         name: name,
     };
 
@@ -196,7 +234,7 @@ fn test_correct_layering() {
     let mut name: [u8; 32] = Default::default();
     insert_array_in_array(& mut name, "name".as_bytes());
 
-    let node = Node { min_ip: 20, max_ip: 20, name: name, };
+    let node = Node { min_ip: 20, max_ip: 20, left: 0, right: 0, name: name, };
 
     let mut firstMap = get_memmap();
     place_item(& mut firstMap, &mut 0, &node);
@@ -218,7 +256,7 @@ fn test_correct_layering_panic() {
     let mut name: [u8; 32] = Default::default();
     insert_array_in_array(& mut name, "name".as_bytes());
 
-    let node = Node { min_ip: 20, max_ip: 20, name: name, };
+    let node = Node { min_ip: 20, max_ip: 20, left: 0, right: 0, name: name, };
 
     let mut firstMap = get_memmap();
     place_item(& mut firstMap, &mut 0, &node);
