@@ -39,6 +39,12 @@ pub unsafe fn bytes_to_typed<T>(slice: &[u8]) -> &T {
 
 fn node_to_bytes(node: &Node) -> &[u8] { unsafe { any_as_u8_slice(node) } }
 
+fn insert_array_in_array(one: & mut [u8; 32], two: &[u8])  {
+    for (place, data) in one.iter_mut().zip(two.iter()) {
+        *place = *data
+    }
+}
+
 fn main() {
     run(SOURCE_PATH);
 }
@@ -65,11 +71,11 @@ fn run(scr: &str) {
 }
 
 fn get_node_for_line(l: String) -> Option<Node> {
-    let ipRegex = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap();
-    let nameRegex = Regex::new(r"\b([A-z]|[A-z]\s)+[A-z]\b").unwrap();
-    let min_ip_match = ipRegex.find(l.as_bytes()).expect("didnt find min ip");
-    let max_ip_match = ipRegex.find_at(l.as_bytes(),min_ip_match.end())?;
-    let name_match = nameRegex.find_at(l.as_bytes(),max_ip_match.end())?;
+    let ip_regex = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap();
+    let name_regex = Regex::new(r"\b([A-z]|[A-z]\s)+[A-z]\b").unwrap();
+    let min_ip_match = ip_regex.find(l.as_bytes()).expect("didnt find min ip");
+    let max_ip_match = ip_regex.find_at(l.as_bytes(), min_ip_match.end())?;
+    let name_match = name_regex.find_at(l.as_bytes(), max_ip_match.end())?;
 
     println!("min:{}- max:{}- name:{}", &l[min_ip_match.range()], &l[max_ip_match.range()], &l[name_match.range()]);
 
@@ -85,21 +91,15 @@ fn get_node_for_line(l: String) -> Option<Node> {
 fn get_u32_for_ip(v: &str ) -> Option<u32> {
     let v: Vec<&str> = v.split('.').collect();
     if v.len() < 4 { return None }
-    let mut minArray: [u8; 4] = Default::default();
+    let mut min_array: [u8; 4] = Default::default();
     for i in 0..v.len() {
-        minArray[i] = match v[i].parse() {
+        min_array[i] = match v[i].parse() {
             Ok(n) => n,
             Err(e) => return None
         }
     }
-    //println!("IP?{}.{}.{}.{}",minArray[0],minArray[1],minArray[2],minArray[3]);
-    Some(u32::from_be_bytes(minArray))
-}
-
-fn insert_array_in_array(one: & mut [u8; 32], two: &[u8])  {
-    for (place, data) in one.iter_mut().zip(two.iter()) {
-        *place = *data
-    }
+    //println!("IP?{}.{}.{}.{}",min_array[0],min_array[1],min_array[2],min_array[3]);
+    Some(u32::from_be_bytes(min_array))
 }
 
 fn place_item(
@@ -114,12 +114,12 @@ fn place_item(
     *offset += bytes.len();
 }
 
-fn get_items<'a>(mmap: &'a MmapMut, offset: usize) -> &'a Node {
-    let byteMap = &mmap[offset..(offset+NODE_SIZE)];
-    //let byteMap = unsafe { std::slice::from_raw_parts(&mmap+offset, NODE_SIZE) };
-    let node = node_from_bytes(&byteMap);
+fn get_node<'a>(mmap: &'a MmapMut, offset: usize) -> &'a Node {
+    let byte_map = &mmap[offset..(offset+NODE_SIZE)];
+    //let byte_map = unsafe { std::slice::from_raw_parts(&mmap+offset, NODE_SIZE) };
+    let node = node_from_bytes(&byte_map);
     //print_map(&mmap);
-    //println!("første dims: {:?}", &byteMap);
+    //println!("første dims: {:?}", &byte_map);
     &node
 }
 
@@ -127,7 +127,7 @@ fn find_node(ip: u32) -> Option<[u8; 32]> {
     let mut counter: usize = 0;
     let mut mmap = get_memmap();
     while counter < 50 {
-        let node = get_items(&mmap, NODE_SIZE*counter);
+        let node = get_node(&mmap, NODE_SIZE*counter);
         if node.min_ip < ip && ip < node.max_ip { return Some(node.name) }
         counter += 1;
     }
@@ -189,15 +189,15 @@ fn test_find() {
     let node2 = Node { min_ip, max_ip: 40, left: 0, right: 0, name, };
     let node3 = Node { min_ip, max_ip: 0, left: 0, right: 0, name: Default::default(), };
 
-    let mut firstMap = get_memmap();
-    place_item(& mut firstMap, &mut 0, &node1);
-    place_item(& mut firstMap, &mut NODE_SIZE, &node2);
-    place_item(& mut firstMap, &mut (NODE_SIZE*2), &node3);
+    let mut first_map = get_memmap();
+    place_item(& mut first_map, &mut 0, &node1);
+    place_item(& mut first_map, &mut NODE_SIZE, &node2);
+    place_item(& mut first_map, &mut (NODE_SIZE*2), &node3);
 
-    let mut anotherMap = get_memmap();
-    let gottenName = find_node((min_ip+max_ip)/2).unwrap();
+    let mut another_map = get_memmap();
+    let gotten_name = find_node((min_ip+max_ip)/2).unwrap();
 
-    assert_eq!(gottenName, name);
+    assert_eq!(gotten_name, name);
 }
 
 #[test]
@@ -215,11 +215,11 @@ fn test_place_item_and_get() {
         name: name,
     };
 
-    let mut firstMap = get_memmap();
-    place_item(& mut firstMap, &mut 0, &node);
+    let mut first_map = get_memmap();
+    place_item(& mut first_map, &mut 0, &node);
 
-    let mut anotherMap = get_memmap();
-    let getnode = get_items(&anotherMap, 0);
+    let mut another_map = get_memmap();
+    let getnode = get_node(&another_map, 0);
 
     let left = std::str::from_utf8(&name).unwrap();
     let right = std::str::from_utf8(&getnode.name).unwrap();
@@ -228,7 +228,7 @@ fn test_place_item_and_get() {
 }
 
 #[test]
-fn test_correct_layering() {
+fn test_correct_placement() {
     fs::remove_file(MAP_PATH);
 
     let mut name: [u8; 32] = Default::default();
@@ -236,12 +236,12 @@ fn test_correct_layering() {
 
     let node = Node { min_ip: 20, max_ip: 20, left: 0, right: 0, name: name, };
 
-    let mut firstMap = get_memmap();
-    place_item(& mut firstMap, &mut 0, &node);
-    place_item(& mut firstMap, &mut NODE_SIZE, &node);
+    let mut first_map = get_memmap();
+    place_item(& mut first_map, &mut 0, &node);
+    place_item(& mut first_map, &mut NODE_SIZE, &node);
 
-    let mut anotherMap = get_memmap();
-    let getnode = get_items(&anotherMap, NODE_SIZE);
+    let mut another_map = get_memmap();
+    let getnode = get_node(&another_map, NODE_SIZE);
 
     let left = std::str::from_utf8(&name).unwrap();
     let right = std::str::from_utf8(&getnode.name).unwrap();
@@ -250,7 +250,7 @@ fn test_correct_layering() {
 
 #[test]
 #[should_panic]
-fn test_correct_layering_panic() {
+fn test_correct_placement_panic() {
     fs::remove_file(MAP_PATH);
 
     let mut name: [u8; 32] = Default::default();
@@ -258,12 +258,12 @@ fn test_correct_layering_panic() {
 
     let node = Node { min_ip: 20, max_ip: 20, left: 0, right: 0, name: name, };
 
-    let mut firstMap = get_memmap();
-    place_item(& mut firstMap, &mut 0, &node);
+    let mut first_map = get_memmap();
+    place_item(& mut first_map, &mut 0, &node);
 
-    let mut anotherMap = get_memmap();
+    let mut another_map = get_memmap();
     //get something that doesnt exists
-    let getnode = get_items(&anotherMap, NODE_SIZE);
+    let getnode = get_node(&another_map, NODE_SIZE);
 
     let left = std::str::from_utf8(&name).unwrap();
     let right = std::str::from_utf8(&getnode.name).unwrap();
