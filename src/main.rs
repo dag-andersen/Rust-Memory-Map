@@ -1,3 +1,14 @@
+#![allow(box_pointers)]
+#![allow(dead_code)]
+#![allow(missing_docs)]
+#![allow(non_camel_case_types)]
+#![allow(non_snake_case)]
+#![allow(non_upper_case_globals)]
+#![allow(trivial_casts)]
+#![allow(unsafe_code)]
+#![allow(unused_imports)]
+#![allow(unused_results)]
+
 const MAP_PATH: &str = "testdata/db.txt";
 const SOURCE_PATH: &str = "testdata/set1.txt";
 const NODE_SIZE : usize = std::mem::size_of::<Node>();
@@ -9,7 +20,7 @@ use std::collections::HashMap;
 use memmap::{MmapMut, MmapOptions};
 use bytes::str::ByteStr;
 use std::io::Read;
-use std::{fs::{OpenOptions, File}, io::{Seek, SeekFrom, Write}, os::unix::prelude::AsRawFd, ptr, fs, mem};
+use std::{fs::{OpenOptions, File}, io::{Seek, SeekFrom, Write}, os::unix::prelude::AsRawFd, ptr, fs, mem, fmt};
 use std::convert::TryInto;
 use bytes::{MutBuf, ToBytes};
 use regex::bytes::Regex;
@@ -25,15 +36,22 @@ struct Node {
     name: [u8; 32],
 }
 
+impl fmt::Display for Node {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // Customize so only `x` and `y` are denoted.
+        write!(f, "{:p}, name: {}, min_ip: {}, max_ip: {}, left: {}, right: {}", &self, std::str::from_utf8(&self.name).unwrap(), self.min_ip, self.max_ip, self.left, self.right)
+    }
+}
+
 unsafe fn any_as_u8_slice<T: Sized>(p: &T) -> &[u8] {
     std::slice::from_raw_parts((p as *const T) as *const u8, std::mem::size_of::<T>())
 }
 
-fn node_from_bytes(slice: &[u8]) -> &Node { unsafe { bytes_to_typed(slice) } }
+fn node_from_bytes(slice: &[u8]) -> &mut Node { unsafe { bytes_to_typed(slice) } }
 
-pub unsafe fn bytes_to_typed<T>(slice: &[u8]) -> &T {
-    std::slice::from_raw_parts(slice.as_ptr() as *const T, std::mem::size_of::<T>())
-        .get(0)
+pub unsafe fn bytes_to_typed<T>(slice: &[u8]) -> &mut T {
+    std::slice::from_raw_parts_mut(slice.as_ptr() as *mut T, std::mem::size_of::<T>())
+        .get_mut(0)
         .unwrap()
 }
 
@@ -64,9 +82,12 @@ fn run(scr: &str) {
         if l.is_empty() { continue; }
 
         let node = get_node_for_line(l);
-        if node.is_none() { continue }
 
-        place_item(& mut mmap, & mut shifter, &node.unwrap());
+        if node.is_none() { continue }
+        let node = node.unwrap();
+
+        insert_node(& mut mmap,shifter, &node);
+        shifter += 1;
     }
 }
 
@@ -77,7 +98,7 @@ fn get_node_for_line(l: String) -> Option<Node> {
     let max_ip_match = ip_regex.find_at(l.as_bytes(), min_ip_match.end())?;
     let name_match = name_regex.find_at(l.as_bytes(), max_ip_match.end())?;
 
-    println!("min:{}- max:{}- name:{}", &l[min_ip_match.range()], &l[max_ip_match.range()], &l[name_match.range()]);
+    //println!("min:{}- max:{}- name:{}", &l[min_ip_match.range()], &l[max_ip_match.range()], &l[name_match.range()]);
 
     let mut name: [u8; 32] = Default::default();
     insert_array_in_array(& mut name, name_match.as_bytes());
@@ -102,36 +123,49 @@ fn get_u32_for_ip(v: &str ) -> Option<u32> {
     Some(u32::from_be_bytes(min_array))
 }
 
-fn place_item(
-    mmap: & mut MmapMut,
-    offset: & mut usize,
-    node: & Node,
-) {
-    let bytes = node_to_bytes(node);
-    mmap[*offset..(*offset+bytes.len())].copy_from_slice(bytes);
-    //println!("offset:{} {:?}", *offset, bytes);
-    //println!("mmap: {:?}", &mmap[0..40]);
-    *offset += bytes.len();
+fn insert_node(mmap: & mut MmapMut, offset: usize, node: &Node) {
+    place_item(mmap, offset, &node);
 }
 
-fn get_node<'a>(mmap: &'a MmapMut, offset: usize) -> &'a Node {
+
+
+fn get_node<'a>(mmap: &'a MmapMut, index: usize) -> &'a mut Node {
+    get_node_raw(mmap,index*NODE_SIZE)
+}
+
+fn get_node_raw<'a>(mmap: &'a MmapMut, offset: usize) -> &'a mut Node {
     let byte_map = &mmap[offset..(offset+NODE_SIZE)];
     //let byte_map = unsafe { std::slice::from_raw_parts(&mmap+offset, NODE_SIZE) };
     let node = node_from_bytes(&byte_map);
     //print_map(&mmap);
     //println!("første dims: {:?}", &byte_map);
-    &node
+    node
 }
 
 fn find_node(ip: u32) -> Option<[u8; 32]> {
     let mut counter: usize = 0;
     let mut mmap = get_memmap();
     while counter < 50 {
-        let node = get_node(&mmap, NODE_SIZE*counter);
+        let node = get_node(&mmap, counter);
         if node.min_ip < ip && ip < node.max_ip { return Some(node.name) }
         counter += 1;
     }
     None
+}
+
+fn place_item(mmap: & mut MmapMut, index: usize, node: & Node) {
+    place_item_raw(mmap,index * NODE_SIZE,node);
+}
+
+fn place_item_raw(
+    mmap: & mut MmapMut,
+    offset: usize,
+    node: & Node,
+) {
+    let bytes = node_to_bytes(node);
+    mmap[offset..(offset+bytes.len())].copy_from_slice(bytes);
+    println!("{:p}",&mmap[offset]);
+    println!("{}", node)
 }
 
 fn get_buffer(file: &str) -> BufReader<std::fs::File> {
@@ -190,9 +224,9 @@ fn test_find() {
     let node3 = Node { min_ip, max_ip: 0, left: 0, right: 0, name: Default::default(), };
 
     let mut first_map = get_memmap();
-    place_item(& mut first_map, &mut 0, &node1);
-    place_item(& mut first_map, &mut NODE_SIZE, &node2);
-    place_item(& mut first_map, &mut (NODE_SIZE*2), &node3);
+    place_item(& mut first_map, 0, &node1);
+    place_item(& mut first_map, 1, &node2);
+    place_item(& mut first_map, 2, &node3);
 
     let mut another_map = get_memmap();
     let gotten_name = find_node((min_ip+max_ip)/2).unwrap();
@@ -216,7 +250,7 @@ fn test_place_item_and_get() {
     };
 
     let mut first_map = get_memmap();
-    place_item(& mut first_map, &mut 0, &node);
+    place_item(& mut first_map, 0, &node);
 
     let mut another_map = get_memmap();
     let getnode = get_node(&another_map, 0);
@@ -234,14 +268,15 @@ fn test_correct_placement() {
     let mut name: [u8; 32] = Default::default();
     insert_array_in_array(& mut name, "name".as_bytes());
 
-    let node = Node { min_ip: 20, max_ip: 20, left: 0, right: 0, name: name, };
+    let node1 = Node { min_ip: 20, max_ip: 20, left: 0, right: 0, name: Default::default(), };
+    let node2 = Node { min_ip: 20, max_ip: 20, left: 0, right: 0, name: name, };
 
     let mut first_map = get_memmap();
-    place_item(& mut first_map, &mut 0, &node);
-    place_item(& mut first_map, &mut NODE_SIZE, &node);
+    place_item(& mut first_map, 0, &node1);
+    place_item(& mut first_map, 1, &node2);
 
     let mut another_map = get_memmap();
-    let getnode = get_node(&another_map, NODE_SIZE);
+    let getnode = get_node(&another_map, 1);
 
     let left = std::str::from_utf8(&name).unwrap();
     let right = std::str::from_utf8(&getnode.name).unwrap();
@@ -259,11 +294,11 @@ fn test_correct_placement_panic() {
     let node = Node { min_ip: 20, max_ip: 20, left: 0, right: 0, name: name, };
 
     let mut first_map = get_memmap();
-    place_item(& mut first_map, &mut 0, &node);
+    place_item(& mut first_map, 0, &node);
 
     let mut another_map = get_memmap();
     //get something that doesnt exists
-    let getnode = get_node(&another_map, NODE_SIZE);
+    let getnode = get_node(&another_map, 1);
 
     let left = std::str::from_utf8(&name).unwrap();
     let right = std::str::from_utf8(&getnode.name).unwrap();
