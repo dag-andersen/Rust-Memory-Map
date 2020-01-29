@@ -13,20 +13,14 @@ const MAP_PATH: &str = "testdata/db.txt";
 const SOURCE_PATH: &str = "testdata/set1.txt";
 const NODE_SIZE : usize = std::mem::size_of::<Node>();
 
-use std;
 use std::io::{BufRead, BufReader};
 use std::ops::Add;
-use std::collections::HashMap;
 use memmap::{MmapMut, MmapOptions};
-use bytes::str::ByteStr;
 use std::io::Read;
 use std::{fs::{OpenOptions, File}, io::{Seek, SeekFrom, Write}, os::unix::prelude::AsRawFd, ptr, fs, mem, fmt};
-use std::convert::TryInto;
 use bytes::{MutBuf, ToBytes};
 use regex::bytes::Regex;
-use std::borrow::Borrow;
 use std::cmp::min;
-use core::cmp;
 
 struct Node {
     min_ip: u32,
@@ -64,10 +58,10 @@ fn insert_array_in_array(one: & mut [u8; 32], two: &[u8])  {
 }
 
 fn main() {
-    run(SOURCE_PATH);
+    store_scr_on_map(SOURCE_PATH);
 }
 
-fn run(scr: &str) {
+fn store_scr_on_map(scr: &str) {
     fs::remove_file(MAP_PATH);
 
     let mut mmap = get_memmap();
@@ -125,9 +119,36 @@ fn get_u32_for_ip(v: &str ) -> Option<u32> {
 
 fn insert_node(mmap: & mut MmapMut, offset: usize, node: &Node) {
     place_item(mmap, offset, &node);
+    if offset == 0 { return }
+    let root = get_node(&mmap, 0);
+    insert_node_on_node(&mmap, root, offset, &node);
 }
 
+fn insert_node_on_node(mmap: & MmapMut, parent: &mut Node, offset: usize, child: &Node) {
 
+    let mut offset_from_node = 0;
+
+    if parent.min_ip <= child.min_ip && child.max_ip <= parent.max_ip { panic!("Ip overlap") }
+
+    if parent.max_ip < child.max_ip {
+        if parent.right == 0 {
+            parent.right = offset;
+            return;
+        }
+        offset_from_node = parent.right;
+    } else if parent.min_ip > child.min_ip {
+        if parent.left == 0 {
+            parent.left = offset;
+            return;
+        }
+        offset_from_node = parent.left;
+    }
+
+    let node= get_node(&mmap, offset_from_node);
+
+    insert_node_on_node(mmap, node, offset, &child);
+
+}
 
 fn get_node<'a>(mmap: &'a MmapMut, index: usize) -> &'a mut Node {
     get_node_raw(mmap,index*NODE_SIZE)
@@ -135,11 +156,60 @@ fn get_node<'a>(mmap: &'a MmapMut, index: usize) -> &'a mut Node {
 
 fn get_node_raw<'a>(mmap: &'a MmapMut, offset: usize) -> &'a mut Node {
     let byte_map = &mmap[offset..(offset+NODE_SIZE)];
-    //let byte_map = unsafe { std::slice::from_raw_parts(&mmap+offset, NODE_SIZE) };
     let node = node_from_bytes(&byte_map);
-    //print_map(&mmap);
-    //println!("første dims: {:?}", &byte_map);
     node
+}
+
+fn find_node_in_tree(ip: u32) -> Option<[u8; 32]> {
+    let mmap = get_memmap();
+    let mut accNode = get_node(&mmap, 0);
+
+    while true {
+        let mut offset_from_node: usize = 0;
+        if accNode.min_ip <= ip && ip <= accNode.max_ip { return Some(accNode.name) }
+
+        if accNode.max_ip < ip {
+            if accNode.right == 0 {
+                break;
+            }
+            offset_from_node = accNode.right;
+        } else if accNode.min_ip > ip {
+            if accNode.left == 0 {
+                break;
+            }
+            offset_from_node = accNode.left;
+        }
+        accNode = get_node(&mmap, offset_from_node);
+    }
+    None
+}
+
+#[test]
+fn test_find_node_in_tree() {
+    store_scr_on_map(SOURCE_PATH);
+    let mut mmap = get_memmap();
+    for i in 0..5 {
+        println!("{}", get_node(&mmap, i));
+    }
+
+    let name = find_node_in_tree(get_u32_for_ip("000.000.000.015").unwrap());
+    assert!(name.is_some());
+    let name = name.unwrap();
+    let strName = std::str::from_utf8(&name).unwrap().trim_matches(char::from(0));
+    assert_eq!(strName,"Siteimprove");
+
+
+    let name = find_node_in_tree(get_u32_for_ip("000.000.002.015").unwrap());
+    assert!(name.is_some());
+    let name = name.unwrap();
+    let strName = std::str::from_utf8(&name).unwrap().trim_matches(char::from(0));
+    assert_eq!(strName,"Olesen");
+
+    let name = find_node_in_tree(get_u32_for_ip("000.000.000.001").unwrap());
+    assert!(name.is_none());
+
+    let name = find_node_in_tree(get_u32_for_ip("001.000.000.000").unwrap());
+    assert!(name.is_none());
 }
 
 fn find_node(ip: u32) -> Option<[u8; 32]> {
@@ -157,13 +227,12 @@ fn place_item(mmap: & mut MmapMut, index: usize, node: & Node) {
     place_item_raw(mmap,index * NODE_SIZE,node);
 }
 
-fn place_item_raw(
-    mmap: & mut MmapMut,
-    offset: usize,
-    node: & Node,
-) {
+fn place_item_raw(mmap: & mut MmapMut, offset: usize, node: & Node,) {
     let bytes = node_to_bytes(node);
     mmap[offset..(offset+bytes.len())].copy_from_slice(bytes);
+
+    //mmap.flush();
+    //mmap.flush_range(offset, bytes.len());
     println!("{:p}",&mmap[offset]);
     println!("{}", node)
 }
@@ -229,6 +298,8 @@ fn test_find() {
     place_item(& mut first_map, 2, &node3);
 
     let mut another_map = get_memmap();
+    let temp = find_node((min_ip+max_ip)/2);
+    assert!(temp.is_some());
     let gotten_name = find_node((min_ip+max_ip)/2).unwrap();
 
     assert_eq!(gotten_name, name);
@@ -237,17 +308,10 @@ fn test_find() {
 #[test]
 fn test_place_item_and_get() {
     fs::remove_file(MAP_PATH);
-
     let mut name: [u8; 32] = Default::default();
     insert_array_in_array(& mut name, "name".as_bytes());
 
-    let node = Node {
-        min_ip: 20,
-        max_ip: 20,
-        left: 0,
-        right: 0,
-        name: name,
-    };
+    let node = Node { min_ip: 20, max_ip: 20, left: 0, right: 0, name: name, };
 
     let mut first_map = get_memmap();
     place_item(& mut first_map, 0, &node);
@@ -264,7 +328,6 @@ fn test_place_item_and_get() {
 #[test]
 fn test_correct_placement() {
     fs::remove_file(MAP_PATH);
-
     let mut name: [u8; 32] = Default::default();
     insert_array_in_array(& mut name, "name".as_bytes());
 
