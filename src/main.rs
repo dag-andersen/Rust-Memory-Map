@@ -189,42 +189,6 @@ fn find_node_in_tree(ip: u32) -> Option<[u8; 32]> {
     None
 }
 
-#[test]
-fn test_find_node_in_tree() {
-    store_scr_on_map(SOURCE_PATH_1);
-    let mut mmap = get_memmap();
-    for i in 0..5 {
-        println!("{}", get_node(&mmap, i));
-    }
-
-    let name = find_node_in_tree(get_u32_for_ip("000.000.000.015").unwrap());
-    assert!(name.is_some());
-    let name = name.unwrap();
-    let strName = std::str::from_utf8(&name).unwrap().trim_matches(char::from(0));
-    assert_eq!(strName,"Siteimprove");
-
-    let name = find_node_in_tree(get_u32_for_ip("000.000.002.015").unwrap());
-    assert!(name.is_some());
-    let name = name.unwrap();
-    let strName = std::str::from_utf8(&name).unwrap().trim_matches(char::from(0));
-    assert_eq!(strName,"Olesen");
-
-    let name = find_node_in_tree(get_u32_for_ip("000.000.000.001").unwrap());
-    assert!(name.is_none());
-
-    let name = find_node_in_tree(get_u32_for_ip("001.000.000.000").unwrap());
-    assert!(name.is_none());
-}
-
-#[test]
-fn test_find_node_in_tree_2() {
-    store_scr_on_map(SOURCE_PATH_2);
-    let mut mmap = get_memmap();
-    for i in 0..20 {
-        println!("{}", get_node(&mmap, i));
-    }
-}
-
 fn find_node(ip: u32) -> Option<[u8; 32]> {
     let mut counter: usize = 0;
     let mut mmap = get_memmap();
@@ -268,6 +232,35 @@ fn get_memmap() -> MmapMut {
     mmap
 }
 
+fn print_tree() {
+    let mmap = get_memmap();
+    let root = get_node(&mmap, 0);
+    print_node(&mmap, &root, 0)
+}
+
+fn print_node(mmap: &MmapMut, node: &Node, n: usize) {
+    let indention : String = (0..n).map(|_| '-').collect();
+    if node.right != 0 {
+        let rightNode = get_node(&mmap, node.right);
+        print_node(mmap, &rightNode, n + 1);
+    }
+    print!("{}",indention);
+    println!("{}", std::str::from_utf8(&node.name).unwrap());
+    if node.left != 0 {
+        let leftNode = get_node(&mmap, node.left);
+        print_node(mmap, &leftNode, n + 1);
+    }
+}
+
+#[test]
+fn test_print_tree() {
+    let src = "thisFileWillBeDeleted";
+    generate_source_file(200, src);
+    store_scr_on_map(src);
+    print_tree();
+    fs::remove_file(src);
+}
+
 #[test]
 fn test_get_ip_for_line() {
     let ip_str = "0.0.0.132";
@@ -289,6 +282,38 @@ fn test_get_ip_for_line() {
     assert!(ip_u32.is_none());
 }
 
+#[test]
+fn test_find_node_in_tree() {
+    store_scr_on_map(SOURCE_PATH_1);
+    let mut mmap = get_memmap();
+
+    let name = find_node_in_tree(get_u32_for_ip("000.000.000.015").unwrap());
+    assert!(name.is_some());
+    let name = name.unwrap();
+    let strName = std::str::from_utf8(&name).unwrap().trim_matches(char::from(0));
+    assert_eq!(strName,"Siteimprove");
+
+    let name = find_node_in_tree(get_u32_for_ip("000.000.002.015").unwrap());
+    assert!(name.is_some());
+    let name = name.unwrap();
+    let strName = std::str::from_utf8(&name).unwrap().trim_matches(char::from(0));
+    assert_eq!(strName,"Olesen");
+
+    let name = find_node_in_tree(get_u32_for_ip("000.000.000.001").unwrap());
+    assert!(name.is_none());
+
+    let name = find_node_in_tree(get_u32_for_ip("001.000.000.000").unwrap());
+    assert!(name.is_none());
+}
+
+#[test]
+fn test_find_node_in_tree_2() {
+    store_scr_on_map(SOURCE_PATH_2);
+    let mut mmap = get_memmap();
+    for i in 0..20 {
+        println!("{}", get_node(&mmap, i));
+    }
+}
 
 #[test]
 fn test_find() {
@@ -380,43 +405,35 @@ fn test_correct_placement_panic() {
     assert_eq!(left, right);
 }
 
-#[test]
-fn generate_ip_file() {
-
-    let file = File::create("testdata/set2.txt").unwrap();
-    let mut file = LineWriter::new(file);
-
+fn generate_random_ip_firm() -> String {
     let mut rng = rand::thread_rng();
-
-    for i in 0..20 {
-        let mut r = String::new();
-
-        let ip1 : u8 = 0;
-        let ip2 : u8 = 0;
-        let ip3 : u8 = rng.gen();
-        let ip4 : u8 = rng.gen();
-
-        r.push_str(&format!("{}",ip1)); r.push('.');
-        r.push_str(&format!("{}",ip2)); r.push('.');
-        r.push_str(&format!("{}",ip3)); r.push('.');
-        r.push_str(&format!("{}",ip4 >> 1)); r.push(' ');
-        r.push_str(&format!("{}",ip1)); r.push('.');
-        r.push_str(&format!("{}",ip2)); r.push('.');
-        r.push_str(&format!("{}",ip3)); r.push('.');
-        r.push_str(&format!("{}",ip4)); r.push(' ');
-
-        let name = rng.sample_iter(&Alphanumeric)
-            .take(5)
-            .collect::<String>();
-
-        r.push_str(&name);
-        r.push_str("\n");
-
-        file.write_all(r.as_bytes());
-        print!("{}", r);
-    }
+    let ip1 : u8 = 0;
+    let ip2 : u8 = 0;
+    let ip3 : u8 = rng.gen();
+    let ip4 : u8 = rng.gen();
+    let mut r = String::new();
+    r.push_str(&format!("{}",ip1)); r.push('.');
+    r.push_str(&format!("{}",ip2)); r.push('.');
+    r.push_str(&format!("{}",ip3)); r.push('.');
+    r.push_str(&format!("{}",ip4 >> 1)); r.push(' ');
+    r.push_str(&format!("{}",ip1)); r.push('.');
+    r.push_str(&format!("{}",ip2)); r.push('.');
+    r.push_str(&format!("{}",ip3)); r.push('.');
+    r.push_str(&format!("{}",ip4)); r.push(' ');
+    let name = rng.sample_iter(&Alphanumeric).take(5).collect::<String>();
+    r.push_str(&name); r.push_str("\n");
+    r
 }
 
+fn generate_source_file(n: usize, s:&str) {
+    let file = File::create(s).unwrap();
+    let mut file = LineWriter::new(file);
+    for _ in 0..n {
+        let s = generate_random_ip_firm();
+        file.write_all( s.as_bytes());
+        print!("{}", s);
+    }
+}
 
 
 //(\d{1,3}[.]){3}(\d{1,3})|(\w+\s?)+
