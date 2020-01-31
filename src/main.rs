@@ -124,6 +124,7 @@ fn insert_node(mmap: & mut MmapMut, offset: usize, node: &Node) {
     if offset == 0 { return }
     let root = get_node(&mmap, 0);
     insert_node_on_node(&mmap, root, offset, &node);
+    print!("-{}",offset);
 }
 
 fn insert_node_on_node(mmap: & MmapMut, parent: &mut Node, offset: usize, child: &Node) {
@@ -150,9 +151,7 @@ fn insert_node_on_node(mmap: & MmapMut, parent: &mut Node, offset: usize, child:
     }
 
     let node= get_node(&mmap, offset_from_node);
-
     insert_node_on_node(mmap, node, offset, &child);
-
 }
 
 fn get_node<'a>(mmap: &'a MmapMut, index: usize) -> &'a mut Node {
@@ -207,7 +206,7 @@ fn place_item(mmap: & mut MmapMut, index: usize, node: & Node) {
 fn place_item_raw(mmap: & mut MmapMut, offset: usize, node: & Node,) {
     let bytes = node_to_bytes(node);
     mmap[offset..(offset+bytes.len())].copy_from_slice(bytes);
-    mmap.flush();
+    //mmap.flush();
     //mmap.flush_range(offset, bytes.len());
     //println!("{:p}",&mmap[offset]);
     //println!("{}", node)
@@ -218,7 +217,7 @@ fn get_buffer(file: &str) -> BufReader<std::fs::File> {
 }
 
 fn get_memmap() -> MmapMut {
-    const SIZE: u64 = 128 * 128;
+    const SIZE: u64 = 128 * 128 * 128 * 128;
     let mut file = OpenOptions::new()
         .read(true)
         .write(true)
@@ -259,6 +258,14 @@ fn test_print_tree() {
     store_scr_on_map(src);
     print_tree();
     fs::remove_file(src);
+}
+
+#[test]
+fn test_make_40_file() {
+    let src = "40gb";
+    generate_source_file(1000, src);
+    store_scr_on_map(src);
+    print_tree();
 }
 
 #[test]
@@ -304,15 +311,6 @@ fn test_find_node_in_tree() {
 
     let name = find_node_in_tree(get_u32_for_ip("001.000.000.000").unwrap());
     assert!(name.is_none());
-}
-
-#[test]
-fn test_find_node_in_tree_2() {
-    store_scr_on_map(SOURCE_PATH_2);
-    let mut mmap = get_memmap();
-    for i in 0..20 {
-        println!("{}", get_node(&mmap, i));
-    }
 }
 
 #[test]
@@ -407,8 +405,8 @@ fn test_correct_placement_panic() {
 
 fn generate_random_ip_firm() -> String {
     let mut rng = rand::thread_rng();
-    let ip1 : u8 = 0;
-    let ip2 : u8 = 0;
+    let ip1 : u8 = rng.gen();
+    let ip2 : u8 = rng.gen();
     let ip3 : u8 = rng.gen();
     let ip4 : u8 = rng.gen();
     let mut r = String::new();
@@ -420,7 +418,7 @@ fn generate_random_ip_firm() -> String {
     r.push_str(&format!("{}",ip2)); r.push('.');
     r.push_str(&format!("{}",ip3)); r.push('.');
     r.push_str(&format!("{}",ip4)); r.push(' ');
-    let name = rng.sample_iter(&Alphanumeric).take(5).collect::<String>();
+    let name = rng.sample_iter(&Alphanumeric).take(10).collect::<String>();
     r.push_str(&name); r.push_str("\n");
     r
 }
@@ -428,10 +426,12 @@ fn generate_random_ip_firm() -> String {
 fn generate_source_file(n: usize, s:&str) {
     let file = File::create(s).unwrap();
     let mut file = LineWriter::new(file);
-    for _ in 0..n {
+    for i in 0..n {
+        if i % 100 == 0 { println!("number of lines created: {}", i); }
         let s = generate_random_ip_firm();
         file.write_all( s.as_bytes());
-        print!("{}", s);
+        file.flush();
+        //print!("{}", s);
     }
 }
 
