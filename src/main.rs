@@ -10,23 +10,22 @@
 #![allow(unused_results)]
 
 const MAP_PATH: &str = "testdata/db.txt";
-const SOURCE_PATH: &str = "testdata/set1.txt";
+const SOURCE_PATH_1: &str = "testdata/set1.txt";
+const SOURCE_PATH_2: &str = "testdata/set2.txt";
+const SOURCE_PATH_3: &str = "testdata/set3.txt";
 const NODE_SIZE : usize = std::mem::size_of::<Node>();
 
-use std;
-use std::io::{BufRead, BufReader};
+use std::io::{BufRead, BufReader, LineWriter};
 use std::ops::Add;
-use std::collections::HashMap;
 use memmap::{MmapMut, MmapOptions};
-use bytes::str::ByteStr;
 use std::io::Read;
 use std::{fs::{OpenOptions, File}, io::{Seek, SeekFrom, Write}, os::unix::prelude::AsRawFd, ptr, fs, mem, fmt};
-use std::convert::TryInto;
 use bytes::{MutBuf, ToBytes};
 use regex::bytes::Regex;
-use std::borrow::Borrow;
 use std::cmp::min;
-use core::cmp;
+use rand::{Rng, random};
+use std::io::prelude::*;
+use rand::distributions::Alphanumeric;
 
 struct Node {
     min_ip: u32,
@@ -39,7 +38,7 @@ struct Node {
 impl fmt::Display for Node {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         // Customize so only `x` and `y` are denoted.
-        write!(f, "{:p}, name: {}, min_ip: {}, max_ip: {}, left: {}, right: {}", &self, std::str::from_utf8(&self.name).unwrap(), self.min_ip, self.max_ip, self.left, self.right)
+        write!(f, "{:p}, n: {}, min: {}, max: {}, l: {}, r: {}", &self, std::str::from_utf8(&self.name).unwrap(), self.min_ip, self.max_ip, self.left, self.right)
     }
 }
 
@@ -64,19 +63,17 @@ fn insert_array_in_array(one: & mut [u8; 32], two: &[u8])  {
 }
 
 fn main() {
-    run(SOURCE_PATH);
+    store_scr_on_map(SOURCE_PATH_1);
 }
 
-fn run(scr: &str) {
+fn store_scr_on_map(scr: &str) {
     fs::remove_file(MAP_PATH);
 
     let mut mmap = get_memmap();
 
     let buffer = get_buffer(scr);
 
-    let mut shifter = 0;
-
-    for (_, line) in buffer.lines().enumerate() {
+    for (i, line) in buffer.lines().enumerate() {
         if line.is_err() { continue }
         let l = line.unwrap();
         if l.is_empty() { continue; }
@@ -86,17 +83,16 @@ fn run(scr: &str) {
         if node.is_none() { continue }
         let node = node.unwrap();
 
-        insert_node(& mut mmap,shifter, &node);
-        shifter += 1;
+        insert_node(& mut mmap,i, &node);
     }
 }
 
 fn get_node_for_line(l: String) -> Option<Node> {
     let ip_regex = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap();
-    let name_regex = Regex::new(r"\b([A-z]|[A-z]\s)+[A-z]\b").unwrap();
+    let name_regex = Regex::new(r"\b(([A-z]|\d)+\s?)+\b").unwrap();
     let min_ip_match = ip_regex.find(l.as_bytes()).expect("didnt find min ip");
-    let max_ip_match = ip_regex.find_at(l.as_bytes(), min_ip_match.end())?;
-    let name_match = name_regex.find_at(l.as_bytes(), max_ip_match.end())?;
+    let max_ip_match = ip_regex.find_at(l.as_bytes(), min_ip_match.end()).expect("didnt find max ip");
+    let name_match = name_regex.find_at(l.as_bytes(), max_ip_match.end()).expect("didnt find name");
 
     //println!("min:{}- max:{}- name:{}", &l[min_ip_match.range()], &l[max_ip_match.range()], &l[name_match.range()]);
 
@@ -125,9 +121,38 @@ fn get_u32_for_ip(v: &str ) -> Option<u32> {
 
 fn insert_node(mmap: & mut MmapMut, offset: usize, node: &Node) {
     place_item(mmap, offset, &node);
+    if offset == 0 { return }
+    let root = get_node(&mmap, 0);
+    insert_node_on_node(&mmap, root, offset, &node);
+    print!("-{}",offset);
 }
 
+fn insert_node_on_node(mmap: & MmapMut, parent: &mut Node, offset: usize, child: &Node) {
 
+    let mut offset_from_node = 0;
+
+    if parent.min_ip <= child.min_ip && child.max_ip <= parent.max_ip {
+        println!("Overlap: {}", std::str::from_utf8(&child.name).unwrap());
+        return
+    }
+
+    if parent.max_ip < child.max_ip {
+        if parent.right == 0 {
+            parent.right = offset;
+            return;
+        }
+        offset_from_node = parent.right;
+    } else if parent.min_ip > child.min_ip {
+        if parent.left == 0 {
+            parent.left = offset;
+            return;
+        }
+        offset_from_node = parent.left;
+    }
+
+    let node= get_node(&mmap, offset_from_node);
+    insert_node_on_node(mmap, node, offset, &child);
+}
 
 fn get_node<'a>(mmap: &'a MmapMut, index: usize) -> &'a mut Node {
     get_node_raw(mmap,index*NODE_SIZE)
@@ -135,11 +160,32 @@ fn get_node<'a>(mmap: &'a MmapMut, index: usize) -> &'a mut Node {
 
 fn get_node_raw<'a>(mmap: &'a MmapMut, offset: usize) -> &'a mut Node {
     let byte_map = &mmap[offset..(offset+NODE_SIZE)];
-    //let byte_map = unsafe { std::slice::from_raw_parts(&mmap+offset, NODE_SIZE) };
     let node = node_from_bytes(&byte_map);
-    //print_map(&mmap);
-    //println!("første dims: {:?}", &byte_map);
     node
+}
+
+fn find_node_in_tree(ip: u32) -> Option<[u8; 32]> {
+    let mmap = get_memmap();
+    let mut accNode = get_node(&mmap, 0);
+
+    while true {
+        let mut offset_from_node: usize = 0;
+        if accNode.min_ip <= ip && ip <= accNode.max_ip { return Some(accNode.name) }
+
+        if accNode.max_ip < ip {
+            if accNode.right == 0 {
+                break;
+            }
+            offset_from_node = accNode.right;
+        } else if accNode.min_ip > ip {
+            if accNode.left == 0 {
+                break;
+            }
+            offset_from_node = accNode.left;
+        }
+        accNode = get_node(&mmap, offset_from_node);
+    }
+    None
 }
 
 fn find_node(ip: u32) -> Option<[u8; 32]> {
@@ -157,15 +203,13 @@ fn place_item(mmap: & mut MmapMut, index: usize, node: & Node) {
     place_item_raw(mmap,index * NODE_SIZE,node);
 }
 
-fn place_item_raw(
-    mmap: & mut MmapMut,
-    offset: usize,
-    node: & Node,
-) {
+fn place_item_raw(mmap: & mut MmapMut, offset: usize, node: & Node,) {
     let bytes = node_to_bytes(node);
     mmap[offset..(offset+bytes.len())].copy_from_slice(bytes);
-    println!("{:p}",&mmap[offset]);
-    println!("{}", node)
+    //mmap.flush();
+    //mmap.flush_range(offset, bytes.len());
+    //println!("{:p}",&mmap[offset]);
+    //println!("{}", node)
 }
 
 fn get_buffer(file: &str) -> BufReader<std::fs::File> {
@@ -173,7 +217,7 @@ fn get_buffer(file: &str) -> BufReader<std::fs::File> {
 }
 
 fn get_memmap() -> MmapMut {
-    const SIZE: u64 = 128 * 128;
+    const SIZE: u64 = 128 * 128 * 128 * 128;
     let mut file = OpenOptions::new()
         .read(true)
         .write(true)
@@ -185,6 +229,43 @@ fn get_memmap() -> MmapMut {
     file.seek(SeekFrom::Start(0)).unwrap();
     let mut mmap = unsafe { MmapOptions::new().map_mut( & file).unwrap() };
     mmap
+}
+
+fn print_tree() {
+    let mmap = get_memmap();
+    let root = get_node(&mmap, 0);
+    print_node(&mmap, &root, 0)
+}
+
+fn print_node(mmap: &MmapMut, node: &Node, n: usize) {
+    let indention : String = (0..n).map(|_| '-').collect();
+    if node.right != 0 {
+        let rightNode = get_node(&mmap, node.right);
+        print_node(mmap, &rightNode, n + 1);
+    }
+    print!("{}",indention);
+    println!("{}", std::str::from_utf8(&node.name).unwrap());
+    if node.left != 0 {
+        let leftNode = get_node(&mmap, node.left);
+        print_node(mmap, &leftNode, n + 1);
+    }
+}
+
+#[test]
+fn test_print_tree() {
+    let src = "thisFileWillBeDeleted";
+    generate_source_file(200, src);
+    store_scr_on_map(src);
+    print_tree();
+    fs::remove_file(src);
+}
+
+#[test]
+fn test_make_40_file() {
+    let src = "40gb";
+    generate_source_file(1000, src);
+    store_scr_on_map(src);
+    print_tree();
 }
 
 #[test]
@@ -208,6 +289,29 @@ fn test_get_ip_for_line() {
     assert!(ip_u32.is_none());
 }
 
+#[test]
+fn test_find_node_in_tree() {
+    store_scr_on_map(SOURCE_PATH_1);
+    let mut mmap = get_memmap();
+
+    let name = find_node_in_tree(get_u32_for_ip("000.000.000.015").unwrap());
+    assert!(name.is_some());
+    let name = name.unwrap();
+    let strName = std::str::from_utf8(&name).unwrap().trim_matches(char::from(0));
+    assert_eq!(strName,"Siteimprove");
+
+    let name = find_node_in_tree(get_u32_for_ip("000.000.002.015").unwrap());
+    assert!(name.is_some());
+    let name = name.unwrap();
+    let strName = std::str::from_utf8(&name).unwrap().trim_matches(char::from(0));
+    assert_eq!(strName,"Olesen");
+
+    let name = find_node_in_tree(get_u32_for_ip("000.000.000.001").unwrap());
+    assert!(name.is_none());
+
+    let name = find_node_in_tree(get_u32_for_ip("001.000.000.000").unwrap());
+    assert!(name.is_none());
+}
 
 #[test]
 fn test_find() {
@@ -229,6 +333,8 @@ fn test_find() {
     place_item(& mut first_map, 2, &node3);
 
     let mut another_map = get_memmap();
+    let temp = find_node((min_ip+max_ip)/2);
+    assert!(temp.is_some());
     let gotten_name = find_node((min_ip+max_ip)/2).unwrap();
 
     assert_eq!(gotten_name, name);
@@ -237,17 +343,10 @@ fn test_find() {
 #[test]
 fn test_place_item_and_get() {
     fs::remove_file(MAP_PATH);
-
     let mut name: [u8; 32] = Default::default();
     insert_array_in_array(& mut name, "name".as_bytes());
 
-    let node = Node {
-        min_ip: 20,
-        max_ip: 20,
-        left: 0,
-        right: 0,
-        name: name,
-    };
+    let node = Node { min_ip: 20, max_ip: 20, left: 0, right: 0, name: name, };
 
     let mut first_map = get_memmap();
     place_item(& mut first_map, 0, &node);
@@ -264,7 +363,6 @@ fn test_place_item_and_get() {
 #[test]
 fn test_correct_placement() {
     fs::remove_file(MAP_PATH);
-
     let mut name: [u8; 32] = Default::default();
     insert_array_in_array(& mut name, "name".as_bytes());
 
@@ -304,6 +402,39 @@ fn test_correct_placement_panic() {
     let right = std::str::from_utf8(&getnode.name).unwrap();
     assert_eq!(left, right);
 }
+
+fn generate_random_ip_firm() -> String {
+    let mut rng = rand::thread_rng();
+    let ip1 : u8 = rng.gen();
+    let ip2 : u8 = rng.gen();
+    let ip3 : u8 = rng.gen();
+    let ip4 : u8 = rng.gen();
+    let mut r = String::new();
+    r.push_str(&format!("{}",ip1)); r.push('.');
+    r.push_str(&format!("{}",ip2)); r.push('.');
+    r.push_str(&format!("{}",ip3)); r.push('.');
+    r.push_str(&format!("{}",ip4 >> 1)); r.push(' ');
+    r.push_str(&format!("{}",ip1)); r.push('.');
+    r.push_str(&format!("{}",ip2)); r.push('.');
+    r.push_str(&format!("{}",ip3)); r.push('.');
+    r.push_str(&format!("{}",ip4)); r.push(' ');
+    let name = rng.sample_iter(&Alphanumeric).take(10).collect::<String>();
+    r.push_str(&name); r.push_str("\n");
+    r
+}
+
+fn generate_source_file(n: usize, s:&str) {
+    let file = File::create(s).unwrap();
+    let mut file = LineWriter::new(file);
+    for i in 0..n {
+        if i % 100 == 0 { println!("number of lines created: {}", i); }
+        let s = generate_random_ip_firm();
+        file.write_all( s.as_bytes());
+        file.flush();
+        //print!("{}", s);
+    }
+}
+
 
 //(\d{1,3}[.]){3}(\d{1,3})|(\w+\s?)+
 //(\d{1,3}[.]){3}(\d{1,3})\s
