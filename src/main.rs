@@ -10,10 +10,12 @@
 #![allow(unused_results)]
 
 const MAP_PATH: &str = "testdata/db.txt";
-const SOURCE_PATH: &str = "testdata/set1.txt";
+const SOURCE_PATH_1: &str = "testdata/set1.txt";
+const SOURCE_PATH_2: &str = "testdata/set2.txt";
+const SOURCE_PATH_3: &str = "testdata/set3.txt";
 const NODE_SIZE : usize = std::mem::size_of::<Node>();
 
-use std::io::{BufRead, BufReader};
+use std::io::{BufRead, BufReader, LineWriter};
 use std::ops::Add;
 use memmap::{MmapMut, MmapOptions};
 use std::io::Read;
@@ -21,6 +23,9 @@ use std::{fs::{OpenOptions, File}, io::{Seek, SeekFrom, Write}, os::unix::prelud
 use bytes::{MutBuf, ToBytes};
 use regex::bytes::Regex;
 use std::cmp::min;
+use rand::{Rng, random};
+use std::io::prelude::*;
+use rand::distributions::Alphanumeric;
 
 struct Node {
     min_ip: u32,
@@ -33,7 +38,7 @@ struct Node {
 impl fmt::Display for Node {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         // Customize so only `x` and `y` are denoted.
-        write!(f, "{:p}, name: {}, min_ip: {}, max_ip: {}, left: {}, right: {}", &self, std::str::from_utf8(&self.name).unwrap(), self.min_ip, self.max_ip, self.left, self.right)
+        write!(f, "{:p}, n: {}, min: {}, max: {}, l: {}, r: {}", &self, std::str::from_utf8(&self.name).unwrap(), self.min_ip, self.max_ip, self.left, self.right)
     }
 }
 
@@ -58,7 +63,7 @@ fn insert_array_in_array(one: & mut [u8; 32], two: &[u8])  {
 }
 
 fn main() {
-    store_scr_on_map(SOURCE_PATH);
+    store_scr_on_map(SOURCE_PATH_1);
 }
 
 fn store_scr_on_map(scr: &str) {
@@ -68,9 +73,7 @@ fn store_scr_on_map(scr: &str) {
 
     let buffer = get_buffer(scr);
 
-    let mut shifter = 0;
-
-    for (_, line) in buffer.lines().enumerate() {
+    for (i, line) in buffer.lines().enumerate() {
         if line.is_err() { continue }
         let l = line.unwrap();
         if l.is_empty() { continue; }
@@ -80,17 +83,16 @@ fn store_scr_on_map(scr: &str) {
         if node.is_none() { continue }
         let node = node.unwrap();
 
-        insert_node(& mut mmap,shifter, &node);
-        shifter += 1;
+        insert_node(& mut mmap,i, &node);
     }
 }
 
 fn get_node_for_line(l: String) -> Option<Node> {
     let ip_regex = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap();
-    let name_regex = Regex::new(r"\b([A-z]|[A-z]\s)+[A-z]\b").unwrap();
+    let name_regex = Regex::new(r"\b(([A-z]|\d)+\s?)+\b").unwrap();
     let min_ip_match = ip_regex.find(l.as_bytes()).expect("didnt find min ip");
-    let max_ip_match = ip_regex.find_at(l.as_bytes(), min_ip_match.end())?;
-    let name_match = name_regex.find_at(l.as_bytes(), max_ip_match.end())?;
+    let max_ip_match = ip_regex.find_at(l.as_bytes(), min_ip_match.end()).expect("didnt find max ip");
+    let name_match = name_regex.find_at(l.as_bytes(), max_ip_match.end()).expect("didnt find name");
 
     //println!("min:{}- max:{}- name:{}", &l[min_ip_match.range()], &l[max_ip_match.range()], &l[name_match.range()]);
 
@@ -128,7 +130,10 @@ fn insert_node_on_node(mmap: & MmapMut, parent: &mut Node, offset: usize, child:
 
     let mut offset_from_node = 0;
 
-    if parent.min_ip <= child.min_ip && child.max_ip <= parent.max_ip { panic!("Ip overlap") }
+    if parent.min_ip <= child.min_ip && child.max_ip <= parent.max_ip {
+        println!("Overlap: {}", std::str::from_utf8(&child.name).unwrap());
+        return
+    }
 
     if parent.max_ip < child.max_ip {
         if parent.right == 0 {
@@ -186,7 +191,7 @@ fn find_node_in_tree(ip: u32) -> Option<[u8; 32]> {
 
 #[test]
 fn test_find_node_in_tree() {
-    store_scr_on_map(SOURCE_PATH);
+    store_scr_on_map(SOURCE_PATH_1);
     let mut mmap = get_memmap();
     for i in 0..5 {
         println!("{}", get_node(&mmap, i));
@@ -197,7 +202,6 @@ fn test_find_node_in_tree() {
     let name = name.unwrap();
     let strName = std::str::from_utf8(&name).unwrap().trim_matches(char::from(0));
     assert_eq!(strName,"Siteimprove");
-
 
     let name = find_node_in_tree(get_u32_for_ip("000.000.002.015").unwrap());
     assert!(name.is_some());
@@ -210,6 +214,15 @@ fn test_find_node_in_tree() {
 
     let name = find_node_in_tree(get_u32_for_ip("001.000.000.000").unwrap());
     assert!(name.is_none());
+}
+
+#[test]
+fn test_find_node_in_tree_2() {
+    store_scr_on_map(SOURCE_PATH_2);
+    let mut mmap = get_memmap();
+    for i in 0..20 {
+        println!("{}", get_node(&mmap, i));
+    }
 }
 
 fn find_node(ip: u32) -> Option<[u8; 32]> {
@@ -230,11 +243,10 @@ fn place_item(mmap: & mut MmapMut, index: usize, node: & Node) {
 fn place_item_raw(mmap: & mut MmapMut, offset: usize, node: & Node,) {
     let bytes = node_to_bytes(node);
     mmap[offset..(offset+bytes.len())].copy_from_slice(bytes);
-
-    //mmap.flush();
+    mmap.flush();
     //mmap.flush_range(offset, bytes.len());
-    println!("{:p}",&mmap[offset]);
-    println!("{}", node)
+    //println!("{:p}",&mmap[offset]);
+    //println!("{}", node)
 }
 
 fn get_buffer(file: &str) -> BufReader<std::fs::File> {
@@ -367,6 +379,45 @@ fn test_correct_placement_panic() {
     let right = std::str::from_utf8(&getnode.name).unwrap();
     assert_eq!(left, right);
 }
+
+#[test]
+fn generate_ip_file() {
+
+    let file = File::create("testdata/set2.txt").unwrap();
+    let mut file = LineWriter::new(file);
+
+    let mut rng = rand::thread_rng();
+
+    for i in 0..20 {
+        let mut r = String::new();
+
+        let ip1 : u8 = 0;
+        let ip2 : u8 = 0;
+        let ip3 : u8 = rng.gen();
+        let ip4 : u8 = rng.gen();
+
+        r.push_str(&format!("{}",ip1)); r.push('.');
+        r.push_str(&format!("{}",ip2)); r.push('.');
+        r.push_str(&format!("{}",ip3)); r.push('.');
+        r.push_str(&format!("{}",ip4 >> 1)); r.push(' ');
+        r.push_str(&format!("{}",ip1)); r.push('.');
+        r.push_str(&format!("{}",ip2)); r.push('.');
+        r.push_str(&format!("{}",ip3)); r.push('.');
+        r.push_str(&format!("{}",ip4)); r.push(' ');
+
+        let name = rng.sample_iter(&Alphanumeric)
+            .take(5)
+            .collect::<String>();
+
+        r.push_str(&name);
+        r.push_str("\n");
+
+        file.write_all(r.as_bytes());
+        print!("{}", r);
+    }
+}
+
+
 
 //(\d{1,3}[.]){3}(\d{1,3})|(\w+\s?)+
 //(\d{1,3}[.]){3}(\d{1,3})\s
