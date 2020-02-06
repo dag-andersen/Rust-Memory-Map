@@ -9,11 +9,11 @@
 #![allow(unused_imports)]
 #![allow(unused_results)]
 
-const MAP_PATH: &str = "testdata/out/map.txt";
-const SOURCE_PATH_1: &str = "testdata/in/set1.txt";
-const SOURCE_PATH_2: &str = "testdata/in/set2.txt";
-const SOURCE_PATH_3: &str = "testdata/in/set3.txt";
-const TREE_PRINT_PATH: &str = "testdata/out/tree.txt";
+const SOURCE_PATH_1:    &str = "testdata/in/set1.txt";
+const SOURCE_PATH_2:    &str = "testdata/in/set2.txt";
+const SOURCE_PATH_3:    &str = "testdata/in/set3.txt";
+const MAP_PATH:         &str = "testdata/out/map.txt";
+const TREE_PRINT_PATH:  &str = "testdata/out/tree.txt";
 const NODE_SIZE : usize = std::mem::size_of::<Node>();
 
 use std::io::{BufRead, BufReader, LineWriter};
@@ -21,7 +21,6 @@ use std::ops::Add;
 use memmap::{MmapMut, MmapOptions};
 use std::io::Read;
 use std::{fs::{OpenOptions, File}, io::{Seek, SeekFrom, Write}, os::unix::prelude::AsRawFd, ptr, fs, mem, fmt};
-use bytes::{MutBuf, ToBytes};
 use regex::bytes::Regex;
 use std::cmp::min;
 use rand::{Rng, random};
