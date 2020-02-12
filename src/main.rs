@@ -16,6 +16,11 @@ const MAP_PATH:         &str = "testdata/out/map.txt";
 const TREE_PRINT_PATH:  &str = "testdata/out/tree.txt";
 const NODE_SIZE : usize = std::mem::size_of::<Node>();
 
+mod Tree;
+mod FileGenerator;
+mod TreePrinter;
+mod MemTalker;
+
 use std::io::{BufRead, BufReader, LineWriter};
 use std::ops::Add;
 use memmap::{MmapMut, MmapOptions};
@@ -27,10 +32,6 @@ use rand::{Rng, random};
 use std::io::prelude::*;
 use rand::distributions::Alphanumeric;
 use rand::prelude::ThreadRng;
-
-mod FileGenerator;
-mod TreePrinter;
-mod MemTalker;
 
 pub struct Node {
     min_ip: u32,
@@ -77,7 +78,7 @@ fn store_scr_on_map(scr: &str) {
         if node.is_none() { continue }
         let node = node.unwrap();
 
-        insert_node(& mut mmap,i, &node);
+        Tree::insert_node(& mut mmap,i, &node);
     }
 }
 
@@ -110,61 +111,6 @@ fn get_u32_for_ip(v: &str ) -> Option<u32> {
     }
     //println!("IP?{}.{}.{}.{}",min_array[0],min_array[1],min_array[2],min_array[3]);
     Some(u32::from_be_bytes(min_array))
-}
-
-fn insert_node(mmap: & mut MmapMut, index: usize, node: &Node) {
-    MemTalker::place_item(mmap, index, &node);
-    if index == 0 { return }
-    let root = MemTalker::get_node(&mmap, 0);
-    insert_node_on_node(&mmap, root, index, &node);
-    //print!("-{}",offset);
-}
-
-fn insert_node_on_node(mmap: & MmapMut, parent: &mut Node, index: usize, child: &Node) {
-
-    let mut offset_from_node = 0;
-
-    if parent.min_ip <= child.min_ip && child.max_ip <= parent.max_ip {
-        println!("Overlap: {}", std::str::from_utf8(&child.name).expect("Overlap expect"));
-        return
-    }
-
-    if parent.max_ip < child.max_ip {
-        if parent.right == 0 {
-            parent.right = index;
-            return;
-        }
-        offset_from_node = parent.right;
-    } else if parent.min_ip > child.min_ip {
-        if parent.left == 0 {
-            parent.left = index;
-            return;
-        }
-        offset_from_node = parent.left;
-    }
-
-    let node = MemTalker::get_node(&mmap, offset_from_node);
-    insert_node_on_node(mmap, node, index, &child);
-}
-
-fn find_node_in_tree(ip: u32) -> Option<[u8; 32]> {
-    let mmap = get_memmap();
-    let mut accNode = MemTalker::get_node(&mmap, 0);
-
-    while true {
-        let mut offset_from_node: usize = 0;
-        if accNode.min_ip <= ip && ip <= accNode.max_ip { return Some(accNode.name) }
-
-        if accNode.max_ip < ip {
-            if accNode.right == 0 { break; }
-            offset_from_node = accNode.right;
-        } else if accNode.min_ip > ip {
-            if accNode.left == 0 { break; }
-            offset_from_node = accNode.left;
-        }
-        accNode = MemTalker::get_node(&mmap, offset_from_node);
-    }
-    None
 }
 
 fn get_buffer(file: &str) -> BufReader<std::fs::File> {
@@ -210,9 +156,9 @@ fn test_find_random() {
     let node = Node { min_ip: ip-1, max_ip: ip+1, left: 0, right: 0, name, };
 
     let mut mmap = get_memmap();
-    insert_node(&mut mmap,numberOfLines, &node);
+    Tree::insert_node(&mut mmap,numberOfLines, &node);
 
-    let getNode = find_node_in_tree(ip);
+    let getNode = Tree::find_node_in_tree(ip);
     assert!(getNode.is_some());
     let getNode = getNode.unwrap();
     let left = std::str::from_utf8(&name).unwrap();
@@ -247,22 +193,22 @@ fn test_get_ip_for_line() {
 fn test_find_node_in_tree() {
     store_scr_on_map(SOURCE_PATH_1);
 
-    let name = find_node_in_tree(get_u32_for_ip("000.000.000.015").unwrap());
+    let name = Tree::find_node_in_tree(get_u32_for_ip("000.000.000.015").unwrap());
     assert!(name.is_some());
     let name = name.unwrap();
     let strName = std::str::from_utf8(&name).unwrap().trim_matches(char::from(0));
     assert_eq!(strName,"Siteimprove");
 
-    let name = find_node_in_tree(get_u32_for_ip("000.000.002.015").unwrap());
+    let name = Tree::find_node_in_tree(get_u32_for_ip("000.000.002.015").unwrap());
     assert!(name.is_some());
     let name = name.unwrap();
     let strName = std::str::from_utf8(&name).unwrap().trim_matches(char::from(0));
     assert_eq!(strName,"Olesen");
 
-    let name = find_node_in_tree(get_u32_for_ip("000.000.000.001").unwrap());
+    let name = Tree::find_node_in_tree(get_u32_for_ip("000.000.000.001").unwrap());
     assert!(name.is_none());
 
-    let name = find_node_in_tree(get_u32_for_ip("001.000.000.000").unwrap());
+    let name = Tree::find_node_in_tree(get_u32_for_ip("001.000.000.000").unwrap());
     assert!(name.is_none());
 }
 
