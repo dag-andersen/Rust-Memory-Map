@@ -20,6 +20,7 @@ mod Tree;
 mod FileGenerator;
 mod TreePrinter;
 mod MemTalker;
+mod BenchmarkTests;
 
 use std::io::{BufRead, BufReader, LineWriter};
 use std::ops::Add;
