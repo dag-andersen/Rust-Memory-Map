@@ -20,6 +20,7 @@ mod Tree;
 mod FileGenerator;
 mod TreePrinter;
 mod MemTalker;
+mod BenchmarkTests;
 
 use std::io::{BufRead, BufReader, LineWriter};
 use std::ops::Add;
@@ -135,7 +136,7 @@ fn get_memmap() -> MmapMut {
 #[test]
 fn test_print_tree_to_file() {
     let src = "thisFileWillBeDeleted";
-    FileGenerator::generate_source_file(10000, src);
+    FileGenerator::generate_source_file_with(src, 100,1..2,99..100, 4);
     store_scr_on_map(src);
     TreePrinter::print_tree_to_file(TREE_PRINT_PATH);
     fs::remove_file(src);
