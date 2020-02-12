@@ -15,6 +15,7 @@ Cargo.lock
 *.icloud
 
 .DS_Store
+.vscode
 
 **/workspace.xml
 workspace.xml

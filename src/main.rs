@@ -28,7 +28,11 @@ use std::io::prelude::*;
 use rand::distributions::Alphanumeric;
 use rand::prelude::ThreadRng;
 
-struct Node {
+mod FileGenerator;
+mod TreePrinter;
+mod MemTalker;
+
+pub struct Node {
     min_ip: u32,
     max_ip: u32,
     left: usize,
@@ -42,20 +46,6 @@ impl fmt::Display for Node {
         write!(f, "{:p}, n: {}, min: {}, max: {}, l: {}, r: {}", &self, std::str::from_utf8(&self.name).unwrap(), self.min_ip, self.max_ip, self.left, self.right)
     }
 }
-
-unsafe fn any_as_u8_slice<T: Sized>(p: &T) -> &[u8] {
-    std::slice::from_raw_parts((p as *const T) as *const u8, std::mem::size_of::<T>())
-}
-
-fn node_from_bytes(slice: &[u8]) -> &mut Node { unsafe { bytes_to_typed(slice) } }
-
-pub unsafe fn bytes_to_typed<T>(slice: &[u8]) -> &mut T {
-    std::slice::from_raw_parts_mut(slice.as_ptr() as *mut T, std::mem::size_of::<T>())
-        .get_mut(0)
-        .unwrap()
-}
-
-fn node_to_bytes(node: &Node) -> &[u8] { unsafe { any_as_u8_slice(node) } }
 
 fn insert_array_in_array(one: & mut [u8; 32], two: &[u8])  {
     for (place, data) in one.iter_mut().zip(two.iter()) {
@@ -123,9 +113,9 @@ fn get_u32_for_ip(v: &str ) -> Option<u32> {
 }
 
 fn insert_node(mmap: & mut MmapMut, index: usize, node: &Node) {
-    place_item(mmap, index, &node);
+    MemTalker::place_item(mmap, index, &node);
     if index == 0 { return }
-    let root = get_node(&mmap, 0);
+    let root = MemTalker::get_node(&mmap, 0);
     insert_node_on_node(&mmap, root, index, &node);
     //print!("-{}",offset);
 }
@@ -153,23 +143,13 @@ fn insert_node_on_node(mmap: & MmapMut, parent: &mut Node, index: usize, child: 
         offset_from_node = parent.left;
     }
 
-    let node= get_node(&mmap, offset_from_node);
+    let node = MemTalker::get_node(&mmap, offset_from_node);
     insert_node_on_node(mmap, node, index, &child);
-}
-
-fn get_node<'a>(mmap: &'a MmapMut, index: usize) -> &'a mut Node {
-    get_node_raw(mmap,index*NODE_SIZE)
-}
-
-fn get_node_raw<'a>(mmap: &'a MmapMut, offset: usize) -> &'a mut Node {
-    let byte_map = &mmap[offset..(offset+NODE_SIZE)];
-    let node = node_from_bytes(&byte_map);
-    node
 }
 
 fn find_node_in_tree(ip: u32) -> Option<[u8; 32]> {
     let mmap = get_memmap();
-    let mut accNode = get_node(&mmap, 0);
+    let mut accNode = MemTalker::get_node(&mmap, 0);
 
     while true {
         let mut offset_from_node: usize = 0;
@@ -182,18 +162,9 @@ fn find_node_in_tree(ip: u32) -> Option<[u8; 32]> {
             if accNode.left == 0 { break; }
             offset_from_node = accNode.left;
         }
-        accNode = get_node(&mmap, offset_from_node);
+        accNode = MemTalker::get_node(&mmap, offset_from_node);
     }
     None
-}
-
-fn place_item(mmap: & mut MmapMut, index: usize, node: & Node) {
-    place_item_raw(mmap,index * NODE_SIZE,node);
-}
-
-fn place_item_raw(mmap: & mut MmapMut, offset: usize, node: & Node,) {
-    let bytes = node_to_bytes(node);
-    mmap[offset..(offset+bytes.len())].copy_from_slice(bytes);
 }
 
 fn get_buffer(file: &str) -> BufReader<std::fs::File> {
@@ -215,51 +186,12 @@ fn get_memmap() -> MmapMut {
     mmap
 }
 
-fn print_tree() {
-    let mmap = get_memmap();
-    let root = get_node(&mmap, 0);
-    print_node(&mmap, &root, 0)
-}
-
-fn print_node(mmap: &MmapMut, node: &Node, n: usize) {
-    let indention : String = (0..n).map(|_| '-').collect();
-    if node.right != 0 {
-        print_node(mmap, &get_node(&mmap, node.right), n + 1);
-    }
-    print!("{}",indention);
-    println!("{}", std::str::from_utf8(&node.name).unwrap());
-    if node.left != 0 {
-        print_node(mmap, &get_node(&mmap, node.left), n + 1);
-    }
-}
-
-fn print_tree_to_file(s: &str) {
-    let file = File::create(s).unwrap();
-    let mut file = LineWriter::new(file);
-    let mmap = get_memmap();
-    let root = get_node(&mmap, 0);
-    print_node_to_file(&mmap, &root, 0, &mut file);
-}
-
-fn print_node_to_file(mmap: &MmapMut, node: &Node, n: usize, writer: &mut LineWriter<File>) {
-    if node.right != 0 {
-        print_node_to_file(mmap, &get_node(&mmap, node.right), n + 1, writer);
-    }
-    let indention : String = (0..n).map(|_| '-').collect();
-    writer.write_all(indention.as_bytes());
-    writer.write_all(&node.name);
-    writer.write_all("\n".as_bytes());
-    if node.left != 0 {
-        print_node_to_file(mmap, &get_node(&mmap, node.left), n + 1, writer);
-    }
-}
-
 #[test]
 fn test_print_tree_to_file() {
     let src = "thisFileWillBeDeleted";
-    generate_source_file(10000, src);
+    FileGenerator::generate_source_file(10000, src);
     store_scr_on_map(src);
-    print_tree_to_file(TREE_PRINT_PATH);
+    TreePrinter::print_tree_to_file(TREE_PRINT_PATH);
     fs::remove_file(src);
 }
 
@@ -267,7 +199,7 @@ fn test_print_tree_to_file() {
 fn test_find_random() {
     let src = "test_find_random";
     let numberOfLines = 100;
-    generate_source_file(numberOfLines, src);
+    FileGenerator::generate_source_file(numberOfLines, src);
     store_scr_on_map(src);
 
     let mut name: [u8; 32] = Default::default();
@@ -345,11 +277,11 @@ fn test_correct_placement() {
     let node2 = Node { min_ip: 20, max_ip: 20, left: 0, right: 0, name: name, };
 
     let mut first_map = get_memmap();
-    place_item(& mut first_map, 0, &node1);
-    place_item(& mut first_map, 1, &node2);
+    MemTalker::place_item(& mut first_map, 0, &node1);
+    MemTalker::place_item(& mut first_map, 1, &node2);
 
     let mut another_map = get_memmap();
-    let getnode = get_node(&another_map, 1);
+    let getnode = MemTalker::get_node(&another_map, 1);
 
     let left = std::str::from_utf8(&name).unwrap();
     let right = std::str::from_utf8(&getnode.name).unwrap();
@@ -357,37 +289,6 @@ fn test_correct_placement() {
 }
 
 
-fn generate_random_ip_firm(rng: &mut ThreadRng) -> String {
-
-    let ip1 : u8 = rng.gen();
-    let ip2 : u8 = rng.gen();
-    let ip3 : u8 = rng.gen();
-    let ip4 : u8 = rng.gen();
-    let mut r = String::new();
-    r.push_str(&format!("{}",ip1)); r.push('.');
-    r.push_str(&format!("{}",ip2)); r.push('.');
-    r.push_str(&format!("{}",ip3)); r.push('.');
-    r.push_str(&format!("{}",ip4 >> 1)); r.push(' ');
-    r.push_str(&format!("{}",ip1)); r.push('.');
-    r.push_str(&format!("{}",ip2)); r.push('.');
-    r.push_str(&format!("{}",ip3)); r.push('.');
-    r.push_str(&format!("{}",ip4)); r.push(' ');
-    let name = rng.sample_iter(&Alphanumeric).take(4).collect::<String>();
-    r.push_str(&name); r.push_str("\n");
-    r
-}
-
-fn generate_source_file(n: usize, s:&str) {
-    let file = File::create(s).unwrap();
-    let mut file = LineWriter::new(file);
-    for i in 0..n {
-        if i % 1000 == 0 { println!("number of lines created: {}", i); }
-        let mut rng = rand::thread_rng();
-        let s = generate_random_ip_firm(&mut rng);
-        file.write_all( s.as_bytes());
-        file.flush();
-    }
-}
 
 
 //(\d{1,3}[.]){3}(\d{1,3})|(\w+\s?)+
