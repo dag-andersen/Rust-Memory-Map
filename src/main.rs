@@ -26,6 +26,7 @@ use std::cmp::min;
 use rand::{Rng, random};
 use std::io::prelude::*;
 use rand::distributions::Alphanumeric;
+use rand::prelude::ThreadRng;
 
 struct Node {
     min_ip: u32,
@@ -356,8 +357,8 @@ fn test_correct_placement() {
 }
 
 
-fn generate_random_ip_firm() -> String {
-    let mut rng = rand::thread_rng();
+fn generate_random_ip_firm(rng: &mut ThreadRng) -> String {
+
     let ip1 : u8 = rng.gen();
     let ip2 : u8 = rng.gen();
     let ip3 : u8 = rng.gen();
@@ -381,7 +382,8 @@ fn generate_source_file(n: usize, s:&str) {
     let mut file = LineWriter::new(file);
     for i in 0..n {
         if i % 1000 == 0 { println!("number of lines created: {}", i); }
-        let s = generate_random_ip_firm();
+        let mut rng = rand::thread_rng();
+        let s = generate_random_ip_firm(&mut rng);
         file.write_all( s.as_bytes());
         file.flush();
     }
