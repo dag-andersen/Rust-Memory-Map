@@ -1,8 +1,9 @@
 use stopwatch::Stopwatch;
-use crate::{FileGenerator, TreePrinter, TREE_PRINT_PATH, store_scr_on_map};
+use crate::{FileGenerator, TREE_PRINT_PATH, store_scr_on_map};
 use std::fs;
 use std::fs::File;
 use std::io::{LineWriter, Write};
+use crate::Tree::TreePrinter;
 
 #[test]
 fn speed_test() {

@@ -1,6 +1,3 @@
-
-
-//use rand::prelude::ThreadRng;
 use rand::Rng;
 use rand::distributions::Alphanumeric;
 use std::io::{LineWriter, Write};
