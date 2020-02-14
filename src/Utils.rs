@@ -1,11 +1,16 @@
 use memmap::{MmapMut, MmapOptions};
 use std::fs::OpenOptions;
 use std::io::{SeekFrom, Write, Seek};
+use crate::{Tree};
 
 pub(crate) fn insert_array_in_array(one: & mut [u8; 32], two: &[u8])  {
     for (place, data) in one.iter_mut().zip(two.iter()) {
         *place = *data
     }
+}
+
+pub(crate) fn entry_to_node(entry: crate::Entry) -> Tree::Node {
+    Tree::Node { min_ip: entry.min_ip, max_ip: entry.max_ip, left: 0, right: 0, name: entry.name }
 }
 
 pub(crate) fn get_memmap(source: &str, size: u64) -> MmapMut {
