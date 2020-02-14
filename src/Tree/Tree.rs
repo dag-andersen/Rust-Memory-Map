@@ -3,7 +3,7 @@ use memmap::MmapMut;
 use crate::Tree::Node;
 
 pub fn insert_node(mmap: & mut MmapMut, index: usize, node: &Node) {
-    NodeToMem::place_item(mmap, index, &node);
+    NodeToMem::place_node(mmap, index, &node);
     if index == 0 { return }
     let root = NodeToMem::get_node(&mmap, 0);
     insert_node_on_node(&mmap, root, index, &node);

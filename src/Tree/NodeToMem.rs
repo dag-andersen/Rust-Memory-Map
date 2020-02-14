@@ -15,6 +15,6 @@ fn get_node_raw<'a>(mmap: &'a MmapMut, offset: usize) -> &'a mut Node {
     node_from_bytes(&byte_map)
 }
 
-pub fn place_item(mmap: & mut MmapMut, index: usize, node: & Node) {
+pub fn place_node(mmap: & mut MmapMut, index: usize, node: & Node) {
     Utils::place_item_raw(mmap,index * NODE_SIZE,node);
 }
