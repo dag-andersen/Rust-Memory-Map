@@ -46,17 +46,14 @@ pub(crate) fn entry_to_node(entry: crate::Entry) -> Tree::Node {
 }
 
 pub(crate) fn get_memmap(source: &str, size: u64) -> MmapMut {
-    let mut file = OpenOptions::new()
+    let file = OpenOptions::new()
         .read(true)
         .write(true)
         .create(true)
         .open(source)
-        .expect("Unable to open file");
-    file.seek(SeekFrom::Start(size)).unwrap();
-    file.write_all(&[0]).unwrap();
-    file.seek(SeekFrom::Start(0)).unwrap();
-    let mut mmap = unsafe { MmapOptions::new().map_mut( & file).unwrap() };
-    mmap
+        .expect("couldn't open file");
+    file.set_len(size).expect("error while setting length of file");
+    unsafe { MmapOptions::new().map_mut(&file).unwrap() }
 }
 
 pub(crate) unsafe fn any_as_u8_slice<T: Sized>(p: &T) -> &[u8] {
