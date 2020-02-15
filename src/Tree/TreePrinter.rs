@@ -1,12 +1,12 @@
-
-use crate::{get_memmap, Node, MemTalker};
+use crate::{get_memmap, Utils, MAP_PATH};
 use std::fs::File;
 use std::io::{LineWriter, Write};
 use memmap::MmapMut;
-use crate::MemTalker::get_node;
+use crate::NodeToMem::get_node;
+use crate::Tree::Node;
 
 fn print_tree() {
-    let mmap = get_memmap();
+    let mmap = Utils::get_memmap(MAP_PATH, 3000000);
     let root = get_node(&mmap, 0);
     print_node(&mmap, &root, 0)
 }
@@ -26,7 +26,7 @@ fn print_node(mmap: &MmapMut, node: &Node, n: usize) {
 pub(crate) fn print_tree_to_file(s: &str) {
     let file = File::create(s).unwrap();
     let mut file = LineWriter::new(file);
-    let mmap = get_memmap();
+    let mmap = Utils::get_memmap(MAP_PATH, 3000000);
     let root = get_node(&mmap, 0);
     print_node_to_file(&mmap, &root, 0, &mut file);
 }

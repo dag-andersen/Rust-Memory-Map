@@ -1,10 +1,11 @@
-use crate::{MemTalker, Node, get_memmap};
+use crate::{NodeToMem, get_memmap, MAP_PATH};
 use memmap::MmapMut;
+use crate::Tree::Node;
 
 pub fn insert_node(mmap: & mut MmapMut, index: usize, node: &Node) {
-    MemTalker::place_item(mmap, index, &node);
+    NodeToMem::place_node(mmap, index, &node);
     if index == 0 { return }
-    let root = MemTalker::get_node(&mmap, 0);
+    let root = NodeToMem::get_node(&mmap, 0);
     insert_node_on_node(&mmap, root, index, &node);
     //print!("-{}",offset);
 }
@@ -32,15 +33,15 @@ fn insert_node_on_node(mmap: & MmapMut, parent: &mut Node, index: usize, child: 
         offset_from_node = parent.left;
     }
 
-    let node = MemTalker::get_node(&mmap, offset_from_node);
+    let node = NodeToMem::get_node(&mmap, offset_from_node);
     insert_node_on_node(mmap, node, index, &child);
 }
 
-pub fn find_node_in_tree(ip: u32) -> Option<[u8; 32]> {
-    let mmap = get_memmap();
-    let mut accNode = MemTalker::get_node(&mmap, 0);
+pub fn find_node(ip: u32) -> Option<[u8; 32]> {
+    let mmap = get_memmap(MAP_PATH, 3000000);
+    let mut accNode = NodeToMem::get_node(&mmap, 0);
 
-    while true {
+    loop {
         let mut offset_from_node: usize = 0;
         if accNode.min_ip <= ip && ip <= accNode.max_ip { return Some(accNode.name) }
 
@@ -51,7 +52,7 @@ pub fn find_node_in_tree(ip: u32) -> Option<[u8; 32]> {
             if accNode.left == 0 { break; }
             offset_from_node = accNode.left;
         }
-        accNode = MemTalker::get_node(&mmap, offset_from_node);
+        accNode = NodeToMem::get_node(&mmap, offset_from_node);
     }
     None
 }

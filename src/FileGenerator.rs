@@ -1,6 +1,3 @@
-
-
-//use rand::prelude::ThreadRng;
 use rand::Rng;
 use rand::distributions::Alphanumeric;
 use std::io::{LineWriter, Write};
@@ -41,7 +38,6 @@ pub fn generate_source_file(n: usize, s:&str) {
         file.write_all( s.as_bytes());
         file.flush();
     }
-
 }
 
 fn gen_firm(rng: &ThreadRng, size: usize) -> String {
