@@ -73,3 +73,25 @@ pub(crate) fn place_item_raw<T>(mmap: & mut MmapMut, offset: usize, t: &T) {
     let bytes = unsafe { any_as_u8_slice(t) };
     mmap[offset..(offset+bytes.len())].copy_from_slice(bytes);
 }
+
+
+#[test]
+fn test_get_ip_for_line() {
+    let ip_str = "0.0.0.132";
+    let ip_u32 = get_u32_for_ip(&ip_str);
+    assert!(ip_u32.is_some());
+    assert_eq!(ip_u32.unwrap(),132);
+
+    let ip_str = "0.0.1.1";
+    let ip_u32 = get_u32_for_ip(&ip_str);
+    assert!(ip_u32.is_some());
+    assert_eq!(ip_u32.unwrap(),257);
+
+    let ip_str = "0.0.0.300";
+    let ip_u32 = get_u32_for_ip(&ip_str);
+    assert!(ip_u32.is_none());
+
+    let ip_str = "0.1.1";
+    let ip_u32 = get_u32_for_ip(&ip_str);
+    assert!(ip_u32.is_none());
+}

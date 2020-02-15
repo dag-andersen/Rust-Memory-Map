@@ -13,8 +13,9 @@ Cargo.lock
 !/testdata/out/folderFile.txt
 
 *.icloud
-
 .DS_Store
+
+.idea
 .vscode
 
 **/workspace.xml

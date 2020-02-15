@@ -88,11 +88,42 @@ fn test_print_tree_to_file() {
 }
 
 #[test]
-fn test_find_random() {
+fn test_find_node_in_tree() {
+
+    let insert: fn(&mut MmapMut, usize, Entry) = Tree::insert_entry;
+    let get: fn(ip: u32) -> Option<[u8; 32]> = Tree::find_value;
+
+    load_to_map(SOURCE_PATH_1,MAP_PATH, insert);
+
+    let name = get(Utils::get_u32_for_ip("000.000.000.015").unwrap());
+    assert!(name.is_some());
+    let name = name.unwrap();
+    let strName = std::str::from_utf8(&name).unwrap().trim_matches(char::from(0));
+    assert_eq!(strName,"Siteimprove");
+
+    let name = get(Utils::get_u32_for_ip("000.000.002.015").unwrap());
+    assert!(name.is_some());
+    let name = name.unwrap();
+    let strName = std::str::from_utf8(&name).unwrap().trim_matches(char::from(0));
+    assert_eq!(strName,"Olesen");
+
+    let name = get(Utils::get_u32_for_ip("000.000.000.001").unwrap());
+    assert!(name.is_none());
+
+    let name = get(Utils::get_u32_for_ip("001.000.000.000").unwrap());
+    assert!(name.is_none());
+}
+
+#[test]
+fn test_find_inserted_node_in_tree() {
+
+    let insert: fn(&mut MmapMut, usize, Entry) = Tree::insert_entry;
+    let get: fn(ip: u32) -> Option<[u8; 32]> = Tree::find_value;
+
     let src = "test_find_random";
     let numberOfLines = 100;
     FileGenerator::generate_source_file(numberOfLines, src);
-    load_to_map(src, MAP_PATH, Tree::insert_entry);
+    load_to_map(src, MAP_PATH, insert);
 
     let mut name: [u8; 32] = Default::default();
     Utils::insert_array_in_array(& mut name, "testname".as_bytes());
@@ -102,9 +133,9 @@ fn test_find_random() {
     let entry = Entry { min_ip: ip-1, max_ip: ip+1, name, };
 
     let mut mmap = get_memmap(MAP_PATH, 300000000);
-    Tree::insert_entry(&mut mmap, numberOfLines, entry);
+    insert(&mut mmap, numberOfLines, entry);
 
-    let getNode = Tree::find_value(ip);
+    let getNode = get(ip);
     assert!(getNode.is_some());
     let getNode = getNode.unwrap();
     let left = std::str::from_utf8(&name).unwrap();
@@ -112,72 +143,6 @@ fn test_find_random() {
     assert_eq!(left, right);
 
     fs::remove_file(src);
-}
-
-#[test]
-fn test_get_ip_for_line() {
-    let ip_str = "0.0.0.132";
-    let ip_u32 = Utils::get_u32_for_ip(&ip_str);
-    assert!(ip_u32.is_some());
-    assert_eq!(ip_u32.unwrap(),132);
-
-    let ip_str = "0.0.1.1";
-    let ip_u32 = Utils::get_u32_for_ip(&ip_str);
-    assert!(ip_u32.is_some());
-    assert_eq!(ip_u32.unwrap(),257);
-
-    let ip_str = "0.0.0.300";
-    let ip_u32 = Utils::get_u32_for_ip(&ip_str);
-    assert!(ip_u32.is_none());
-
-    let ip_str = "0.1.1";
-    let ip_u32 = Utils::get_u32_for_ip(&ip_str);
-    assert!(ip_u32.is_none());
-}
-
-#[test]
-fn test_find_node_in_tree() {
-    load_to_map(SOURCE_PATH_1,MAP_PATH, Tree::insert_entry);
-
-    let name = Tree::find_value(Utils::get_u32_for_ip("000.000.000.015").unwrap());
-    assert!(name.is_some());
-    let name = name.unwrap();
-    let strName = std::str::from_utf8(&name).unwrap().trim_matches(char::from(0));
-    assert_eq!(strName,"Siteimprove");
-
-    let name = Tree::find_value(Utils::get_u32_for_ip("000.000.002.015").unwrap());
-    assert!(name.is_some());
-    let name = name.unwrap();
-    let strName = std::str::from_utf8(&name).unwrap().trim_matches(char::from(0));
-    assert_eq!(strName,"Olesen");
-
-    let name = Tree::find_value(Utils::get_u32_for_ip("000.000.000.001").unwrap());
-    assert!(name.is_none());
-
-    let name = Tree::find_value(Utils::get_u32_for_ip("001.000.000.000").unwrap());
-    assert!(name.is_none());
-}
-
-
-#[test]
-fn test_correct_placement() {
-    fs::remove_file(MAP_PATH);
-    let mut name: [u8; 32] = Default::default();
-    Utils::insert_array_in_array(& mut name, "name".as_bytes());
-
-    let node1 = Tree::Node { min_ip: 20, max_ip: 20, left: 0, right: 0, name: Default::default(), };
-    let node2 = Tree::Node { min_ip: 20, max_ip: 20, left: 0, right: 0, name: name, };
-
-    let mut first_map = Utils::get_memmap(MAP_PATH, 300000000);
-    NodeToMem::place_node(& mut first_map, 0, &node1);
-    NodeToMem::place_node(& mut first_map, 1, &node2);
-
-    let mut another_map = get_memmap(MAP_PATH, 300000000);
-    let getnode = NodeToMem::get_node(&another_map, 1);
-
-    let left = std::str::from_utf8(&name).unwrap();
-    let right = std::str::from_utf8(&getnode.name).unwrap();
-    assert_eq!(left, right);
 }
 
 
