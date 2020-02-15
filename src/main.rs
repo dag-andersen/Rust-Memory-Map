@@ -48,13 +48,13 @@ impl fmt::Display for Entry {
 }
 
 fn main() {
-    store_scr_on_map(SOURCE_PATH_1, MAP_PATH);
+    load_to_map(SOURCE_PATH_1, MAP_PATH,Tree::insert_entry);
 }
 
-fn store_scr_on_map(input: &str, output: &str) {
-    fs::remove_file(output);
+fn load_to_map(input: &str, map_path: &str, map_fn: fn(&mut MmapMut, usize, Entry)) {
+    fs::remove_file(map_path);
 
-    let mut mmap = get_memmap(output, 300000000);
+    let mut mmap = get_memmap(map_path, 300000000);
 
     let ip_regex = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap();
     let name_regex = Regex::new(r"\b(([A-z]|\d)+\s?)+\b").unwrap();
@@ -70,7 +70,7 @@ fn store_scr_on_map(input: &str, output: &str) {
         if entry.is_none() { continue }
         let entry = entry.unwrap();
 
-        Tree::insert_entry(& mut mmap, i, entry);
+        map_fn(& mut mmap, i, entry);
     }
 }
 
@@ -82,81 +82,81 @@ fn get_buffer(file: &str) -> BufReader<std::fs::File> {
 fn test_print_tree_to_file() {
     let src = "thisFileWillBeDeleted";
     FileGenerator::generate_source_file_with(src, 100,1..2,99..100, 4);
-    store_scr_on_map(src, MAP_PATH);
+    load_to_map(src, MAP_PATH, Tree::insert_entry);
     Tree::TreePrinter::print_tree_to_file(TREE_PRINT_PATH);
     fs::remove_file(src);
 }
 
-//#[test]
-//fn test_find_random() {
-//    let src = "test_find_random";
-//    let numberOfLines = 100;
-//    FileGenerator::generate_source_file(numberOfLines, src);
-//    store_scr_on_map(src);
-//
-//    let mut name: [u8; 32] = Default::default();
-//    Utils::insert_array_in_array(& mut name, "testname".as_bytes());
-//
-//    let ip = 34568;
-//
-//    let entry = Entry { min_ip: ip-1, max_ip: ip+1, name, };
-//
-//    let mut mmap = get_memmap(MAP_PATH, 300000000);
-//    Tree::insert_entry(&mut mmap, numberOfLines, entry);
-//
-//    let getNode = Tree::Tree::find_node(ip);
-//    assert!(getNode.is_some());
-//    let getNode = getNode.unwrap();
-//    let left = std::str::from_utf8(&name).unwrap();
-//    let right = std::str::from_utf8(&getNode).unwrap();
-//    assert_eq!(left, right);
-//
-//    fs::remove_file(src);
-//}
-//
-//#[test]
-//fn test_get_ip_for_line() {
-//    let ip_str = "0.0.0.132";
-//    let ip_u32 = get_u32_for_ip(&ip_str);
-//    assert!(ip_u32.is_some());
-//    assert_eq!(ip_u32.unwrap(),132);
-//
-//    let ip_str = "0.0.1.1";
-//    let ip_u32 = get_u32_for_ip(&ip_str);
-//    assert!(ip_u32.is_some());
-//    assert_eq!(ip_u32.unwrap(),257);
-//
-//    let ip_str = "0.0.0.300";
-//    let ip_u32 = get_u32_for_ip(&ip_str);
-//    assert!(ip_u32.is_none());
-//
-//    let ip_str = "0.1.1";
-//    let ip_u32 = get_u32_for_ip(&ip_str);
-//    assert!(ip_u32.is_none());
-//}
+#[test]
+fn test_find_random() {
+    let src = "test_find_random";
+    let numberOfLines = 100;
+    FileGenerator::generate_source_file(numberOfLines, src);
+    load_to_map(src, MAP_PATH, Tree::insert_entry);
 
-//#[test]
-//fn test_find_node_in_tree() {
-//    store_scr_on_map(SOURCE_PATH_1);
-//
-//    let name = Tree::Tree::find_node(get_u32_for_ip("000.000.000.015").unwrap());
-//    assert!(name.is_some());
-//    let name = name.unwrap();
-//    let strName = std::str::from_utf8(&name).unwrap().trim_matches(char::from(0));
-//    assert_eq!(strName,"Siteimprove");
-//
-//    let name = Tree::Tree::find_node(get_u32_for_ip("000.000.002.015").unwrap());
-//    assert!(name.is_some());
-//    let name = name.unwrap();
-//    let strName = std::str::from_utf8(&name).unwrap().trim_matches(char::from(0));
-//    assert_eq!(strName,"Olesen");
-//
-//    let name = Tree::Tree::find_node(get_u32_for_ip("000.000.000.001").unwrap());
-//    assert!(name.is_none());
-//
-//    let name = Tree::Tree::find_node(get_u32_for_ip("001.000.000.000").unwrap());
-//    assert!(name.is_none());
-//}
+    let mut name: [u8; 32] = Default::default();
+    Utils::insert_array_in_array(& mut name, "testname".as_bytes());
+
+    let ip = 34568;
+
+    let entry = Entry { min_ip: ip-1, max_ip: ip+1, name, };
+
+    let mut mmap = get_memmap(MAP_PATH, 300000000);
+    Tree::insert_entry(&mut mmap, numberOfLines, entry);
+
+    let getNode = Tree::find_value(ip);
+    assert!(getNode.is_some());
+    let getNode = getNode.unwrap();
+    let left = std::str::from_utf8(&name).unwrap();
+    let right = std::str::from_utf8(&getNode).unwrap();
+    assert_eq!(left, right);
+
+    fs::remove_file(src);
+}
+
+#[test]
+fn test_get_ip_for_line() {
+    let ip_str = "0.0.0.132";
+    let ip_u32 = Utils::get_u32_for_ip(&ip_str);
+    assert!(ip_u32.is_some());
+    assert_eq!(ip_u32.unwrap(),132);
+
+    let ip_str = "0.0.1.1";
+    let ip_u32 = Utils::get_u32_for_ip(&ip_str);
+    assert!(ip_u32.is_some());
+    assert_eq!(ip_u32.unwrap(),257);
+
+    let ip_str = "0.0.0.300";
+    let ip_u32 = Utils::get_u32_for_ip(&ip_str);
+    assert!(ip_u32.is_none());
+
+    let ip_str = "0.1.1";
+    let ip_u32 = Utils::get_u32_for_ip(&ip_str);
+    assert!(ip_u32.is_none());
+}
+
+#[test]
+fn test_find_node_in_tree() {
+    load_to_map(SOURCE_PATH_1,MAP_PATH, Tree::insert_entry);
+
+    let name = Tree::find_value(Utils::get_u32_for_ip("000.000.000.015").unwrap());
+    assert!(name.is_some());
+    let name = name.unwrap();
+    let strName = std::str::from_utf8(&name).unwrap().trim_matches(char::from(0));
+    assert_eq!(strName,"Siteimprove");
+
+    let name = Tree::find_value(Utils::get_u32_for_ip("000.000.002.015").unwrap());
+    assert!(name.is_some());
+    let name = name.unwrap();
+    let strName = std::str::from_utf8(&name).unwrap().trim_matches(char::from(0));
+    assert_eq!(strName,"Olesen");
+
+    let name = Tree::find_value(Utils::get_u32_for_ip("000.000.000.001").unwrap());
+    assert!(name.is_none());
+
+    let name = Tree::find_value(Utils::get_u32_for_ip("001.000.000.000").unwrap());
+    assert!(name.is_none());
+}
 
 
 #[test]
