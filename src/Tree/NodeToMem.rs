@@ -3,7 +3,7 @@ use crate::{Utils, MAP_PATH};
 use crate::Tree::{NODE_SIZE, Node};
 use std::fs;
 
-fn node_from_bytes(slice: &[u8]) -> &mut Node { unsafe { Utils::bytes_to_typed(slice) } }
+fn node_from_bytes(slice: &[u8]) -> &mut Node { unsafe { Utils::bytes_to_type(slice) } }
 
 fn node_to_bytes(node: &Node) -> &[u8] { unsafe { Utils::any_as_u8_slice(node) } }
 

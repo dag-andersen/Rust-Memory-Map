@@ -48,7 +48,8 @@ impl fmt::Display for Entry {
 }
 
 fn main() {
-    load_to_map(SOURCE_PATH_1, MAP_PATH,Tree::insert_entry);
+    //load_to_map(SOURCE_PATH_1, MAP_PATH,Tree::insert_entry);
+    load_to_table(SOURCE_PATH_1);
 }
 
 fn load_to_map(input: &str, map_path: &str, map_fn: fn(&mut MmapMut, usize, Entry)) {
@@ -66,11 +67,72 @@ fn load_to_map(input: &str, map_path: &str, map_fn: fn(&mut MmapMut, usize, Entr
         let l = line.unwrap();
         if l.is_empty() { continue; }
 
-        let entry = Utils::get_entry_for_line(&ip_regex, &name_regex, l);
+        let entry = Utils::get_entry_for_line(&ip_regex, &name_regex, &l.as_str());
         if entry.is_none() { continue }
         let entry = entry.unwrap();
 
         map_fn(& mut mmap, i, entry);
+    }
+}
+
+fn load_to_table(input: &str) {
+
+    const SOURCE_PATH_1:    &str = "testdata/in/set1.txt";
+    const TABLE1:           &str = "testdata/out/table1.txt";
+    const TABLE2:           &str = "testdata/out/table2.txt";
+
+    fn place_node(mmap: & mut MmapMut, ip: u32, node: usize) {
+        Utils::place_item_raw(mmap,ip as usize * std::mem::size_of::<usize>(),&node);
+    }
+
+    fs::remove_file(TABLE1);
+    fs::remove_file(TABLE2);
+
+    let mut mmap1 = get_memmap(TABLE1, 10000);
+    let mut mmap2 = get_memmap(TABLE2, 10000);
+
+    let ip_regex = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap();
+    let name_regex = Regex::new(r"\b(([A-z]|\d)+\s?)+\b").unwrap();
+
+    let buffer = get_buffer(input);
+
+    let mut courser = 0;
+
+    for (i, line) in buffer.lines().enumerate() {
+        if line.is_err() { continue }
+        let l = line.unwrap();
+        if l.is_empty() { continue; }
+
+        let entry = Utils::get_entry_for_line(&ip_regex, &name_regex, &l.as_str());
+        if entry.is_none() { continue }
+        let entry = entry.unwrap();
+
+        println!("{}  {:?}", &l, &l.as_str().bytes());
+
+        Utils::place_item_raw(&mut mmap2, courser, &l.as_str());
+
+        let bytesbytes = &mmap2[courser..courser+l.as_str().len()];
+        println!("{:?}", bytesbytes);
+
+        //let test = std::str::from_utf8(bytesbytes).unwrap();
+        //println!("crazy test: {}",test);
+
+        //let mut ost: &str = unsafe { Utils::bytes_to_type(&mmap2[courser..courser+30]) };
+
+        courser += l.as_str().len();
+        //println!("{}",ost);
+
+        //courser += std::mem::size_of::<l>();
+
+        for ip in entry.min_ip..entry.max_ip {
+            println!("{}",ip);
+            place_node(&mut mmap1, ip, i);
+            let size = std::mem::size_of::<usize>();
+            let offset = ip as usize * size;
+
+            let bytes = &mmap1[offset..(offset + size)];
+            println!("{:?}", bytes);
+        }
     }
 }
 

@@ -62,7 +62,9 @@ pub fn generate_source_file_with(s:&str, n: u32, range: Range<u32>, padding: Ran
         let r: u32 = if range.start == range.end { range.start } else { rng.gen_range(range.start, range.end) };
         let p: u32 = if padding.start == padding.end { range.start } else { rng.gen_range(padding.start, padding.end) };
         let min_ip: u32 = ip_curser;
+        if std::u32::MAX - r < min_ip { break; }
         let max_ip: u32 = min_ip + r;
+        if std::u32::MAX - p < max_ip { break; }
         ip_curser = max_ip + p;
 
         if std::u32::MAX < max_ip { break; }

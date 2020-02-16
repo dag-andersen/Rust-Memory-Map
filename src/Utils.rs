@@ -10,7 +10,7 @@ pub(crate) fn insert_array_in_array(one: & mut [u8; 32], two: &[u8])  {
     }
 }
 
-pub(crate) fn get_entry_for_line(ip_regex: &Regex, name_regex: &Regex, l: String) -> Option<Entry> {
+pub(crate) fn get_entry_for_line(ip_regex: &Regex, name_regex: &Regex, l: &str) -> Option<Entry> {
 
     let min_ip_match = ip_regex.find(l.as_bytes()).expect("didnt find min ip");
     let max_ip_match = ip_regex.find_at(l.as_bytes(), min_ip_match.end()).expect("didnt find max ip");
@@ -60,7 +60,7 @@ pub(crate) unsafe fn any_as_u8_slice<T: Sized>(p: &T) -> &[u8] {
     std::slice::from_raw_parts((p as *const T) as *const u8, std::mem::size_of::<T>())
 }
 
-pub(crate) unsafe fn bytes_to_typed<T>(slice: &[u8]) -> &mut T {
+pub(crate) unsafe fn bytes_to_type<T>(slice: &[u8]) -> &mut T {
     std::slice::from_raw_parts_mut(slice.as_ptr() as *mut T, std::mem::size_of::<T>())
         .get_mut(0)
         .unwrap()
