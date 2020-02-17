@@ -18,6 +18,8 @@ Cargo.lock
 .idea
 .vscode
 
+.vagrant
+
 **/workspace.xml
 workspace.xml
 
