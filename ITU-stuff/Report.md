@@ -43,7 +43,15 @@ Use profiler
 
 # Data structures
 ## Trees
+
+![Tree disk usage](../docs/images/bachelor-01.png)
+
 ## Tables
+
+best and worst case:
+2^32 /8    /1000/1000/1000 = 0.53 GB pr. bit 
+bites/bytes/kilo/mega/giga
+
 ### sql
 
 # Design
