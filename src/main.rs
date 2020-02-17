@@ -14,6 +14,7 @@ const SOURCE_PATH_2:    &str = "testdata/in/set2.txt";
 const SOURCE_PATH_3:    &str = "testdata/in/set3.txt";
 const MAP_PATH:         &str = "testdata/out/map.txt";
 const TREE_PRINT_PATH:  &str = "testdata/out/tree.txt";
+const usizeSize:       usize = std::mem::size_of::<usize>();
 
 mod FileGenerator;
 mod Tree;
@@ -38,17 +39,18 @@ use crate::Tree::NodeToMem;
 pub struct Entry {
     pub min_ip: u32,
     pub max_ip: u32,
-    pub name: [u8; 32],
+    pub name: String,
 }
 
 impl fmt::Display for Entry {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:p}, n: {}, min: {}, max: {}", &self, std::str::from_utf8(&self.name).unwrap(), self.min_ip, self.max_ip)
+        write!(f, "{:p}, n: {}, min: {}, max: {}", &self, self.name, self.min_ip, self.max_ip)
     }
 }
 
 fn main() {
-    load_to_map(SOURCE_PATH_1, MAP_PATH,Tree::insert_entry);
+    //load_to_map(SOURCE_PATH_1, MAP_PATH,Tree::insert_entry);
+    load_to_table(SOURCE_PATH_1);
 }
 
 fn load_to_map(input: &str, map_path: &str, map_fn: fn(&mut MmapMut, usize, Entry)) {
@@ -66,11 +68,79 @@ fn load_to_map(input: &str, map_path: &str, map_fn: fn(&mut MmapMut, usize, Entr
         let l = line.unwrap();
         if l.is_empty() { continue; }
 
-        let entry = Utils::get_entry_for_line(&ip_regex, &name_regex, l);
+        let entry = Utils::get_entry_for_line(&ip_regex, &name_regex, &l);
         if entry.is_none() { continue }
         let entry = entry.unwrap();
 
         map_fn(& mut mmap, i, entry);
+    }
+}
+
+fn load_to_table(input: &str) {
+
+    const SOURCE_PATH_1:    &str = "testdata/in/set1.txt";
+    const TABLE1:           &str = "testdata/out/table1.txt";
+    const TABLE2:           &str = "testdata/out/table2.txt";
+
+    pub struct row {
+        pub size: usize,
+        pub name: String,
+    }
+
+    fn place_node(mmap: & mut MmapMut, ip: u32, node: usize) {
+        Utils::place_item_raw(mmap,ip as usize * std::mem::size_of::<usize>(),&node);
+    }
+
+    fs::remove_file(TABLE1);
+    fs::remove_file(TABLE2);
+
+    let mut mmap1 = get_memmap(TABLE1, 10000);
+    let mut mmap2 = get_memmap(TABLE2, 10000);
+
+    let ip_regex = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap();
+    let name_regex = Regex::new(r"\b(([A-z]|\d)+\s?)+\b").unwrap();
+
+    let buffer = get_buffer(input);
+
+    let mut courser = 0;
+
+    for (i, line) in buffer.lines().enumerate() {
+        if line.is_err() { continue }
+        let l = line.unwrap();
+        if l.is_empty() { continue; }
+
+        let entry = Utils::get_entry_for_line(&ip_regex, &name_regex, &l);
+        if entry.is_none() { continue }
+        let entry = entry.unwrap();
+
+        for ip in entry.min_ip..entry.max_ip {
+            print!("{}",ip);
+            place_node(&mut mmap1, ip, courser);
+            let offset = ip as usize * usizeSize;
+
+            let bytes = &mmap1[offset..(offset + usizeSize)];
+            println!("{:?}", bytes);
+        }
+
+        let newRow = row { size: entry.name.len(), name: entry.name };
+
+        Utils::place_item_raw(&mut mmap2, courser, &newRow.size);
+        //println!("{:?}",&mmap2[0..50]);
+
+        let namesize: usize = unsafe { *Utils::bytes_to_type(&mmap2[courser..(courser+usizeSize)]) };
+
+        let nameAsBytes = newRow.name.as_bytes();
+
+        courser += usizeSize;
+
+        mmap2[courser..(courser+nameAsBytes.len())].copy_from_slice(nameAsBytes);
+
+        let nameAsBytes = &mmap2[(courser)..courser+namesize];
+
+        let name = std::str::from_utf8(nameAsBytes).expect("bad formatting");
+        println!("crazy test: {}",name);
+
+        courser += namesize;
     }
 }
 
@@ -130,7 +200,7 @@ fn test_find_inserted_node_in_tree() {
 
     let ip = 34568;
 
-    let entry = Entry { min_ip: ip-1, max_ip: ip+1, name, };
+    let entry = Entry { min_ip: ip-1, max_ip: ip+1, name: String::from("testname") };
 
     let mut mmap = get_memmap(MAP_PATH, 300000000);
     insert(&mut mmap, numberOfLines, entry);

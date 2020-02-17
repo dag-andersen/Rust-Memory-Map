@@ -46,11 +46,11 @@ fn speed_test_2() {
     const range_length_scale: u32 = 100;
     const padding_lenght_scale: u32 = 100;
 
-    for number_of_rows in 1..4 {
+    for number_of_rows in 1..5 {
         writer.write_all(format!("Number of rows: {}\n", numer_of_rows_scale.pow(number_of_rows)).as_bytes());
-        for range_length in 1..4 {
+        for range_length in 1..5 {
             writer.write_all(format!("--- range length: {}\n", range_length_scale.pow(range_length)).as_bytes());
-            for padding_length in 1..4 {
+            for padding_length in 1..5 {
                 writer.write_all(format!("------ padding length: {}\n", padding_lenght_scale.pow(padding_length)).as_bytes());
                 FileGenerator::generate_source_file_with(
                     in_src,
