@@ -10,7 +10,7 @@ pub(crate) fn insert_array_in_array(one: & mut [u8; 32], two: &[u8])  {
     }
 }
 
-pub(crate) fn get_entry_for_line(ip_regex: &Regex, name_regex: &Regex, l: &str) -> Option<Entry> {
+pub(crate) fn get_entry_for_line(ip_regex: &Regex, name_regex: &Regex, l: &String) -> Option<Entry> {
 
     let min_ip_match = ip_regex.find(l.as_bytes()).expect("didnt find min ip");
     let max_ip_match = ip_regex.find_at(l.as_bytes(), min_ip_match.end()).expect("didnt find max ip");
@@ -18,13 +18,10 @@ pub(crate) fn get_entry_for_line(ip_regex: &Regex, name_regex: &Regex, l: &str) 
 
     //println!("min:{}- max:{}- name:{}", &l[min_ip_match.range()], &l[max_ip_match.range()], &l[name_match.range()]);
 
-    let mut name: [u8; 32] = Default::default();
-    insert_array_in_array(& mut name, name_match.as_bytes());
-
     let min_ip = get_u32_for_ip(&l[min_ip_match.range()])?;
     let max_ip = get_u32_for_ip(&l[max_ip_match.range()])?;
 
-    Some(Entry { min_ip, max_ip, name })
+    Some(Entry { min_ip, max_ip, name: String::from(&l.as_str()[name_match.range()]) })
 }
 
 pub(crate) fn get_u32_for_ip(v: &str ) -> Option<u32> {
@@ -42,7 +39,9 @@ pub(crate) fn get_u32_for_ip(v: &str ) -> Option<u32> {
 }
 
 pub(crate) fn entry_to_node(entry: crate::Entry) -> Tree::Node {
-    Tree::Node { min_ip: entry.min_ip, max_ip: entry.max_ip, left: 0, right: 0, name: entry.name }
+    let mut name: [u8; 32] = Default::default();
+    insert_array_in_array(& mut name, entry.name.as_bytes());
+    Tree::Node { min_ip: entry.min_ip, max_ip: entry.max_ip, left: 0, right: 0, name }
 }
 
 pub(crate) fn get_memmap(source: &str, size: u64) -> MmapMut {
