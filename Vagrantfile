@@ -6,13 +6,7 @@ Vagrant.configure("2") do |config|
     config.vm.box_url = "https://github.com/devopsgroup-io/vagrant-digitalocean/raw/master/box/digital_ocean.box"
     config.ssh.private_key_path = '~/.ssh/id_rsa'
     config.vm.synced_folder ".", "/vagrant", type: "rsync",
-        rsync__exclude:
-            "/target/"
-            ".git/"
-            ".github/"
-            ".docs/"
-            ".vscode"
-            "ITU-STUFF/"
+        rsync__exclude: ["/target/", ".git/", ".github/", ".docs/", ".vscode", "ITU-STUFF/"]
 
     config.vm.define "rust-memory-map", primary: true do |server|
       server.vm.provider :digital_ocean do |provider|
