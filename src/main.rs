@@ -9,18 +9,19 @@
 #![allow(unused_imports)]
 #![allow(unused_results)]
 
-const SOURCE_PATH_1:    &str = "testdata/in/set1.txt";
-const SOURCE_PATH_2:    &str = "testdata/in/set2.txt";
-const SOURCE_PATH_3:    &str = "testdata/in/set3.txt";
-const MAP_PATH:         &str = "testdata/out/map.txt";
-const TREE_PRINT_PATH:  &str = "testdata/out/tree.txt";
-const usizeSize:       usize = std::mem::size_of::<usize>();
+const SOURCE_PATH_1:    &str    = "testdata/in/set1.txt";
+const SOURCE_PATH_2:    &str    = "testdata/in/set2.txt";
+const SOURCE_PATH_3:    &str    = "testdata/in/set3.txt";
+const MAP_PATH:         &str    = "testdata/out/map.txt";
+const TREE_PRINT_PATH:  &str    = "testdata/out/tree.txt";
+const usizeSize:        usize   = std::mem::size_of::<usize>();
 
 mod FileGenerator;
 mod Tree;
 mod Table;
 mod BenchmarkTests;
 mod Utils;
+mod TableLookup;
 
 use std::io::{BufRead, BufReader, LineWriter};
 use std::ops::Add;
@@ -49,7 +50,7 @@ impl fmt::Display for Entry {
 }
 
 fn main() {
-    //load_to_map(SOURCE_PATH_1, MAP_PATH,Tree::insert_entry);
+    load_to_map(SOURCE_PATH_1, MAP_PATH,Tree::insert_entry);
     load_to_table(SOURCE_PATH_1);
 }
 
@@ -61,9 +62,7 @@ fn load_to_map(input: &str, map_path: &str, map_fn: fn(&mut MmapMut, usize, Entr
     let ip_regex = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap();
     let name_regex = Regex::new(r"\b(([A-z]|\d)+\s?)+\b").unwrap();
 
-    let buffer = get_buffer(input);
-
-    for (i, line) in buffer.lines().enumerate() {
+    for (i, line) in get_buffer(input).lines().enumerate() {
         if line.is_err() { continue }
         let l = line.unwrap();
         if l.is_empty() { continue; }
@@ -82,15 +81,6 @@ fn load_to_table(input: &str) {
     const TABLE1:           &str = "testdata/out/table1.txt";
     const TABLE2:           &str = "testdata/out/table2.txt";
 
-    pub struct row {
-        pub size: usize,
-        pub name: String,
-    }
-
-    fn place_node(mmap: & mut MmapMut, ip: u32, node: usize) {
-        Utils::place_item_raw(mmap,ip as usize * std::mem::size_of::<usize>(),&node);
-    }
-
     fs::remove_file(TABLE1);
     fs::remove_file(TABLE2);
 
@@ -100,11 +90,9 @@ fn load_to_table(input: &str) {
     let ip_regex = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap();
     let name_regex = Regex::new(r"\b(([A-z]|\d)+\s?)+\b").unwrap();
 
-    let buffer = get_buffer(input);
-
     let mut courser = 0;
 
-    for (i, line) in buffer.lines().enumerate() {
+    for (_, line) in get_buffer(input).lines().enumerate() {
         if line.is_err() { continue }
         let l = line.unwrap();
         if l.is_empty() { continue; }
@@ -114,33 +102,14 @@ fn load_to_table(input: &str) {
         let entry = entry.unwrap();
 
         for ip in entry.min_ip..entry.max_ip {
-            print!("{}",ip);
-            place_node(&mut mmap1, ip, courser);
+            Utils::place_item_raw(&mut mmap1,ip as usize * usizeSize,&courser);
             let offset = ip as usize * usizeSize;
-
             let bytes = &mmap1[offset..(offset + usizeSize)];
-            println!("{:?}", bytes);
+            println!("ip:{} - {:?}", ip, bytes);
         }
 
-        let newRow = row { size: entry.name.len(), name: entry.name };
-
-        Utils::place_item_raw(&mut mmap2, courser, &newRow.size);
-        //println!("{:?}",&mmap2[0..50]);
-
-        let namesize: usize = unsafe { *Utils::bytes_to_type(&mmap2[courser..(courser+usizeSize)]) };
-
-        let nameAsBytes = newRow.name.as_bytes();
-
-        courser += usizeSize;
-
-        mmap2[courser..(courser+nameAsBytes.len())].copy_from_slice(nameAsBytes);
-
-        let nameAsBytes = &mmap2[(courser)..courser+namesize];
-
-        let name = std::str::from_utf8(nameAsBytes).expect("bad formatting");
-        println!("crazy test: {}",name);
-
-        courser += namesize;
+        courser = TableLookup::place_name(&mut mmap2,courser, entry.name.as_bytes());
+        TableLookup::get_name(&mmap2, courser - usizeSize - entry.name.len());
     }
 }
 
