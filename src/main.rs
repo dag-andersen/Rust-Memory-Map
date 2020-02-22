@@ -103,20 +103,10 @@ fn load_to_table(input: &str) {
         bufReader_to_strings(x)
             .map(move |x| Utils::get_entry_for_line(&ip_regex, &name_regex, &x))
             .filter(|x| x.is_some())
-            .map(|x|x.unwrap())
+            .map(|x| x.unwrap())
     });
 
-    fs::remove_file(TABLE1);
-    fs::remove_file(TABLE2);
-
-    let mut lookup_table = get_memmap(TABLE1, 4_000_000_000);
-    let mut ip_table = get_memmap(TABLE2, 16_000_000_000);
-
-    let mut courser= 0;
-    for entry in strings_to_entries(get_buffer(input)) {
-        Table::TableLookup::place_entry(&mut lookup_table, &entry,courser as u32);
-        courser = Table::TableLookup::place_name(&mut ip_table, courser, entry.name.as_bytes());
-    }
+    Table::insert_entry(strings_to_entries(get_buffer(input)));
 }
 
 fn get_buffer(file: &str) -> BufReader<std::fs::File> {
