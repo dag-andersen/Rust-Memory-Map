@@ -12,8 +12,11 @@
 const SOURCE_PATH_1:    &str    = "testdata/in/set1.txt";
 const SOURCE_PATH_2:    &str    = "testdata/in/set2.txt";
 const SOURCE_PATH_3:    &str    = "testdata/in/set3.txt";
-const MAP_PATH:         &str    = "testdata/out/map.txt";
-const TREE_PRINT_PATH:  &str    = "testdata/out/tree.txt";
+const SP_10_000:        &str    = "testdata/in/10_000.txt";
+const SP_100_000:       &str    = "testdata/in/100_000.txt";
+const SP_1_000_1000:    &str    = "testdata/in/1_000_000.txt";
+const MAP_PATH:         &str    = "testdata/out/tree/map.txt";
+const TREE_PRINT_PATH:  &str    = "testdata/out/tree/tree_print.txt";
 const TABLE1:           &str    = "testdata/out/table/table1.txt";
 const TABLE2:           &str    = "testdata/out/table/table2.txt";
 
@@ -29,9 +32,8 @@ mod Tree;
 mod Table;
 mod BenchmarkTests;
 mod Utils;
-mod TableLookup;
 
-use std::io::{BufRead, BufReader, LineWriter};
+use std::io::{BufRead, BufReader, LineWriter, Error, Lines};
 use std::ops::Add;
 use memmap::{MmapMut, MmapOptions};
 use std::io::Read;
@@ -44,6 +46,7 @@ use rand::distributions::Alphanumeric;
 use rand::prelude::ThreadRng;
 use crate::Utils::get_memmap;
 use crate::Tree::NodeToMem;
+use std::iter::{Map, FilterMap, Filter, FromIterator, Enumerate};
 
 pub struct Entry {
     pub min_ip: u32,
@@ -85,35 +88,34 @@ fn load_to_map(input: &str, map_path: &str, map_fn: fn(&mut MmapMut, usize, Entr
 
 fn load_to_table(input: &str) {
 
+    let bufReader_to_strings = (|b:BufReader<File>| {
+        b.lines().map(|y| {
+            if y.is_err() { return None }
+            let y = y.unwrap();
+            if y.is_empty() { return None }
+            return Some(y);
+        }).filter(|x| x.is_some()).map(|x| x.unwrap())
+    });
+
+    let mut strings_to_entries = (|x:BufReader<File>| {
+        let ip_regex = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap();
+        let name_regex = Regex::new(r"\b(([A-z]|\d)+\s?)+\b").unwrap();
+        bufReader_to_strings(x)
+            .map(move |x| Utils::get_entry_for_line(&ip_regex, &name_regex, &x))
+            .filter(|x| x.is_some())
+            .map(|x|x.unwrap())
+    });
+
     fs::remove_file(TABLE1);
     fs::remove_file(TABLE2);
 
-    let mut mmap1 = get_memmap(TABLE1, 10000);
-    let mut mmap2 = get_memmap(TABLE2, 10000);
+    let mut lookup_table = get_memmap(TABLE1, 4_000_000_000);
+    let mut ip_table = get_memmap(TABLE2, 16_000_000_000);
 
-    let ip_regex = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap();
-    let name_regex = Regex::new(r"\b(([A-z]|\d)+\s?)+\b").unwrap();
-
-    let mut courser = 0;
-
-    for (_, line) in get_buffer(input).lines().enumerate() {
-        if line.is_err() { continue }
-        let l = line.unwrap();
-        if l.is_empty() { continue; }
-
-        let entry = Utils::get_entry_for_line(&ip_regex, &name_regex, &l);
-        if entry.is_none() { continue }
-        let entry = entry.unwrap();
-
-        for ip in entry.min_ip..entry.max_ip {
-            Utils::place_item_raw(&mut mmap1,ip as usize * usizeSize,&courser);
-            let offset = ip as usize * usizeSize;
-            let bytes = &mmap1[offset..(offset + usizeSize)];
-            println!("ip:{} - {:?}", ip, bytes);
-        }
-
-        courser = TableLookup::place_name(&mut mmap2,courser, entry.name.as_bytes());
-        TableLookup::get_name(&mmap2, courser - usizeSize - entry.name.len());
+    let mut courser= 0;
+    for entry in strings_to_entries(get_buffer(input)) {
+        Table::TableLookup::place_entry(&mut lookup_table, &entry,courser as u32);
+        courser = Table::TableLookup::place_name(&mut ip_table, courser, entry.name.as_bytes());
     }
 }
 

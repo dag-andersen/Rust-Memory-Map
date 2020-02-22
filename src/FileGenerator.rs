@@ -101,7 +101,12 @@ pub fn generate_source_file_with(s:&str, n: u32, range: Range<u32>, padding: Ran
     }
 }
 
-#[test]
+fn genHugeFile() {
+    let src = "testdata/in/10_000.txt";
+    fs::remove_file(src);
+    generate_source_file_with(src, 10_000,1..300,0..100, 4);
+}
+
 fn test_print_tree_to_file() {
     let src = "thisFileWillBeDeleted";
     generate_source_file_with(src, 10,1..2,99..100, 4);

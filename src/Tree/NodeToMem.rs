@@ -34,7 +34,7 @@ fn test_correct_placement() {
     place_node(& mut first_map, 0, &node1);
     place_node(& mut first_map, 1, &node2);
 
-    let mut another_map = Utils::get_memmap(MAP_PATH, 300000000);
+    let another_map = Utils::get_memmap(MAP_PATH, 300000000);
     let getnode = get_node(&another_map, 1);
 
     let left = std::str::from_utf8(&name).unwrap();
