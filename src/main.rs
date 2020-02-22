@@ -14,7 +14,15 @@ const SOURCE_PATH_2:    &str    = "testdata/in/set2.txt";
 const SOURCE_PATH_3:    &str    = "testdata/in/set3.txt";
 const MAP_PATH:         &str    = "testdata/out/map.txt";
 const TREE_PRINT_PATH:  &str    = "testdata/out/tree.txt";
+const TABLE1:           &str    = "testdata/out/table/table1.txt";
+const TABLE2:           &str    = "testdata/out/table/table2.txt";
+
 const usizeSize:        usize   = std::mem::size_of::<usize>();
+const u128Size:         usize   = std::mem::size_of::<u128>();
+const u64Size:          usize   = std::mem::size_of::<u64>();
+const u32Size:          usize   = std::mem::size_of::<u32>();
+const u16Size:          usize   = std::mem::size_of::<u16>();
+const u8Size:           usize   = std::mem::size_of::<u8>();
 
 mod FileGenerator;
 mod Tree;
@@ -57,7 +65,7 @@ fn main() {
 fn load_to_map(input: &str, map_path: &str, map_fn: fn(&mut MmapMut, usize, Entry)) {
     fs::remove_file(map_path);
 
-    let mut mmap = get_memmap(map_path, 300000000);
+    let mut mmap = get_memmap(map_path, 3_000_000_000);
 
     let ip_regex = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap();
     let name_regex = Regex::new(r"\b(([A-z]|\d)+\s?)+\b").unwrap();
@@ -76,10 +84,6 @@ fn load_to_map(input: &str, map_path: &str, map_fn: fn(&mut MmapMut, usize, Entr
 }
 
 fn load_to_table(input: &str) {
-
-    const SOURCE_PATH_1:    &str = "testdata/in/set1.txt";
-    const TABLE1:           &str = "testdata/out/table1.txt";
-    const TABLE2:           &str = "testdata/out/table2.txt";
 
     fs::remove_file(TABLE1);
     fs::remove_file(TABLE2);
