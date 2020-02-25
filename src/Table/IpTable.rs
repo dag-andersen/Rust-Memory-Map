@@ -1,13 +1,10 @@
-use crate::{TABLE1, TABLE2, u32Size, Entry, FileGenerator};
+use crate::{TABLE1, TABLE2, u32Size, Entry, FileGenerator, Table};
 use crate::Table::{NameTable, IpTable};
 use crate::Utils;
 use memmap::MmapMut;
 use std::fs;
 
-pub fn get_name(ip: u32) -> Option<String> {
-    let lookup_table = Utils::get_memmap(TABLE1, 4_000_000_000);
-    let ip_table = Utils::get_memmap(TABLE2, 16_000_000_000);
-
+pub fn get_name_on_map(ip: u32, lookup_table: &MmapMut, ip_table: &MmapMut) -> Option<String> {
     let ip_address = ip as usize * u32Size;
 
     let addr = &ip_table[ip_address..ip_address + u32Size];
@@ -30,8 +27,8 @@ fn place_entry_and_get_name() {
     fs::remove_file(TABLE1);
     fs::remove_file(TABLE2);
 
-    let mut lookup_table = Utils::get_memmap(TABLE1, 4_000_000_000);
-    let mut ip_table = Utils::get_memmap(TABLE2, 16_000_000_000);
+    let mut lookup_table = Table::gen_lookup_table();
+    let mut ip_table = Table::gen_ip_table();
 
     let mut courser= 0;
 
@@ -56,10 +53,10 @@ fn place_entry_and_get_name() {
     //println!("{:?}",&lookup_table[0..50]);
     //println!("{:?}",&ip_table[0..200]);
 
-    let out_name0 = get_name(0);
-    let out_name1 = get_name(5);
-    let out_name2 = get_name(9);
-    let out_name3 = get_name(20);
+    let out_name0 = get_name_on_map(0, &lookup_table, &ip_table);
+    let out_name1 = get_name_on_map(5, &lookup_table, &ip_table);
+    let out_name2 = get_name_on_map(9, &lookup_table, &ip_table);
+    let out_name3 = get_name_on_map(20, &lookup_table, &ip_table);
     assert!(out_name0.is_some());
     assert!(out_name1.is_some());
     assert!(out_name2.is_some());
@@ -69,7 +66,7 @@ fn place_entry_and_get_name() {
     assert_eq!(out_name2.unwrap(),name2);
     assert_eq!(out_name3.unwrap(),name3);
 
-    let out_name4 = get_name(40);
+    let out_name4 = get_name_on_map(40,&lookup_table,&ip_table);
     assert!(out_name4.is_none());
 
     fs::remove_file(TABLE1);

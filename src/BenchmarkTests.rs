@@ -1,5 +1,5 @@
 use stopwatch::Stopwatch;
-use crate::{FileGenerator, TREE_PRINT_PATH, MAP_PATH, load_to_tree, load_to_table, Utils, TABLE2, TABLE1, u32Size, SP_100_000, SP_10_000, thisFileWillBeDeleted};
+use crate::{FileGenerator, TREE_PRINT_PATH, MAP_PATH, load_to_tree, load_to_table, Utils, TABLE2, TABLE1, u32Size, SP_100_000, SP_10_000, thisFileWillBeDeleted, Table};
 use std::fs;
 use std::fs::File;
 use std::io::{LineWriter, Write};
@@ -106,8 +106,8 @@ fn speed_test_5() {
     sw.stop();
     println!("score: {}", sw.elapsed().as_millis());
 
-    let mut lookup_table = get_memmap(TABLE1, 4_000_000_000);
-    let mut ip_table = get_memmap(TABLE2, 16_000_000_000);
+    let lookup_table = Table::gen_lookup_table();
+    let ip_table = Table::gen_ip_table();
 
     let mut sw = Stopwatch::start_new();
 

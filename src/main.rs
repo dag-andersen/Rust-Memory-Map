@@ -70,7 +70,7 @@ fn main() {
 fn load_to_tree(input: &str, map_path: &str, map_fn: fn(&mut MmapMut, usize, Entry)) {
     fs::remove_file(map_path);
 
-    let mut mmap = get_memmap(map_path, 3_000_000_000);
+    let mut mmap = Tree::gen_tree_map();
 
     let ip_regex = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap();
     let name_regex = Regex::new(r"\b(([A-z]|\d)+\s?)+\b").unwrap();
@@ -174,15 +174,15 @@ fn find_hardcoded_node_in_table() {
 #[test]
 fn find_random_gen_requests_in_map() {
 
-    let scr = SP_10_000 ;
+    let scr = SP_100_000 ;
     load_to_tree(scr, MAP_PATH, Tree::insert_entry);
-    let requests = FileGenerator::generate_lookup_testdata(scr,50);
+    let requests = FileGenerator::generate_lookup_testdata(scr,10);
 
     for (ip, name) in requests {
         let value = Tree::find_value(ip);
         assert!(value.is_some());
         let value = value.unwrap();
-        println!("Found: {} - {}", ip, value);
+        //println!("Found: {} - {}", ip, value);
         assert_eq!(name, value)
     }
 }
@@ -198,7 +198,7 @@ fn find_random_gen_requests_in_table() {
         let value = Table::find_value(ip);
         assert!(value.is_some());
         let value = value.unwrap();
-        println!("Found: {} - {}", ip, value);
+        //println!("Found: {} - {}", ip, value);
         assert_eq!(name, value)
     }
 }
@@ -221,7 +221,7 @@ fn find_inserted_node_in_tree() {
 
     let entry = Entry { min_ip: ip-1, max_ip: ip+1, name: String::from("testname") };
 
-    let mut mmap = get_memmap(MAP_PATH, 300000000);
+    let mut mmap = Tree::gen_tree_map();
     insert(&mut mmap, numberOfLines, entry);
 
     let getNode = get(ip);

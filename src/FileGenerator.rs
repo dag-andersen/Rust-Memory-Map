@@ -143,7 +143,6 @@ pub fn generate_lookup_testdata(src: &str, gap: usize) -> Vec<(u32,String)>{
         }
         counter -= 1;
     }
-
     vec.shuffle(&mut rng);
     vec
 }

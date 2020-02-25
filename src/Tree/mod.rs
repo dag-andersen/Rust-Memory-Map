@@ -1,5 +1,5 @@
 use core::fmt;
-use crate::{Entry, Utils};
+use crate::{Entry, Utils, MAP_PATH};
 use memmap::MmapMut;
 
 pub mod NodeToMem;
@@ -27,8 +27,17 @@ pub fn insert_entry(mmap: &mut MmapMut, index: usize, entry: Entry) {
     Tree::insert_node(mmap, index, &node);
 }
 
+pub fn gen_tree_map() -> MmapMut {
+    Utils::get_memmap(MAP_PATH, 10_000_000)
+}
+
 pub fn find_value(ip: u32) -> Option<String> {
-    let node = Tree::find_node(ip);
+    let mmap = gen_tree_map();
+    find_value_on_map(ip,&mmap)
+}
+
+pub fn find_value_on_map(ip: u32, mmap: &MmapMut) -> Option<String> {
+    let node = Tree::find_node_on_map(ip, mmap);
     if node.is_none() { return None }
     match std::str::from_utf8(&node.unwrap()) {
         Ok(T) => Some(T.trim_matches(char::from(0)).to_string()),

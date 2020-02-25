@@ -21,8 +21,8 @@ pub fn insert_entry<'a, I>(vals: I)
     fs::remove_file(TABLE1);
     fs::remove_file(TABLE2);
 
-    let mut lookup_table = Utils::get_memmap(TABLE1, 4_000_000_000);
-    let mut ip_table = Utils::get_memmap(TABLE2, 16_000_000_000);
+    let mut lookup_table = gen_lookup_table();
+    let mut ip_table = gen_ip_table();
 
     let mut courser= 0;
     for entry in vals {
@@ -31,6 +31,20 @@ pub fn insert_entry<'a, I>(vals: I)
     }
 }
 
+pub fn gen_lookup_table() -> MmapMut {
+    Utils::get_memmap(TABLE1, 4_000_000_000)
+}
+
+pub fn gen_ip_table() -> MmapMut {
+    Utils::get_memmap(TABLE2, 16_000_000_000)
+}
+
 pub fn find_value(ip: u32) -> Option<String> {
-    IpTable::get_name(ip)
+    let lookup_table = gen_lookup_table();
+    let ip_table = gen_ip_table();
+    IpTable::get_name_on_map(ip, &lookup_table,&ip_table)
+}
+
+pub fn find_value_on_map(ip: u32, lookup_table: &MmapMut, ip_table: &MmapMut) -> Option<String> {
+    IpTable::get_name_on_map(ip,lookup_table,ip_table)
 }

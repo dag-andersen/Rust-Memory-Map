@@ -37,8 +37,7 @@ fn insert_node_on_node(mmap: & MmapMut, parent: &mut Node, index: usize, child: 
     insert_node_on_node(mmap, node, index, &child);
 }
 
-pub fn find_node(ip: u32) -> Option<[u8; 32]> {
-    let mmap = get_memmap(MAP_PATH, 3000000);
+pub fn find_node_on_map(ip: u32, mmap: &MmapMut) -> Option<[u8; 32]> {
     let mut accNode = NodeToMem::get_node(&mmap, 0);
 
     loop {
