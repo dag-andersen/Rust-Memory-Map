@@ -10,6 +10,8 @@ Cargo.lock
 **/*.rs.bk
 
 
+testdata/out/
+
 *.icloud
 .DS_Store
 

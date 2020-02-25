@@ -2,9 +2,10 @@ use core::fmt;
 use crate::{Entry, Utils, TABLE1, TABLE2};
 use memmap::MmapMut;
 use std::fs;
+use crate::Table;
 
-mod Table;
-pub mod TableLookup;
+mod IpTable;
+pub mod NameTable;
 
 const NODE_SIZE : usize = std::mem::size_of::<Node>();
 
@@ -25,11 +26,11 @@ pub fn insert_entry<'a, I>(vals: I)
 
     let mut courser= 0;
     for entry in vals {
-        TableLookup::place_entry(&mut lookup_table, &entry,courser as u32);
-        courser = TableLookup::place_name(&mut ip_table, courser, entry.name.as_bytes());
+        IpTable::place_entry(&mut ip_table, &entry, courser as u32);
+        courser = NameTable::place_name(&mut lookup_table, courser, entry.name.as_bytes());
     }
 }
 
 pub fn find_value(ip: u32) -> String {
-    Table::get_name(ip)
+    IpTable::get_name(ip)
 }
