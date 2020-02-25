@@ -150,6 +150,26 @@ fn test_find_node_in_tree() {
 }
 
 #[test]
+fn test_find_node_in_table() {
+
+    load_to_table(SOURCE_PATH_1);
+
+    let name = Table::find_value(Utils::get_u32_for_ip("000.000.000.015").unwrap());
+    assert!(name.is_some());
+    assert_eq!(name.unwrap(),"Siteimprove");
+
+    let name = Table::find_value(Utils::get_u32_for_ip("000.000.002.015").unwrap());
+    assert!(name.is_some());
+    assert_eq!(name.unwrap(),"Olesen");
+
+    let name = Table::find_value(Utils::get_u32_for_ip("000.000.000.001").unwrap());
+    assert!(name.is_none());
+
+    let name = Table::find_value(Utils::get_u32_for_ip("001.000.000.000").unwrap());
+    assert!(name.is_none());
+}
+
+#[test]
 fn test_find_inserted_node_in_tree() {
 
     let insert: fn(&mut MmapMut, usize, Entry) = Tree::insert_entry;

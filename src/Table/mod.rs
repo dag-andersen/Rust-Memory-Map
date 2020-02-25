@@ -31,6 +31,6 @@ pub fn insert_entry<'a, I>(vals: I)
     }
 }
 
-pub fn find_value(ip: u32) -> String {
+pub fn find_value(ip: u32) -> Option<String> {
     IpTable::get_name(ip)
 }
