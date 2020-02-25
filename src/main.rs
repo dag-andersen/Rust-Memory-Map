@@ -20,6 +20,8 @@ const TREE_PRINT_PATH:  &str    = "testdata/out/tree/tree_print.txt";
 const TABLE1:           &str    = "testdata/out/table/table1.txt";
 const TABLE2:           &str    = "testdata/out/table/table2.txt";
 
+const thisFileWillBeDeleted: &str = "thisFileWillBeDeleted";
+
 const usizeSize:        usize   = std::mem::size_of::<usize>();
 const u128Size:         usize   = std::mem::size_of::<u128>();
 const u64Size:          usize   = std::mem::size_of::<u64>();
@@ -61,11 +63,11 @@ impl fmt::Display for Entry {
 }
 
 fn main() {
-    load_to_map(SOURCE_PATH_1, MAP_PATH,Tree::insert_entry);
+    load_to_tree(SOURCE_PATH_1, MAP_PATH, Tree::insert_entry);
     load_to_table(SOURCE_PATH_1);
 }
 
-fn load_to_map(input: &str, map_path: &str, map_fn: fn(&mut MmapMut, usize, Entry)) {
+fn load_to_tree(input: &str, map_path: &str, map_fn: fn(&mut MmapMut, usize, Entry)) {
     fs::remove_file(map_path);
 
     let mut mmap = get_memmap(map_path, 3_000_000_000);
@@ -88,23 +90,23 @@ fn load_to_map(input: &str, map_path: &str, map_fn: fn(&mut MmapMut, usize, Entr
 
 fn load_to_table(input: &str) {
 
-    let bufReader_to_strings = (|b:BufReader<File>| {
+    let bufReader_to_strings = |b:BufReader<File>| {
         b.lines().map(|y| {
             if y.is_err() { return None }
             let y = y.unwrap();
             if y.is_empty() { return None }
             return Some(y);
         }).filter(|x| x.is_some()).map(|x| x.unwrap())
-    });
+    };
 
-    let mut strings_to_entries = (|x:BufReader<File>| {
+    let mut strings_to_entries = |x:BufReader<File>| {
         let ip_regex = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap();
         let name_regex = Regex::new(r"\b(([A-z]|\d)+\s?)+\b").unwrap();
         bufReader_to_strings(x)
             .map(move |x| Utils::get_entry_for_line(&ip_regex, &name_regex, &x))
             .filter(|x| x.is_some())
             .map(|x| x.unwrap())
-    });
+    };
 
     Table::insert_entry(strings_to_entries(get_buffer(input)));
 }
@@ -114,33 +116,33 @@ fn get_buffer(file: &str) -> BufReader<std::fs::File> {
 }
 
 #[test]
-fn test_print_tree_to_file() {
-    let src = "thisFileWillBeDeleted";
+fn print_tree_to_file() {
+    let src = thisFileWillBeDeleted;
     FileGenerator::generate_source_file_with(src, 100,1..2,99..100, 4);
-    load_to_map(src, MAP_PATH, Tree::insert_entry);
+    load_to_tree(src, MAP_PATH, Tree::insert_entry);
     Tree::TreePrinter::print_tree_to_file(TREE_PRINT_PATH);
     fs::remove_file(src);
 }
 
 #[test]
-fn test_find_node_in_tree() {
+fn find_hardcoded_node_in_tree() {
 
     let insert: fn(&mut MmapMut, usize, Entry) = Tree::insert_entry;
-    let get: fn(ip: u32) -> Option<[u8; 32]> = Tree::find_value;
+    let get: fn(ip: u32) -> Option<String> = Tree::find_value;
 
-    load_to_map(SOURCE_PATH_1,MAP_PATH, insert);
+    load_to_tree(SOURCE_PATH_1, MAP_PATH, insert);
 
     let name = get(Utils::get_u32_for_ip("000.000.000.015").unwrap());
     assert!(name.is_some());
     let name = name.unwrap();
-    let strName = std::str::from_utf8(&name).unwrap().trim_matches(char::from(0));
-    assert_eq!(strName,"Siteimprove");
+    //let strName = name.trim_matches(char::from(0));
+    assert_eq!(name,"Siteimprove");
 
     let name = get(Utils::get_u32_for_ip("000.000.002.015").unwrap());
     assert!(name.is_some());
     let name = name.unwrap();
-    let strName = std::str::from_utf8(&name).unwrap().trim_matches(char::from(0));
-    assert_eq!(strName,"Olesen");
+    //let strName = name.trim_matches(char::from(0));
+    assert_eq!(name,"Olesen");
 
     let name = get(Utils::get_u32_for_ip("000.000.000.001").unwrap());
     assert!(name.is_none());
@@ -150,7 +152,7 @@ fn test_find_node_in_tree() {
 }
 
 #[test]
-fn test_find_node_in_table() {
+fn find_hardcoded_node_in_table() {
 
     load_to_table(SOURCE_PATH_1);
 
@@ -173,12 +175,12 @@ fn test_find_node_in_table() {
 fn test_find_inserted_node_in_tree() {
 
     let insert: fn(&mut MmapMut, usize, Entry) = Tree::insert_entry;
-    let get: fn(ip: u32) -> Option<[u8; 32]> = Tree::find_value;
+    let get: fn(ip: u32) -> Option<String> = Tree::find_value;
 
     let src = "test_find_random";
     let numberOfLines = 100;
     FileGenerator::generate_source_file(numberOfLines, src);
-    load_to_map(src, MAP_PATH, insert);
+    load_to_tree(src, MAP_PATH, insert);
 
     let mut name: [u8; 32] = Default::default();
     Utils::insert_array_in_array(& mut name, "testname".as_bytes());
@@ -193,9 +195,8 @@ fn test_find_inserted_node_in_tree() {
     let getNode = get(ip);
     assert!(getNode.is_some());
     let getNode = getNode.unwrap();
-    let left = std::str::from_utf8(&name).unwrap();
-    let right = std::str::from_utf8(&getNode).unwrap();
-    assert_eq!(left, right);
+    let name = std::str::from_utf8(&name).unwrap().trim_matches(char::from(0)).to_string();
+    assert_eq!(name, getNode);
 
     fs::remove_file(src);
 }

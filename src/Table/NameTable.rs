@@ -1,4 +1,4 @@
-use crate::{Utils, usizeSize, u8Size, Entry, u32Size};
+use crate::{Utils, usizeSize, u8Size, Entry, u32Size, thisFileWillBeDeleted };
 use memmap::{MmapMut, MmapOptions};
 use std::fs;
 
@@ -21,7 +21,7 @@ pub fn get_name(mmap: &MmapMut, offset: usize) -> Option<String> {
 
 #[test]
 fn place_and_get_names() {
-    let scr = "ThisWillBeDeleted";
+    let scr = thisFileWillBeDeleted;
 
     let mut mmap = Utils::get_memmap(scr, 1_000);
     let in_name = "Hans Hansen";

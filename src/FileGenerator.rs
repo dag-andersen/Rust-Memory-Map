@@ -1,6 +1,6 @@
 use rand::Rng;
 use rand::distributions::Alphanumeric;
-use std::io::{LineWriter, Write};
+use std::io::{LineWriter, Write, BufRead};
 use std::fs::File;
 use std::ops::Range;
 use rand::rngs::ThreadRng;
@@ -8,6 +8,8 @@ use rand::seq::SliceRandom;
 use rand::thread_rng;
 use std::cmp::min;
 use std::fs;
+use crate::{SP_100_000, thisFileWillBeDeleted, get_buffer, Utils, Entry};
+use regex::bytes::Regex;
 
 fn generate_random_ip_firm(rng: &mut ThreadRng) -> String {
     let ip1 : u8 = rng.gen();
@@ -101,14 +103,15 @@ pub fn generate_source_file_with(s:&str, n: u32, range: Range<u32>, padding: Ran
     }
 }
 
+//#[test]
 fn genHugeFile() {
-    let src = "testdata/in/10_000.txt";
+    let src = SP_100_000;
     fs::remove_file(src);
     generate_source_file_with(src, 10_000,1..300,0..100, 4);
 }
-
+//#[test]
 fn test_print_tree_to_file() {
-    let src = "thisFileWillBeDeleted";
+    let src = thisFileWillBeDeleted;
     generate_source_file_with(src, 10,1..2,99..100, 4);
     fs::remove_file(src);
 }
