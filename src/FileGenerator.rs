@@ -115,3 +115,35 @@ fn test_print_tree_to_file() {
     generate_source_file_with(src, 10,1..2,99..100, 4);
     fs::remove_file(src);
 }
+
+//#[test]
+pub fn generate_lookup_testdata(src: &str, gap: usize) -> Vec<(u32,String)>{
+
+    let ip_regex = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap();
+    let name_regex = Regex::new(r"\b(([A-z]|\d)+\s?)+\b").unwrap();
+
+    let mut vec : Vec<(u32,String)> = Vec::new();
+    let mut rng = thread_rng();
+
+    let mut counter = 0;
+
+    for (i, line) in get_buffer(src).lines().enumerate() {
+        if counter == 0 {
+            counter = rng.gen_range(0, gap);
+
+            if line.is_err() { continue }
+            let l = line.unwrap();
+            if l.is_empty() { continue; }
+
+            let entry = Utils::get_entry_for_line(&ip_regex, &name_regex, &l);
+            if entry.is_none() { continue }
+            let entry = entry.unwrap();
+            vec.push((rng.gen_range(entry.min_ip,entry.max_ip), entry.name));
+            continue;
+        }
+        counter -= 1;
+    }
+
+    vec.shuffle(&mut rng);
+    vec
+}

@@ -172,7 +172,39 @@ fn find_hardcoded_node_in_table() {
 }
 
 #[test]
-fn test_find_inserted_node_in_tree() {
+fn find_random_gen_requests_in_map() {
+
+    let scr = SP_10_000 ;
+    load_to_tree(scr, MAP_PATH, Tree::insert_entry);
+    let requests = FileGenerator::generate_lookup_testdata(scr,50);
+
+    for (ip, name) in requests {
+        let value = Tree::find_value(ip);
+        assert!(value.is_some());
+        let value = value.unwrap();
+        println!("Found: {} - {}", ip, value);
+        assert_eq!(name, value)
+    }
+}
+
+#[test]
+fn find_random_gen_requests_in_table() {
+
+    let scr = SP_10_000 ;
+    load_to_table(scr);
+    let requests = FileGenerator::generate_lookup_testdata(scr,50);
+
+    for (ip, name) in requests {
+        let value = Table::find_value(ip);
+        assert!(value.is_some());
+        let value = value.unwrap();
+        println!("Found: {} - {}", ip, value);
+        assert_eq!(name, value)
+    }
+}
+
+#[test]
+fn find_inserted_node_in_tree() {
 
     let insert: fn(&mut MmapMut, usize, Entry) = Tree::insert_entry;
     let get: fn(ip: u32) -> Option<String> = Tree::find_value;
