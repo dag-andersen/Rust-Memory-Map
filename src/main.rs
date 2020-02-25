@@ -174,7 +174,7 @@ fn find_hardcoded_node_in_table() {
 #[test]
 fn find_random_gen_requests_in_map() {
 
-    let scr = SP_100_000 ;
+    let scr = SP_10_000 ;
     load_to_tree(scr, MAP_PATH, Tree::insert_entry);
     let requests = FileGenerator::generate_lookup_testdata(scr,10);
 

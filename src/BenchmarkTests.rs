@@ -94,6 +94,46 @@ fn build_time_tree_vs_table() {
 }
 
 #[test]
+fn search_time_tree_vs_table() {
+    let src = SP_10_000;
+
+    load_to_table(src);
+    let requests = FileGenerator::generate_lookup_testdata(src,50);
+    let mut sw = Stopwatch::start_new();
+
+    let lookup_table = Table::gen_lookup_table();
+    let ip_table = Table::gen_ip_table();
+
+    for (ip, name) in requests {
+        let value = Table::find_value_on_map(ip, &lookup_table, &ip_table);
+        assert!(value.is_some());
+        let value = value.unwrap();
+        //println!("Found: {} - {}", ip, value);
+        assert_eq!(name, value)
+    }
+    sw.stop();
+    println!("table score: {}", sw.elapsed().as_micros());
+
+    load_to_tree(src, MAP_PATH, Tree::insert_entry);
+    let requests = FileGenerator::generate_lookup_testdata(src,50);
+    let mut sw = Stopwatch::start_new();
+
+    let mmap = Tree::gen_tree_map();
+
+    for (ip, name) in requests {
+        let value = Tree::find_value_on_map(ip,&mmap);
+        assert!(value.is_some());
+        let value = value.unwrap();
+        //println!("Found: {} - {}", ip, value);
+        assert_eq!(name, value)
+    }
+    sw.stop();
+    println!("tree score: {}", sw.elapsed().as_micros());
+
+}
+
+
+#[test]
 #[ignore]
 fn speed_test_5() {
     let src = SP_100_000;
