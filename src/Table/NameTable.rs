@@ -6,6 +6,7 @@ pub fn place_name(mmap: &mut MmapMut, offset: usize, name: &[u8]) -> usize {
     let len = name.len();
     Utils::place_item_raw(mmap, offset, &(len as u8));
     mmap[offset+u8Size..offset+u8Size+len].copy_from_slice(name);
+    //mmap.flush();
     offset + u8Size + len
 }
 

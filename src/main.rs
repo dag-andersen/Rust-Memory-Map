@@ -14,7 +14,7 @@ const SOURCE_PATH_2:    &str    = "testdata/in/set2.txt";
 const SOURCE_PATH_3:    &str    = "testdata/in/set3.txt";
 const SP_10_000:        &str    = "testdata/in/10_000.txt";
 const SP_100_000:       &str    = "testdata/in/100_000.txt";
-const SP_1_000_1000:    &str    = "testdata/in/1_000_000.txt";
+const SP_1_000_000:     &str    = "testdata/in/1_000_000.txt";
 const MAP_PATH:         &str    = "testdata/out/tree/map.txt";
 const TREE_PRINT_PATH:  &str    = "testdata/out/tree/tree_print.txt";
 const TABLE1:           &str    = "testdata/out/table/table1.txt";
@@ -46,7 +46,6 @@ use rand::{Rng, random};
 use std::io::prelude::*;
 use rand::distributions::Alphanumeric;
 use rand::prelude::ThreadRng;
-use crate::Utils::get_memmap;
 use crate::Tree::NodeToMem;
 use std::iter::{Map, FilterMap, Filter, FromIterator, Enumerate};
 

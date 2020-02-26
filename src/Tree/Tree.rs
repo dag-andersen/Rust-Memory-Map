@@ -1,4 +1,4 @@
-use crate::{NodeToMem, get_memmap, MAP_PATH};
+use crate::{NodeToMem, MAP_PATH};
 use memmap::MmapMut;
 use crate::Tree::Node;
 
