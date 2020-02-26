@@ -8,7 +8,7 @@ use rand::seq::SliceRandom;
 use rand::thread_rng;
 use std::cmp::min;
 use std::fs;
-use crate::{SP_100_000, thisFileWillBeDeleted, get_buffer, Utils, Entry, SP_500_000, SP_5_000_000, SP_50_000, MAP_PATH, load_to_tree, Tree, SP_10_000, SP_1_000_000};
+use crate::{SP_100_000, thisFileWillBeDeleted, get_buffer, Utils, Entry, SP_500_000, SP_5_000_000, SP_50_000, MAP_PATH, load_to_tree, Tree, SP_10_000, SP_1_000_000, load_to_table, IP_TABLE_1_000_000, NAME_TABLE_1_000_000, load_to_table_on_path, TREE_MAP_1_000_000, TREE_MAP_500_000};
 use regex::bytes::Regex;
 
 fn generate_random_ip_firm(rng: &mut ThreadRng) -> String {
@@ -105,21 +105,21 @@ pub fn generate_source_file_with(s:&str, n: u32, range: Range<u32>, padding: Ran
 
 //#[test]
 fn gen_input_file() {
-    let src = SP_50_000;
+    let src = SP_1_000_000;
     fs::remove_file(src);
-    generate_source_file_with(src, 50_000,1..300,0..100, 4);
+    generate_source_file_with(src, 1_000_000,1..100,0..100, 4);
 }
 
 //#[test]
 fn gen_tree() {
-    let src = SP_10_000;
-    load_to_tree(src, MAP_PATH, Tree::insert_entry);
+    let src = SP_1_000_000;
+    load_to_tree(src, TREE_MAP_1_000_000, Tree::insert_entry);
 }
 
 //#[test]
 fn gen_table() {
     let src = SP_1_000_000;
-    load_to_tree(src, MAP_PATH, Tree::insert_entry);
+    load_to_table_on_path(src, IP_TABLE_1_000_000, NAME_TABLE_1_000_000);
 }
 
 //#[test]

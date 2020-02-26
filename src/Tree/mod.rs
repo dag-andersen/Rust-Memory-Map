@@ -27,9 +27,8 @@ pub fn insert_entry(mmap: &mut MmapMut, index: usize, entry: Entry) {
     Tree::insert_node(mmap, index, &node);
 }
 
-pub fn gen_tree_map() -> MmapMut {
-    Utils::get_memmap(MAP_PATH, 10_000_000)
-}
+pub fn gen_tree_map() -> MmapMut { gen_tree_map_on_path(MAP_PATH) }
+pub fn gen_tree_map_on_path(path: &str) -> MmapMut { Utils::get_memmap(path, 56_000_000) }
 
 pub fn find_value(ip: u32) -> Option<String> {
     let mmap = gen_tree_map();

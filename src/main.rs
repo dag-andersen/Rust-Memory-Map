@@ -19,7 +19,8 @@ const SP_500_000:               &str    = "testdata/in/500_000.txt";
 const SP_1_000_000:             &str    = "testdata/in/1_000_000.txt";
 const SP_5_000_000:             &str    = "testdata/in/5_000_000.txt";
 const MAP_PATH:                 &str    = "testdata/out/tree/map.txt";
-const MAP_PATH_1_000_000:       &str    = "testdata/out/tree/map_1_000_000.txt";
+const TREE_MAP_500_000:         &str    = "testdata/out/tree/map_500_000.txt";
+const TREE_MAP_1_000_000:       &str    = "testdata/out/tree/map_1_000_000.txt";
 const TREE_PRINT_PATH:          &str    = "testdata/out/tree/tree_print.txt";
 const IP_TABLE:                 &str    = "testdata/out/table/IP_TABLE.txt";
 const IP_TABLE_1_000_000:       &str    = "testdata/out/table/IP_TABLE_1_000_000.txt";
@@ -75,7 +76,7 @@ fn main() {
 fn load_to_tree(input: &str, map_path: &str, map_fn: fn(&mut MmapMut, usize, Entry)) {
     fs::remove_file(map_path);
 
-    let mut mmap = Tree::gen_tree_map();
+    let mut mmap = Tree::gen_tree_map_on_path(map_path);
 
     let ip_regex = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap();
     let name_regex = Regex::new(r"\b(([A-z]|\d)+\s?)+\b").unwrap();
@@ -94,6 +95,10 @@ fn load_to_tree(input: &str, map_path: &str, map_fn: fn(&mut MmapMut, usize, Ent
 }
 
 fn load_to_table(input: &str) {
+    load_to_table_on_path(input, IP_TABLE, NAME_TABLE)
+}
+
+fn load_to_table_on_path(input: &str, ip_table: &str, name_table: &str) {
 
     let bufReader_to_strings = |b:BufReader<File>| {
         b.lines().map(|y| {
@@ -113,7 +118,7 @@ fn load_to_table(input: &str) {
             .map(|x| x.unwrap())
     };
 
-    Table::insert_entry(strings_to_entries(get_buffer(input)));
+    Table::insert_entry_on_path(strings_to_entries(get_buffer(input)),ip_table,name_table);
 }
 
 fn get_buffer(file: &str) -> BufReader<std::fs::File> {

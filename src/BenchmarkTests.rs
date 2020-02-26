@@ -1,5 +1,5 @@
 use stopwatch::Stopwatch;
-use crate::{FileGenerator, TREE_PRINT_PATH, MAP_PATH, load_to_tree, load_to_table, Utils, NAME_TABLE, IP_TABLE, u32Size, SP_100_000, SP_10_000, thisFileWillBeDeleted, Table, SP_1_000_000, SP_500_000, SP_50_000};
+use crate::{FileGenerator, TREE_PRINT_PATH, MAP_PATH, load_to_tree, load_to_table, Utils, NAME_TABLE, IP_TABLE, u32Size, SP_100_000, SP_10_000, thisFileWillBeDeleted, Table, SP_1_000_000, SP_500_000, SP_50_000, IP_TABLE_1_000_000, NAME_TABLE_1_000_000, TREE_MAP_1_000_000};
 use std::fs;
 use std::fs::File;
 use std::io::{LineWriter, Write};
@@ -63,12 +63,13 @@ fn build_time_table() {
 #[test]
 #[ignore]
 fn build_time_tree_vs_table() {
+    println!("## build_time_tree_vs_table");
     let src = SP_10_000;
 
     let mut sw = Stopwatch::start_new();
     load_to_tree(src, MAP_PATH, Tree::insert_entry);
     sw.stop();
-    println!("tree score: {}", sw.elapsed().as_millis());
+    println!("tree score:  {}", sw.elapsed().as_millis());
 
     let mut sw = Stopwatch::start_new();
     load_to_table(src);
@@ -119,6 +120,7 @@ fn speed_matrix_tree() {
 
 #[test]
 fn search_time_tree_vs_table() {
+    println!("## search_time_tree_vs_table");
     let src = SP_10_000;
     fs::remove_file(IP_TABLE);
     fs::remove_file(NAME_TABLE);
@@ -162,6 +164,52 @@ fn search_time_tree_vs_table() {
     println!("tree score:  {}", sw.elapsed().as_micros());
 }
 
+#[test]
+fn search_time_tree_vs_table_no_file_gen() {
+    println!("## search_time_tree_vs_table_no_file_gen");
+    let src = SP_1_000_000;
+
+    let requests = FileGenerator::generate_lookup_testdata(src,100);
+    let requests2 = requests.clone();
+    let lenght = requests.len();
+
+    // ------------------------------------------------------
+
+    let lookup_table = Table::gen_lookup_table_from_path(NAME_TABLE_1_000_000);
+    let ip_table = Table::gen_ip_table_from_path(IP_TABLE_1_000_000);
+
+    let mut sw = Stopwatch::start_new();
+    for (ip, name) in requests {
+        let value = Table::find_value_on_map(ip, &lookup_table, &ip_table);
+        if value.is_some() {
+            let value = value.unwrap();
+            if name != value {
+                println!("Wrong match - real name: {} - found name: {} - ip: {}", name, value, ip);
+            }
+        } else { println!("Found non - real name: {} - ip: {}", name, ip) }
+    }
+    sw.stop();
+    println!("--- table score: {}, #{} of requests ran", sw.elapsed().as_micros(), lenght);
+
+    // ------------------------------------------------------
+
+    let mmap = Tree::gen_tree_map_on_path(TREE_MAP_1_000_000);
+
+    let mut sw = Stopwatch::start_new();
+    for (ip, name) in requests2 {
+        let value = Tree::find_value_on_map(ip, &mmap);
+        if value.is_some() {
+            let value = value.unwrap();
+            if name != value {
+                println!("Wrong match - real name: {} - found name: {} - ip: {}", name, value, ip);
+            }
+        } else { println!("Found non - real name: {} - ip: {}", name, ip) }
+
+    }
+    sw.stop();
+    println!("--- Tree score : {}, #{} of requests ran", sw.elapsed().as_micros(), lenght);
+
+}
 
 #[test]
 #[ignore]

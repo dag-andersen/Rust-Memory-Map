@@ -8,7 +8,7 @@ pub fn get_name_on_map(ip: u32, lookup_table: &MmapMut, ip_table: &MmapMut) -> O
     let ip_address = ip as usize * u32Size;
 
     let addr = &ip_table[ip_address..ip_address + u32Size];
-    let index: u32 = unsafe { *Utils::bytes_to_type(addr) };
+    let index = unsafe { *Utils::bytes_to_type::<u32>(addr) };
 
     if index == 0 { return None }
     let index = index as usize -1; // -1 because we use 0 for tracking if there is no value reference
