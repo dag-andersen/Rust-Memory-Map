@@ -1,5 +1,5 @@
 use stopwatch::Stopwatch;
-use crate::{FileGenerator, TREE_PRINT_PATH, MAP_PATH, load_to_tree, load_to_table, Utils, TABLE2, TABLE1, u32Size, SP_100_000, SP_10_000, thisFileWillBeDeleted, Table, SP_1_000_000};
+use crate::{FileGenerator, TREE_PRINT_PATH, MAP_PATH, load_to_tree, load_to_table, Utils, NAME_TABLE, IP_TABLE, u32Size, SP_100_000, SP_10_000, thisFileWillBeDeleted, Table, SP_1_000_000, SP_500_000, SP_50_000};
 use std::fs;
 use std::fs::File;
 use std::io::{LineWriter, Write};
@@ -33,6 +33,7 @@ fn build_time_tree() {
     fs::remove_file(src);
 }
 
+//#[ignore]
 #[test]
 fn build_time_table() {
     let src = thisFileWillBeDeleted;
@@ -57,6 +58,22 @@ fn build_time_table() {
     sw.stop();
     println!("score: {}", sw.elapsed().as_millis());
     fs::remove_file(src);
+}
+
+#[test]
+#[ignore]
+fn build_time_tree_vs_table() {
+    let src = SP_10_000;
+
+    let mut sw = Stopwatch::start_new();
+    load_to_tree(src, MAP_PATH, Tree::insert_entry);
+    sw.stop();
+    println!("tree score: {}", sw.elapsed().as_millis());
+
+    let mut sw = Stopwatch::start_new();
+    load_to_table(src);
+    sw.stop();
+    println!("table score: {}", sw.elapsed().as_millis());
 }
 
 const PATH_SPEED_TEST_2:         &str = "testdata/out/speed/speed_test_2.txt";
@@ -101,32 +118,19 @@ fn speed_matrix_tree() {
 }
 
 #[test]
-#[ignore]
-fn build_time_tree_vs_table() {
-    let src = SP_10_000;
-
-    let mut sw = Stopwatch::start_new();
-    load_to_tree(src, MAP_PATH, Tree::insert_entry);
-    sw.stop();
-    println!("tree score: {}", sw.elapsed().as_millis());
-
-    let mut sw = Stopwatch::start_new();
-    load_to_table(src);
-    sw.stop();
-    println!("table score: {}", sw.elapsed().as_millis());
-}
-
-#[test]
 fn search_time_tree_vs_table() {
-    let src = SP_100_000;
+    let src = SP_10_000;
+    fs::remove_file(IP_TABLE);
+    fs::remove_file(NAME_TABLE);
+    fs::remove_file(MAP_PATH);
 
     load_to_table(src);
     let requests = FileGenerator::generate_lookup_testdata(src,50);
-    let mut sw = Stopwatch::start_new();
 
     let lookup_table = Table::gen_lookup_table();
     let ip_table = Table::gen_ip_table();
 
+    let mut sw = Stopwatch::start_new();
     for (ip, name) in requests {
         let value = Table::find_value_on_map(ip, &lookup_table, &ip_table);
         assert!(value.is_some());

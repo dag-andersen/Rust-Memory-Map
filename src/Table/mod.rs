@@ -1,5 +1,5 @@
 use core::fmt;
-use crate::{Entry, Utils, TABLE1, TABLE2};
+use crate::{Entry, Utils, IP_TABLE, NAME_TABLE};
 use memmap::MmapMut;
 use std::fs;
 use crate::Table;
@@ -14,15 +14,20 @@ pub struct Node {
     pub value: usize,
 }
 
-pub fn insert_entry<'a, I>(vals: I)
+pub fn insert_entry<'a, I: IntoIterator<Item=Entry>>(vals: I)
+{
+    insert_entry_on_path(vals, IP_TABLE, NAME_TABLE);
+}
+
+pub fn insert_entry_on_path<'a, I>(vals: I, ip_talbe: &str, name_table: &str)
     where
         I: IntoIterator<Item = Entry>,
 {
-    fs::remove_file(TABLE1);
-    fs::remove_file(TABLE2);
+    fs::remove_file(ip_talbe);
+    fs::remove_file(name_table);
 
-    let mut lookup_table = gen_lookup_table();
-    let mut ip_table = gen_ip_table();
+    let mut lookup_table = gen_lookup_table_from_path(name_table);
+    let mut ip_table = gen_ip_table_from_path(ip_talbe);
 
     let mut courser= 0;
     for entry in vals {
@@ -31,13 +36,11 @@ pub fn insert_entry<'a, I>(vals: I)
     }
 }
 
-pub fn gen_lookup_table() -> MmapMut {
-    Utils::get_memmap(TABLE1, 4_000_000_000)
-}
+pub fn gen_lookup_table() -> MmapMut { gen_lookup_table_from_path(NAME_TABLE) }
+pub fn gen_lookup_table_from_path(path: &str) -> MmapMut { Utils::get_memmap(path, 4_000_000_000) }
 
-pub fn gen_ip_table() -> MmapMut {
-    Utils::get_memmap(TABLE2, 16_000_000_000)
-}
+pub fn gen_ip_table() -> MmapMut { gen_ip_table_from_path(IP_TABLE) }
+pub fn gen_ip_table_from_path(path: &str) -> MmapMut { Utils::get_memmap(path, 16_000_000_000) }
 
 pub fn find_value(ip: u32) -> Option<String> {
     let lookup_table = gen_lookup_table();

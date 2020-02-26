@@ -1,4 +1,4 @@
-use crate::{TABLE1, TABLE2, u32Size, Entry, FileGenerator, Table};
+use crate::{IP_TABLE, NAME_TABLE, u32Size, Entry, FileGenerator, Table};
 use crate::Table::{NameTable, IpTable};
 use crate::Utils;
 use memmap::MmapMut;
@@ -20,12 +20,13 @@ pub fn place_entry(mmap: &mut MmapMut, entry: &Entry, value: u32) {
     for ip in entry.min_ip..entry.max_ip+1 {
         Utils::place_item_raw(mmap, ip as usize * u32Size, &(value+1)); // +1 because we use 0 for tracking if there is no value reference
     }
+    //mmap.flush();
 }
 
 #[test]
 fn place_entry_and_get_name() {
-    fs::remove_file(TABLE1);
-    fs::remove_file(TABLE2);
+    fs::remove_file(IP_TABLE);
+    fs::remove_file(NAME_TABLE);
 
     let mut lookup_table = Table::gen_lookup_table();
     let mut ip_table = Table::gen_ip_table();
@@ -69,6 +70,6 @@ fn place_entry_and_get_name() {
     let out_name4 = get_name_on_map(40,&lookup_table,&ip_table);
     assert!(out_name4.is_none());
 
-    fs::remove_file(TABLE1);
-    fs::remove_file(TABLE2);
+    fs::remove_file(IP_TABLE);
+    fs::remove_file(NAME_TABLE);
 }

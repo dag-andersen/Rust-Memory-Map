@@ -9,16 +9,22 @@
 #![allow(unused_imports)]
 #![allow(unused_results)]
 
-const SOURCE_PATH_1:    &str    = "testdata/in/set1.txt";
-const SOURCE_PATH_2:    &str    = "testdata/in/set2.txt";
-const SOURCE_PATH_3:    &str    = "testdata/in/set3.txt";
-const SP_10_000:        &str    = "testdata/in/10_000.txt";
-const SP_100_000:       &str    = "testdata/in/100_000.txt";
-const SP_1_000_000:     &str    = "testdata/in/1_000_000.txt";
-const MAP_PATH:         &str    = "testdata/out/tree/map.txt";
-const TREE_PRINT_PATH:  &str    = "testdata/out/tree/tree_print.txt";
-const TABLE1:           &str    = "testdata/out/table/table1.txt";
-const TABLE2:           &str    = "testdata/out/table/table2.txt";
+const SOURCE_PATH_1:            &str    = "testdata/in/set1.txt";
+const SOURCE_PATH_2:            &str    = "testdata/in/set2.txt";
+const SOURCE_PATH_3:            &str    = "testdata/in/set3.txt";
+const SP_10_000:                &str    = "testdata/in/10_000.txt";
+const SP_50_000:                &str    = "testdata/in/50_000.txt";
+const SP_100_000:               &str    = "testdata/in/100_000.txt";
+const SP_500_000:               &str    = "testdata/in/500_000.txt";
+const SP_1_000_000:             &str    = "testdata/in/1_000_000.txt";
+const SP_5_000_000:             &str    = "testdata/in/5_000_000.txt";
+const MAP_PATH:                 &str    = "testdata/out/tree/map.txt";
+const MAP_PATH_1_000_000:       &str    = "testdata/out/tree/map_1_000_000.txt";
+const TREE_PRINT_PATH:          &str    = "testdata/out/tree/tree_print.txt";
+const IP_TABLE:                 &str    = "testdata/out/table/IP_TABLE.txt";
+const IP_TABLE_1_000_000:       &str    = "testdata/out/table/IP_TABLE_1_000_000.txt";
+const NAME_TABLE:               &str    = "testdata/out/table/NAME_TABLE.txt";
+const NAME_TABLE_1_000_000:     &str    = "testdata/out/table/NAME_TABLE_1_000_000.txt";
 
 const thisFileWillBeDeleted: &str = "thisFileWillBeDeleted";
 

@@ -104,16 +104,22 @@ pub fn generate_source_file_with(s:&str, n: u32, range: Range<u32>, padding: Ran
 }
 
 //#[test]
-fn genHugeFile() {
-    let src = SP_100_000;
+fn gen_input_file() {
+    let src = SP_50_000;
     fs::remove_file(src);
-    generate_source_file_with(src, 10_000,1..300,0..100, 4);
+    generate_source_file_with(src, 50_000,1..300,0..100, 4);
 }
+
 //#[test]
-fn test_print_tree_to_file() {
-    let src = thisFileWillBeDeleted;
-    generate_source_file_with(src, 10,1..2,99..100, 4);
-    fs::remove_file(src);
+fn gen_tree() {
+    let src = SP_10_000;
+    load_to_tree(src, MAP_PATH, Tree::insert_entry);
+}
+
+//#[test]
+fn gen_table() {
+    let src = SP_1_000_000;
+    load_to_tree(src, MAP_PATH, Tree::insert_entry);
 }
 
 //#[test]
