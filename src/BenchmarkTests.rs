@@ -6,9 +6,11 @@ use std::io::{LineWriter, Write};
 use crate::Tree;
 use crate::Tree::TreePrinter;
 use crate::Utils::get_memmap;
+use crate::FileGenerator::generate_source_file_with;
 
 #[test]
 fn build_time_tree() {
+    println!("## build_time_tree");
     let src = thisFileWillBeDeleted;
 
     FileGenerator::generate_source_file_with(src, 10,1..2,0..1, 4);
@@ -18,14 +20,14 @@ fn build_time_tree() {
     println!("score: {}", sw.elapsed().as_millis());
     fs::remove_file(src);
 
-    FileGenerator::generate_source_file_with(src, 10000,1..10000,99..100, 4);
+    FileGenerator::generate_source_file_with(src, 10000,1..2,99..100, 4);
     let mut sw = Stopwatch::start_new();
     load_to_tree(src, MAP_PATH, Tree::insert_entry);
     sw.stop();
     println!("score: {}", sw.elapsed().as_millis());
     fs::remove_file(src);
 
-    FileGenerator::generate_source_file_with(src, 10000,1..2,99..100, 4);
+    FileGenerator::generate_source_file_with(src, 10000,1..10000,99..100, 4);
     let mut sw = Stopwatch::start_new();
     load_to_tree(src, MAP_PATH, Tree::insert_entry);
     sw.stop();
@@ -36,6 +38,7 @@ fn build_time_tree() {
 //#[ignore]
 #[test]
 fn build_time_table() {
+    println!("## build_time_table");
     let src = thisFileWillBeDeleted;
 
     FileGenerator::generate_source_file_with(src, 10,1..2,0..1, 4);
@@ -45,14 +48,14 @@ fn build_time_table() {
     println!("score: {}", sw.elapsed().as_millis());
     fs::remove_file(src);
 
-    FileGenerator::generate_source_file_with(src, 10000,1..10000,99..100, 4);
+    FileGenerator::generate_source_file_with(src, 10000,1..2,99..100, 4);
     let mut sw = Stopwatch::start_new();
     load_to_table(src);
     sw.stop();
     println!("score: {}", sw.elapsed().as_millis());
     fs::remove_file(src);
 
-    FileGenerator::generate_source_file_with(src, 10000,1..2,99..100, 4);
+    FileGenerator::generate_source_file_with(src, 10000,1..10000,99..100, 4);
     let mut sw = Stopwatch::start_new();
     load_to_table(src);
     sw.stop();
@@ -64,7 +67,7 @@ fn build_time_table() {
 #[ignore]
 fn build_time_tree_vs_table() {
     println!("## build_time_tree_vs_table");
-    let src = SP_10_000;
+    let src = SP_100_000;
 
     let mut sw = Stopwatch::start_new();
     load_to_tree(src, MAP_PATH, Tree::insert_entry);
@@ -118,65 +121,81 @@ fn speed_matrix_tree() {
     }
 }
 
-#[test]
+//#[test]
+fn genfile() {
+    let src = "genfile";
+    fs::remove_file(src);
+    generate_source_file_with(src, 10_000_000,1..100,0..100, 4);
+}
+
+//#[test]
 fn search_time_tree_vs_table() {
+
+    //let src = "genfile";
+
     println!("## search_time_tree_vs_table");
-    let src = SP_10_000;
+    let src = SP_100_000;
+    generate_source_file_with(src, 10_000_000,1..1,500_000..500_000, 4);
     fs::remove_file(IP_TABLE);
     fs::remove_file(NAME_TABLE);
     fs::remove_file(MAP_PATH);
 
-    load_to_table(src);
-    let requests = FileGenerator::generate_lookup_testdata(src,50);
+    let requests1 = FileGenerator::generate_lookup_testdata(src,5000);
+    let requests2 = requests1.clone();
+    let length = requests1.len();
+    println!("#{} requests created", length);
 
+    load_to_table(src);
     let lookup_table = Table::gen_lookup_table();
     let ip_table = Table::gen_ip_table();
 
+    let mut counter = 0;
+
+    println!("start searching");
     let mut sw = Stopwatch::start_new();
-    for (ip, name) in requests {
+    for (ip, name) in requests1 {
         let value = Table::find_value_on_map(ip, &lookup_table, &ip_table);
         assert!(value.is_some());
         let value = value.unwrap();
+        //if counter % (length/10) == 0 { println!("Found: {}%", counter * (length/10)); }
         if name != value {
-            println!("Wrong match - real name: {} - found name: {} - ip: {}", name, value, ip);
+            println!("Wrong match - real: {} - found: {} - ip: {}", name, value, ip);
         }
-        //assert_eq!(name, value)
+        counter += 1;
     }
     sw.stop();
-    println!("table score: {}", sw.elapsed().as_micros());
+    println!("--- table score: {}, #{} of requests ran", sw.elapsed().as_micros(), length);
 
     load_to_tree(src, MAP_PATH, Tree::insert_entry);
-    let requests = FileGenerator::generate_lookup_testdata(src,50);
-
     let mmap = Tree::gen_tree_map();
 
     let mut sw = Stopwatch::start_new();
-    for (ip, name) in requests {
+    for (ip, name) in requests2 {
         let value = Tree::find_value_on_map(ip,&mmap);
         assert!(value.is_some());
         let value = value.unwrap();
         if name != value {
-            println!("Wrong match - real name: {} - found name: {} - ip: {}", name, value, ip);
+            println!("Wrong match - real: {} - found: {} - ip: {}", name, value, ip);
         }
-        //assert_eq!(name, value)
     }
     sw.stop();
-    println!("tree score:  {}", sw.elapsed().as_micros());
+    println!("--- tree score : {}, #{} of requests ran", sw.elapsed().as_micros(), length);
 }
 
-#[test]
+//#[test]
 fn search_time_tree_vs_table_no_file_gen() {
     println!("## search_time_tree_vs_table_no_file_gen");
     let src = SP_1_000_000;
 
     let requests = FileGenerator::generate_lookup_testdata(src,100);
     let requests2 = requests.clone();
-    let lenght = requests.len();
+    let length = requests.len();
 
     // ------------------------------------------------------
 
     let lookup_table = Table::gen_lookup_table_from_path(NAME_TABLE_1_000_000);
     let ip_table = Table::gen_ip_table_from_path(IP_TABLE_1_000_000);
+    let mmap = Tree::gen_tree_map_on_path(TREE_MAP_1_000_000);
 
     let mut sw = Stopwatch::start_new();
     for (ip, name) in requests {
@@ -184,16 +203,14 @@ fn search_time_tree_vs_table_no_file_gen() {
         if value.is_some() {
             let value = value.unwrap();
             if name != value {
-                println!("Wrong match - real name: {} - found name: {} - ip: {}", name, value, ip);
+                println!("Wrong match - real: {} - found: {} - ip: {}", name, value, ip);
             }
-        } else { println!("Found non - real name: {} - ip: {}", name, ip) }
+        } else { println!("Found none - real name: {} - ip: {}", name, ip) }
     }
     sw.stop();
-    println!("--- table score: {}, #{} of requests ran", sw.elapsed().as_micros(), lenght);
+    println!("--- table score: {}, #{} of requests ran", sw.elapsed().as_micros(), length);
 
     // ------------------------------------------------------
-
-    let mmap = Tree::gen_tree_map_on_path(TREE_MAP_1_000_000);
 
     let mut sw = Stopwatch::start_new();
     for (ip, name) in requests2 {
@@ -203,38 +220,11 @@ fn search_time_tree_vs_table_no_file_gen() {
             if name != value {
                 println!("Wrong match - real name: {} - found name: {} - ip: {}", name, value, ip);
             }
-        } else { println!("Found non - real name: {} - ip: {}", name, ip) }
+        } else { println!("Found none - real name: {} - ip: {}", name, ip) }
 
     }
     sw.stop();
-    println!("--- Tree score : {}, #{} of requests ran", sw.elapsed().as_micros(), lenght);
-
-}
-
-#[test]
-#[ignore]
-fn speed_test_5() {
-    let src = SP_100_000;
-
-    let ip = Utils::get_u32_for_ip("0.0.0.0").unwrap();
-
-    let mut sw = Stopwatch::start_new();
-    let value = Tree::find_value(ip).unwrap();
-    //std::str::from_utf8(&value).expect("bad formatting");
-    sw.stop();
-    println!("score: {}", sw.elapsed().as_millis());
-
-    let lookup_table = Table::gen_lookup_table();
-    let ip_table = Table::gen_ip_table();
-
-    let mut sw = Stopwatch::start_new();
-
-    let ipLookup: usize = ip as usize * u32Size;
-    let id: u32 = unsafe { *Utils::bytes_to_type(&ip_table[ipLookup..(ipLookup + u32Size)]) };
-    //let name = Table::get_name(&lookup_table, id as usize);
-    //println!("name: {}", name);
-    sw.stop();
-    println!("score: {}", sw.elapsed().as_millis());
+    println!("--- Tree score : {}, #{} of requests ran", sw.elapsed().as_micros(), length);
 }
 
 #[test]
