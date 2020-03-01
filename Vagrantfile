@@ -10,11 +10,11 @@ Vagrant.configure("2") do |config|
 
     config.vm.define "rust-memory-map", primary: true do |server|
       server.vm.provider :digital_ocean do |provider|
-        provider.ssh_key_name = ENV["SSH_KEY_NAME"]
-        provider.token = ENV["DIGITAL_OCEAN_TOKEN"]
+        provider.ssh_key_name = ENV["SSH_KEY_PRIVATE_NAME"]
+        provider.token = ENV["DIGITAL_OCEAN_PRIVATE_TOKEN"]
         provider.image = 'ubuntu-18-04-x64'
         provider.region = 'fra1'
-        provider.size = '1gb'
+        provider.size = '8gb'
         provider.privatenetworking = true
       end
 
@@ -30,7 +30,6 @@ Vagrant.configure("2") do |config|
         sudo apt --yes install rustc
         echo "----- sudo apt --yes install cargo"
         sudo apt --yes install cargo
-        cargo test -- --test-threads 1
       SHELL
     end
 

@@ -37,15 +37,15 @@ pub fn insert_entry_on_path<'a, I>(vals: I, ip_talbe: &str, name_table: &str)
 }
 
 pub fn gen_lookup_table() -> MmapMut { gen_lookup_table_from_path(NAME_TABLE) }
-pub fn gen_lookup_table_from_path(path: &str) -> MmapMut { Utils::get_memmap(path, 4_000_000_000) }
+pub fn gen_lookup_table_from_path(path: &str) -> MmapMut { Utils::get_memmap(path, 40_000_000_000) }
 
 pub fn gen_ip_table() -> MmapMut { gen_ip_table_from_path(IP_TABLE) }
-pub fn gen_ip_table_from_path(path: &str) -> MmapMut { Utils::get_memmap(path, 16_000_000_000) }
+pub fn gen_ip_table_from_path(path: &str) -> MmapMut { Utils::get_memmap(path, 20_000_000_000) }
 
 pub fn find_value(ip: u32) -> Option<String> {
     let lookup_table = gen_lookup_table();
     let ip_table = gen_ip_table();
-    IpTable::get_name_on_map(ip, &lookup_table,&ip_table)
+    find_value_on_map(ip, &lookup_table,&ip_table)
 }
 
 pub fn find_value_on_map(ip: u32, lookup_table: &MmapMut, ip_table: &MmapMut) -> Option<String> {
