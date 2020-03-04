@@ -9,10 +9,12 @@ pub mod TreePrinter;
 const NODE_SIZE : usize = std::mem::size_of::<Node>();
 
 pub struct Node {
+    pub red: bool,
     pub min_ip: u32,
     pub max_ip: u32,
     pub left: usize,
     pub right: usize,
+    pub parent: usize,
     pub name: [u8; 32],
 }
 
@@ -23,8 +25,8 @@ impl fmt::Display for Node {
 }
 
 pub fn insert_entry(mmap: &mut MmapMut, index: usize, entry: Entry) {
-    let node = Utils::entry_to_node(entry);
-    Tree::insert_node(mmap, index, &node);
+    let mut node = Utils::entry_to_node(entry);
+    Tree::insert_node(mmap, index, &mut node);
 }
 
 pub fn gen_tree_map() -> MmapMut { gen_tree_map_on_path(MAP_PATH) }

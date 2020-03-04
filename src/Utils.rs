@@ -41,7 +41,7 @@ pub(crate) fn get_u32_for_ip(v: &str ) -> Option<u32> {
 pub(crate) fn entry_to_node(entry: crate::Entry) -> Tree::Node {
     let mut name: [u8; 32] = Default::default();
     insert_array_in_array(& mut name, entry.name.as_bytes());
-    Tree::Node { min_ip: entry.min_ip, max_ip: entry.max_ip, left: 0, right: 0, name }
+    Tree::Node { min_ip: entry.min_ip, max_ip: entry.max_ip, left: 0, right: 0, parent: 0, name, red: true }
 }
 
 pub(crate) fn get_memmap(source: &str, size: u64) -> MmapMut {
