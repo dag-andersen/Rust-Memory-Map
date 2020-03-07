@@ -90,7 +90,7 @@ fn load_to_tree(input: &str, map_path: &str, map_fn: fn(&mut MmapMut, usize, Ent
         if entry.is_none() { continue }
         let entry = entry.unwrap();
 
-        map_fn(& mut mmap, i, entry);
+        map_fn(& mut mmap, i+1, entry);
     }
 }
 
@@ -140,7 +140,9 @@ fn find_hardcoded_node_in_tree() {
     let insert: fn(&mut MmapMut, usize, Entry) = Tree::insert_entry;
     let get: fn(ip: u32) -> Option<String> = Tree::find_value;
 
+    fs::remove_file(MAP_PATH);
     load_to_tree(SOURCE_PATH_1, MAP_PATH, insert);
+    Tree::TreePrinter::print_tree_to_file(TREE_PRINT_PATH);
 
     let name = get(Utils::get_u32_for_ip("000.000.000.015").unwrap());
     assert!(name.is_some());

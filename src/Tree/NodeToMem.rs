@@ -1,5 +1,5 @@
 use memmap::MmapMut;
-use crate::{Utils, MAP_PATH};
+use crate::{Utils, MAP_PATH, usizeSize};
 use crate::Tree::{NODE_SIZE, Node};
 use std::fs;
 
@@ -8,6 +8,7 @@ fn node_from_bytes(slice: &[u8]) -> &mut Node { unsafe { Utils::bytes_to_type(sl
 fn node_to_bytes(node: &Node) -> &[u8] { unsafe { Utils::any_as_u8_slice(node) } }
 
 pub fn get_node<'a>(mmap: &'a MmapMut, index: usize) -> &'a mut Node {
+    if index == 0 { panic!("Cant get node at index 0") }
     get_node_raw(mmap,index*NODE_SIZE)
 }
 
@@ -16,7 +17,7 @@ fn get_node_raw<'a>(mmap: &'a MmapMut, offset: usize) -> &'a mut Node {
     node_from_bytes(&byte_map)
 }
 
-pub fn place_node(mmap: & mut MmapMut, index: usize, node: & Node) {
+pub fn place_node(mmap: &mut MmapMut, index: usize, node: &Node) {
     Utils::place_item_raw(mmap,index * NODE_SIZE,node);
 }
 

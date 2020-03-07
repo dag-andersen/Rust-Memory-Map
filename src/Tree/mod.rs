@@ -20,7 +20,7 @@ pub struct Node {
 
 impl fmt::Display for Node {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:p}, n: {}, min: {}, max: {}, l: {}, r: {}", &self, std::str::from_utf8(&self.name).unwrap(), self.min_ip, self.max_ip, self.left, self.right)
+        write!(f, "red: {}, n: {}, min: {}, max: {}, l: {}, r: {}, p: {}", self.red, std::str::from_utf8(&self.name).unwrap(), self.min_ip, self.max_ip, self.left, self.right, self.parent)
     }
 }
 
