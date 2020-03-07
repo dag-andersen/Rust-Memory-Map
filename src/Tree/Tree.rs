@@ -1,6 +1,6 @@
 use crate::{NodeToMem, MAP_PATH};
 use memmap::MmapMut;
-use crate::Tree::{Node, NODE_SIZE};
+use crate::Tree::{Node, NODE_SIZE, gen_tree_map};
 use std::ops::Deref;
 use crate::Tree::TreePrinter::{print_tree, print_tree_from_map};
 
@@ -72,6 +72,7 @@ fn balance(mmap: &MmapMut, node: &mut Node, nodeIndex: usize) {
     println!("Index: {}, Node: {}", nodeIndex, node);
     println!();
     print_tree_from_map(&mmap);
+    mmap.flush().expect("didnt flush!!");
 
     if node.parent != 0 {
         let mut parent = NodeToMem::get_node(mmap, node.parent);
@@ -88,49 +89,43 @@ fn balance(mmap: &MmapMut, node: &mut Node, nodeIndex: usize) {
                     uncle.red = false;
                     parent.red = false;
                     grandparent.red = true;
+                    mmap.flush().expect("didnt flush!!");
                     balance(mmap, grandparent, parent.parent);
-                    return;
                 }
-            } else {
-                if node.parent == grandparent.left {
-                    if parent.left == nodeIndex {
-                        println!("### left left");
-                        rightRotate(mmap, parent, grandparent);
-                        swapColor(parent,grandparent);
-                        mmap.flush().expect("didnt flush!!");
-                        print_tree_from_map(&mmap);
-                        println!();
-                    } else if parent.right == nodeIndex {
-                        //left right
-                        println!("### left right");
-                        leftRotate(mmap,node, parent);
-                        rightRotate(mmap, node, grandparent);
-                        swapColor(node,grandparent);
-                        mmap.flush().expect("didnt flush!!");
-                        print_tree_from_map(&mmap);
-                        println!();
-                    } else { panic!() }
-                } else if node.parent == grandparent.right {
-                    if parent.right == nodeIndex {
-                        println!("### right right");
-                        leftRotate(mmap,parent, grandparent);
-                        swapColor(parent, grandparent);
-                        mmap.flush().expect("didnt flush!!");
-                        print_tree_from_map(&mmap);
-                        println!();
-                    } else if parent.left == nodeIndex {
-                        println!("### right left");
-                        rightRotate(mmap,node, parent);
-                        leftRotate(mmap,node,grandparent);
-                        swapColor(node, grandparent);
-                        mmap.flush().expect("didnt flush!!");
-                        print_tree_from_map(&mmap);
-                        println!();
-                    }
-                }
+            } else if node.parent == grandparent.left {
+                if parent.left == nodeIndex {
+                    println!("### left left");
+                    rightRotate(mmap, parent, grandparent);
+                    swapColor(parent,grandparent);
+                    mmap.flush().expect("didnt flush!!");
+                } else if parent.right == nodeIndex {
+                    //left right
+                    println!("### left right");
+                    leftRotate(mmap,node, parent);
+                    rightRotate(mmap, node, grandparent);
+                    swapColor(node,grandparent);
+                    mmap.flush().expect("didnt flush!!");
+                } else { panic!() }
+            } else if node.parent == grandparent.right {
+                if parent.right == nodeIndex {
+                    println!("### right right");
+                    leftRotate(mmap,parent, grandparent);
+                    swapColor(parent, grandparent);
+                    mmap.flush().expect("didnt flush!!");
+                } else if parent.left == nodeIndex {
+                    println!("### right left");
+                    rightRotate(mmap,node, parent);
+                    leftRotate(mmap,node,grandparent);
+                    swapColor(node, grandparent);
+                    mmap.flush().expect("didnt flush!!");
+                } else { panic!() }
             }
         }
     }
+    let mut mmap2 = super::gen_tree_map();
+    NodeToMem::place_node(&mut mmap2, nodeIndex, &node);
+    println!();
+    print_tree_from_map(&mmap);
 }
 
 fn swapColor(node1: & mut Node, node2: &mut Node) {
@@ -147,6 +142,11 @@ fn leftRotate(mmap: &MmapMut, child: &mut Node, parent: &mut Node) {
     child.left = child.parent;
     child.parent = oldGrandparentIndex;
 
+
+    //let mut mmap2 = super::gen_tree_map();
+    //NodeToMem::place_node(&mut mmap2, parent.parent, &child);
+    //NodeToMem::place_node(&mut mmap2, child.left, &parent);
+
     if oldGrandparentIndex == 0 {
         unsafe { root_index = parent.parent };
     } else {
@@ -162,23 +162,27 @@ fn leftRotate(mmap: &MmapMut, child: &mut Node, parent: &mut Node) {
 }
 
 fn rightRotate(mmap: &MmapMut, child: &mut Node, parent: &mut Node) {
-    let oldGrandparentIndex = child.parent;
-    child.parent = parent.parent;
+    let oldGrandparentIndex = parent.parent;
     parent.parent = parent.left;
     parent.left = child.right;
-    child.right = oldGrandparentIndex;
+    child.right = child.parent;
+    child.parent = oldGrandparentIndex;
 
-    if child.parent == 0 {
+    //let mut mmap2 = super::gen_tree_map();
+    //NodeToMem::place_node(&mut mmap2, parent.parent, &child);
+    //NodeToMem::place_node(&mut mmap2, child.right, &parent);
+
+    if oldGrandparentIndex == 0 {
         unsafe { root_index = parent.parent };
-        return;
-    }
-    let grandparent = NodeToMem::get_node(mmap, parent.parent);
-    if grandparent.left == child.parent {
-        grandparent.left = child.parent;
-    } else if grandparent.right == child.parent {
-        grandparent.right = child.parent;
     } else {
-        panic!("wrong family relation")
+        let grandparent = NodeToMem::get_node(mmap, oldGrandparentIndex);
+        if grandparent.left == child.right {
+            grandparent.left = parent.parent;
+        } else if grandparent.right == child.right {
+            grandparent.right = parent.parent;
+        } else {
+            panic!("wrong family relation")
+        }
     }
 }
 
