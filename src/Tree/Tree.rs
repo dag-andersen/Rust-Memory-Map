@@ -135,25 +135,25 @@ fn swapColor(node1: & mut Node, node2: &mut Node) {
 
 pub static mut root_index: usize = 1;
 
-fn leftRotate(mmap: &MmapMut, child: &mut Node, parent: &mut Node) {
+fn leftRotate(mmap: &MmapMut, node: &mut Node, parent: &mut Node) {
+    if node.left != 0 {
+        let child = NodeToMem::get_node(mmap, node.left);
+        child.parent = node.parent;
+    }
+
     let oldGrandparentIndex = parent.parent;
     parent.parent = parent.right;
-    parent.right = child.left;
-    child.left = child.parent;
-    child.parent = oldGrandparentIndex;
-
-
-    //let mut mmap2 = super::gen_tree_map();
-    //NodeToMem::place_node(&mut mmap2, parent.parent, &child);
-    //NodeToMem::place_node(&mut mmap2, child.left, &parent);
+    parent.right = node.left;
+    node.left = node.parent;
+    node.parent = oldGrandparentIndex;
 
     if oldGrandparentIndex == 0 {
         unsafe { root_index = parent.parent };
     } else {
         let grandparent = NodeToMem::get_node(mmap, oldGrandparentIndex);
-        if grandparent.left == child.left {
+        if grandparent.left == node.left {
             grandparent.left = parent.parent;
-        } else if grandparent.right == child.left {
+        } else if grandparent.right == node.left {
             grandparent.right = parent.parent;
         } else {
             panic!("left rotate: wrong family relation")
@@ -161,24 +161,25 @@ fn leftRotate(mmap: &MmapMut, child: &mut Node, parent: &mut Node) {
     }
 }
 
-fn rightRotate(mmap: &MmapMut, child: &mut Node, parent: &mut Node) {
+fn rightRotate(mmap: &MmapMut, node: &mut Node, parent: &mut Node) {
+    if node.right != 0 {
+        let child = NodeToMem::get_node(mmap, node.right);
+        child.parent = node.parent;
+    }
+
     let oldGrandparentIndex = parent.parent;
     parent.parent = parent.left;
-    parent.left = child.right;
-    child.right = child.parent;
-    child.parent = oldGrandparentIndex;
-
-    //let mut mmap2 = super::gen_tree_map();
-    //NodeToMem::place_node(&mut mmap2, parent.parent, &child);
-    //NodeToMem::place_node(&mut mmap2, child.right, &parent);
+    parent.left = node.right;
+    node.right = node.parent;
+    node.parent = oldGrandparentIndex;
 
     if oldGrandparentIndex == 0 {
         unsafe { root_index = parent.parent };
     } else {
         let grandparent = NodeToMem::get_node(mmap, oldGrandparentIndex);
-        if grandparent.left == child.right {
+        if grandparent.left == node.right {
             grandparent.left = parent.parent;
-        } else if grandparent.right == child.right {
+        } else if grandparent.right == node.right {
             grandparent.right = parent.parent;
         } else {
             panic!("right rotate: wrong family relation")
