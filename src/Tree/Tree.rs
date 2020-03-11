@@ -56,8 +56,8 @@ fn balance(mmap: &MmapMut, node: &mut Node, nodeIndex: usize) {
     if nodeIndex == unsafe { root_index } {
         node.red = false;
         //node.max_ip = 2;
-        let mut mmap2 = super::gen_tree_map();
-        NodeToMem::place_node(&mut mmap2, nodeIndex, &node);
+        //let mut mmap2 = super::gen_tree_map();
+        //NodeToMem::place_node(&mut mmap2, nodeIndex, &node);
 
         //println!("Root - Index: {}, Node: {}", nodeIndex, node);
         //println!("root speciel on: \n {:?}",&mmap[NODE_SIZE..NODE_SIZE*5]);
@@ -66,7 +66,6 @@ fn balance(mmap: &MmapMut, node: &mut Node, nodeIndex: usize) {
         print_tree_from_map(&mmap);
         println!();
 
-        return;
     }
 
     println!("Index: {}, Node: {}", nodeIndex, node);
@@ -77,8 +76,7 @@ fn balance(mmap: &MmapMut, node: &mut Node, nodeIndex: usize) {
     if node.parent != 0 {
         let mut parent = NodeToMem::get_node(mmap, node.parent);
         //println!("node: {} ----- parent: {}", node,parent);
-        if parent.red {
-            if parent.parent == 0 { return; }
+        if parent.red && parent.parent != 0 {
             let mut grandparent = NodeToMem::get_node(mmap, parent.parent);
             let parentIsLeft = node.parent == grandparent.left;
             let uncleIndex = if parentIsLeft { grandparent.right } else { grandparent.left };
@@ -91,8 +89,10 @@ fn balance(mmap: &MmapMut, node: &mut Node, nodeIndex: usize) {
                     grandparent.red = true;
                     mmap.flush().expect("didnt flush!!");
                     balance(mmap, grandparent, parent.parent);
+                    return;
                 }
-            } else if node.parent == grandparent.left {
+            }
+            if node.parent == grandparent.left {
                 if parent.left == nodeIndex {
                     println!("### left left");
                     rightRotate(mmap, parent, grandparent);
@@ -124,8 +124,8 @@ fn balance(mmap: &MmapMut, node: &mut Node, nodeIndex: usize) {
     }
     let mut mmap2 = super::gen_tree_map();
     NodeToMem::place_node(&mut mmap2, nodeIndex, &node);
-    println!();
-    print_tree_from_map(&mmap);
+    //println!();
+    //print_tree_from_map(&mmap);
 }
 
 fn swapColor(node1: & mut Node, node2: &mut Node) {
@@ -156,7 +156,7 @@ fn leftRotate(mmap: &MmapMut, child: &mut Node, parent: &mut Node) {
         } else if grandparent.right == child.left {
             grandparent.right = parent.parent;
         } else {
-            panic!("wrong family relation")
+            panic!("left rotate: wrong family relation")
         }
     }
 }
@@ -181,7 +181,7 @@ fn rightRotate(mmap: &MmapMut, child: &mut Node, parent: &mut Node) {
         } else if grandparent.right == child.right {
             grandparent.right = parent.parent;
         } else {
-            panic!("wrong family relation")
+            panic!("right rotate: wrong family relation")
         }
     }
 }
