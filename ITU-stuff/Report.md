@@ -1,13 +1,36 @@
 # Bachelor Report
 
-# Intro
+# Intro - abstract
 Speed is first priority
+
+
+
 ## Motivation
 
 when you want to quickly search through a big data-set that cant be store in ram.
 On this scale the answer easy answer could be to just buy a more powerful machine, but this is maybe not what you want. Should you choose to run a given service on a virtual machine on a cloud-provider like _digital ocean_ then running a rending a machine with many resources quickly becomes expensive. This is where this problem becomes relevant.
 
-## problem explained in detail
+## Problem explained in detail
+
+Siteimprove needs service where they can look up information of a given ip-address. The primary focus is quick lookup, so their customers can access their data as quickly as possible.
+
+Preprocessing time is not important as long as it doesn't take over day. 
+Space wise it doesn't matter much either, but again it has to be a realistic/practical amount.
+
+### Data
+
+Each entry consist of two ip addresses and some related data/payload. The first ip determens the lowerbound of the range and the second is the uppoer bound.
+
+I cant get access to the real data due to confindatillity, but i know the number of entries and the amount of payload pr. entry. 
+The system needs to handle 150mil ipv4 ranges with a payload of 256 bytes. 
+35mil ipv6 ranges. 
+
+### Assumptions
+* The input data contains no overlapping ranges
+
+### the goal
+Handle 150 mil entries
+Siteimprove's wishes for a lookup time of p99 in 60ms.
 
 ### Si Rules/Priorities
 ```
@@ -21,6 +44,7 @@ On this scale the answer easy answer could be to just buy a more powerful machin
 ```
 
 ### Si goals 
+I couldn't test on Siteimprove's real data, since it confidential, but could get 
 ```
 - Dataset:              150.mil ipv4
                         35.mil  ipv6
@@ -48,6 +72,33 @@ No need to remove or change entries.
 
 
 ## why rust?
+
+### memory safety
+
+no dagling pointers, no data races, no buffer overflows 
+
+Guaranteed by Rust's ownership system - At compile time
+
+An exable of usefulness of this safety can be found a 
+
+In a survey done by XXX 51% of the security vulnerabilities in the linux kernel is coursed by concurrency and memory safety issues that are fundamentally impossible to get in rust (unless you use the `unsafe` keyword, which is not recommended)
+
+### debugging
+
+### where rust falls short
+```rust
+pub(crate) unsafe fn bytes_to_type<T>(slice: &[u8]) -> &mut T {
+    std::slice::from_raw_parts_mut(slice.as_ptr() as *mut T, std::mem::size_of::<T>())
+        .get_mut(0)
+        .unwrap()
+}
+```
+Here we have no garantee of we are going to get, since it just a pointer and a length that we force to become a reference to type T.
+
+
+
+https://medium.com/paritytech/why-rust-846fd3320d3f
+
 https://stackoverflow.com/questions/33985018/cannot-borrow-x-as-mutable-because-it-is-also-borrowed-as-immutable
 https://stackoverflow.com/questions/47618823/cannot-borrow-as-mutable-because-it-is-also-borrowed-as-immutable
 
@@ -64,6 +115,11 @@ For this problem i have chosen to look into tree structures and full-table struc
 
 ### introduction
 
+
+There is many differently ways of structuring each node depending on what the goal is.
+
+* Fixed size nodes, vs. dynamic sized nodes. If you go for fixed size nodes, you only need to store the index of the node and not the full address.
+* Wanting a separate lookup table or not. This goes hand in hand with the one above, since you cant have 
 
 ![Tree disk usage](../docs/images/bachelor-01.png)
 ```
