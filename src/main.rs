@@ -187,18 +187,20 @@ fn find_hardcoded_node_in_table() {
 #[test]
 fn find_random_gen_requests_in_map() {
 
-    let scr = SP_100;
-    fs::remove_file(MAP_PATH);
-    load_to_tree(scr, MAP_PATH, Tree::insert_entry);
-    let requests = FileGenerator::generate_lookup_testdata(scr,10);
+    fs::remove_file(thisFileWillBeDeleted);
+    let src = thisFileWillBeDeleted;
+    FileGenerator::generate_source_file_with(src, 200,1..2,99..100, 4);
+
+    load_to_tree(src, MAP_PATH, Tree::insert_entry);
+    let requests = FileGenerator::generate_lookup_testdata(src,2);
 
     for (ip, name) in requests {
         let value = Tree::find_value(ip);
-        //assert!(value.is_some());
-        //let value = value.unwrap();
-        //println!("Found: {} - {}", ip, value);
-        //assert_eq!(name, value)
+        assert!(value.is_some());
+        let value = value.unwrap();println!("Found: {} - {}", ip, value);
+        assert_eq!(name, value)
     }
+    fs::remove_file(thisFileWillBeDeleted);
 }
 
 #[test]
@@ -224,7 +226,8 @@ fn find_inserted_node_in_tree() {
     let get: fn(ip: u32) -> Option<String> = Tree::find_value;
 
     let src = "test_find_random";
-    let numberOfLines = 100;
+    fs::remove_file(src);
+    let numberOfLines = 10;
     FileGenerator::generate_source_file(numberOfLines, src);
     load_to_tree(src, MAP_PATH, insert);
 

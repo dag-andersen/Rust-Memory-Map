@@ -23,7 +23,7 @@ fn print_node(mmap: &MmapMut, node: &Node, n: usize) {
     }
     let indention : String = (0..n).map(|_| '-').collect();
     print!("{}",indention);
-    print!("{}", if node.red { "red - " } else { "black - " });
+    print!("{}", if node.red { "X - red - " } else { "O - black - " });
     println!("{}", std::str::from_utf8(&node.name).unwrap());
     if node.left != 0 {
         print_node(mmap, &get_node(&mmap, node.left), n + 1);
@@ -45,7 +45,7 @@ fn print_node_to_file(mmap: &MmapMut, node: &Node, n: usize, writer: &mut LineWr
     let indention : String = (0..n).map(|_| '-').collect();
     writer.write_all(indention.as_bytes());
     writer.write_all(&node.name);
-    writer.write_all(if node.red { "- red" } else { "- black" }.as_bytes());
+    writer.write_all(if node.red { "X - red" } else { "O - black" }.as_bytes());
     writer.write_all("\n".as_bytes());
     if node.left != 0 {
         print_node_to_file(mmap, &get_node(&mmap, node.left), n + 1, writer);

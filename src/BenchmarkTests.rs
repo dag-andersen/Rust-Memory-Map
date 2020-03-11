@@ -8,6 +8,7 @@ use crate::Tree::TreePrinter;
 use crate::Utils::get_memmap;
 use crate::FileGenerator::generate_source_file_with;
 
+#[ignore]
 #[test]
 fn build_time_tree() {
     println!("## build_time_tree");
@@ -35,7 +36,7 @@ fn build_time_tree() {
     fs::remove_file(src);
 }
 
-//#[ignore]
+#[ignore]
 #[test]
 fn build_time_table() {
     println!("## build_time_table");
@@ -81,6 +82,7 @@ fn build_time_tree_vs_table() {
 }
 
 const PATH_SPEED_TEST_2:         &str = "testdata/out/speed/speed_test_2.txt";
+
 #[ignore]
 #[test]
 fn speed_matrix_tree() {
@@ -231,7 +233,7 @@ fn search_time_tree_vs_table_no_file_gen() {
 #[ignore]
 fn test_print_tree_to_file() {
     let src = thisFileWillBeDeleted;
-    FileGenerator::generate_source_file_with(src, 100,1..2,99..100, 4);
+    FileGenerator::generate_source_file_with(src, 20,1..2,99..100, 4);
     load_to_tree(src, MAP_PATH, Tree::insert_entry);
     TreePrinter::print_tree_to_file(TREE_PRINT_PATH);
     fs::remove_file(src);
