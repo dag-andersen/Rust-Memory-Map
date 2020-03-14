@@ -28,6 +28,7 @@ The system needs to handle 150mil ipv4 ranges with a payload of 256 bytes.
 ### Assumptions
 * The input data contains no overlapping ranges
 * No range/entry contain the same payload
+* No ip range is excluded (No ip range should be ignore because of reserved ip-range-blocks)
 
 ### the goal
 Handle 150 mil entries
@@ -143,6 +144,12 @@ There is many differently ways of structuring each node depending on what the go
 Lets split this up into two problems: _range storage_ and _pointer/payload storage_
 
 Depending on if you want to handle ipv6 or not you have to choose 
+
+##### range storage
+
+##### payloadstorage
+
+
 ```
 
 ipv6 - solution E
@@ -212,12 +219,58 @@ dynamic payload
 
 # Testing
 
-### optimizations 
-profilers
+```
+pub fn generate_source_file_with(s:&str, n: u32, range: Range<u32>, padding: Range<u32>, name_size: usize) { ... }
+```
+
 ## Setup
+**Generating test files**
+Created a function that generate a text file where each line is 2 ips and 1 name
+e.g.: `125.74.3.0 125.74.3.10 Siteimprove` 
+
+## Build
+**When running:**
+The program iterate over each line reading them one by one with regex. <insert ref here>
+
+
+## lookup
+**choosing random lookups** 
+Collecting every x'th node and shuffling them afterwards. 
+
+
+### Optimizations 
+
+A huge part of the performance came from using a profiler
+The profiler used for this project was the build-in profiler-tool in _Jetbrains Clion_, which is Jetbrains low-level-programming IDE. 
+
+<Get better images>
+
+![treeprofiler](../docs/images/treeProfiler.png)
+![tableprofiler](../docs/images/tableProfiler.png)
+
+
+### Debugging
+* Stepping through the debugger
+* Printing tree
+```
+--red
+-black
+black
+-black 
+```
+
+```
+
+```
+
 ## Test Results
 
 # Evaluation
+
+## Code wise?
+## design choices?
+
+## Test Data
 
 ## Cache 
 
@@ -227,8 +280,21 @@ but on a more realistic scale (like in this project) this can become a factor wh
 
 The immediate thought would be that the tree would benefit from this, since the nodes closer to the root would be read much more often than the rest of the tree, meaning that the data stored in the upper nodes can be retrieved from the cache. 
 
-### Enchantments 
+Tree
+```
+system out something
+System out something
+```
+Table
+```
+system out something
+System out something
+```
+### Enchantments / Next Steps 
 
+* Upgrade to redblack tree
+* Actually adding a nice api, instead of only running the code through testfuctions/benchmarks.
+* 
 
 # Conclusion  
 
@@ -241,6 +307,9 @@ https://rust-lang-nursery.github.io/rust-cookbook/web/scraping.html
 https://rust-lang.github.io/async-book/01_getting_started/02_why_async.html
 
 # Appendix
+
+
+### Siteimprove Data
 ```
 IP v4 entries for isp is 177765
 IP v6 entries for isp is 29846
@@ -257,4 +326,4 @@ IP v6 entries for pulse is 34027618
 
 124127485+ 17229245+ 9661299+307279+ 19547 + 177765 = 151.000.000
 29846 + 563 + 38018 + 891625 + 3164 + 34027618      =  35.000.000
-``
+```
