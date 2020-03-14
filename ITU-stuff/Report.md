@@ -27,6 +27,7 @@ The system needs to handle 150mil ipv4 ranges with a payload of 256 bytes.
 
 ### Assumptions
 * The input data contains no overlapping ranges
+* No range/entry contain the same payload
 
 ### the goal
 Handle 150 mil entries
@@ -85,6 +86,9 @@ In a survey done by XXX 51% of the security vulnerabilities in the linux kernel 
 
 ### debugging
 
+### ownershitp
+https://medium.com/@thomascountz/ownership-in-rust-part-1-112036b1126b
+
 ### where rust falls short
 ```rust
 pub(crate) unsafe fn bytes_to_type<T>(slice: &[u8]) -> &mut T {
@@ -111,17 +115,34 @@ It depends on range-size, gap-size (between each range), data-size pr entry, how
 
 For this problem i have chosen to look into tree structures and full-table structures. 
 
+Lets declare some variables:
+```
+p = payload size in bytes
+e = number of entries
+```
+
+#### Fixed vs. dynamic payload length 
+Depending on the problem you want to solve you can either choose to use the same amount of space for each entry or have a dynamic size meaning you only use the necessary amount of space for each entry. 
+Dynamic payload is great, since you dont wast space on empty payload, but the downside is that you have to store "absolute addresses" to where the payload begins instead of only storing which number of  fixed-payload-size-block when referring to the payload.
+<insert image>
+This means that it sometimes are not beneficial to use dynamic, if amount of pointers to the payload accumulates to a given amount. 
+
+For this project i have chosen dynamic payload length, because the payload consist of names, which can vary a lot in length. If fixed length was chosen i would either have to accept a large amount of wasted space, or not allow names to be over a given length meaning i would cut of names.
+
 ## Trees
 
 ### introduction
 
-
 There is many differently ways of structuring each node depending on what the goal is.
 
-* Fixed size nodes, vs. dynamic sized nodes. If you go for fixed size nodes, you only need to store the index of the node and not the full address.
+* Fixed size nodes, vs. dynamic sized nodes. If you go for fixed size nodes, you only need to store the index of the node and not the full address. (as explained above)
 * Wanting a separate lookup table or not. This goes hand in hand with the one above, since you cant have 
 
 ![Tree disk usage](../docs/images/bachelor-01.png)
+
+Lets split this up into two problems: _range storage_ and _pointer/payload storage_
+
+Depending on if you want to handle ipv6 or not you have to choose 
 ```
 
 ipv6 - solution E
@@ -133,6 +154,7 @@ ipv6 - solution E
 30.000.000 * 256/1000/1000/1000 = ~7.7gb
 ```
 
+
 ### redblack
 https://www.geeksforgeeks.org/red-black-tree-set-2-insert/
 
@@ -142,9 +164,28 @@ Cons: Slower build time, more space usage
 ## Tables
 
 The general understanding is that searching in tables are quicker than most data structures, because you can get the data by going directly to a specific index by using the key. 
-The naive implementation of this is to just create a full table for all ip-addresses holding a value for each ip. This obviously result in a massive data duplication because a value is stored repeatedly for each key in the associated range. This can easily be improved by actually storing the payload in another table and only storing the 
 
- holding another key that is used as an address to find the actual value.
+1)
+The naive implementation of this is to just create a full table for all ip-addresses holding a value for each ip. This obviously result in a massive data duplication because a value is stored repeatedly for each key in the associated range. This can easily be improved by actually storing the payload in another table and only storing the index in the ip_table
+
+holding another key that is used as an address to find the actual value.
+<insert image>
+
+Implementation overview:
+``` 
+Speed: 2 lookups
+Storage:
+    ip_table: 2^32 * 32
+    payload_table: (1 + p) · e
+```
+This would result in
+```
+(1+256) · 150000000 = 38.550.000.000 bytes = 308.400.000.000 bits
+```
+This means that 32 bit is not big enough to store all the  
+2)
+
+
 
 ### space:
 best and worst case:
@@ -185,6 +226,9 @@ In theory the cache shouldn't matter if the data-set consists of an infinitely l
 but on a more realistic scale (like in this project) this can become a factor when i comes to speed.
 
 The immediate thought would be that the tree would benefit from this, since the nodes closer to the root would be read much more often than the rest of the tree, meaning that the data stored in the upper nodes can be retrieved from the cache. 
+
+### Enchantments 
+
 
 # Conclusion  
 
