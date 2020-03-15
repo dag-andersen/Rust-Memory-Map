@@ -58,8 +58,12 @@ pub fn generate_source_file_with(s:&str, n: u32, range: Range<u32>, padding: Ran
     let mut rng = thread_rng();
     //println!("generate_source_file_with");
 
-    let mut vec : Vec<(u32,u32,String)> = Vec::new();
     let mut ip_curser: u32 = 0;
+
+    let file = File::create(s).unwrap();
+    let mut file = LineWriter::new(file);
+
+    let mut s = String::new();
 
     for i in 0..n {
         let r: u32 = if range.start == range.end { range.start } else { rng.gen_range(range.start, range.end) };
@@ -73,52 +77,44 @@ pub fn generate_source_file_with(s:&str, n: u32, range: Range<u32>, padding: Ran
         if std::u32::MAX < max_ip { println!("broke after {} iterations", i); break; }
 
         //if i % 500_000 == 0 { println!("lines generated: {}", i)}
+        //if i % (n/10) == 0 { println!("10% done")}
 
         let name = gen_firm(& rng, name_size);
 
-        vec.push((min_ip,max_ip,name));
+        let min_ip: [u8; 4] = transform_u32_to_array_of_u8( min_ip);
+        let max_ip: [u8; 4] = transform_u32_to_array_of_u8(max_ip);
+
+        for i in 0..4 {
+            s.push_str(&format!("{}",min_ip[i]));
+            if i < 3 { s.push('.'); }
+        }
+        s.push(' ');
+        for i in 0..4 {
+            s.push_str(&format!("{}",max_ip[i]));
+            if i < 3 { s.push('.'); }
+        }
+        s.push(' ');
+        s.push_str(name.as_str());
+        s.push_str("\n");
+
+        if i % (n/10) == 0 { println!("Done: {:.2}%", i as f32/n as f32); }
+
+        if i % 100 == 0 {
+            file.write_all(s.as_bytes());
+            s = String::new();
+        }
     }
+    file.write_all(s.as_bytes());
 
     println!("highest ip: {}", ip_curser);
-    //println!("shuffle start");
-    vec.shuffle(&mut rng);
-    //println!("writing to file");
-    let file = File::create(s).unwrap();
-    let mut file = LineWriter::new(file);
-
-    let mut counter = 0;
-    for (min, max, name) in vec.into_iter() {
-        let min_ip: [u8; 4] = transform_u32_to_array_of_u8( min);
-        let max_ip: [u8; 4] = transform_u32_to_array_of_u8(max);
-        let mut r = String::new();
-
-        for i in 0..4 {
-            r.push_str(&format!("{}",min_ip[i]));
-            if i < 3 { r.push('.'); }
-        }
-        r.push(' ');
-        for i in 0..4 {
-            r.push_str(&format!("{}",max_ip[i]));
-            if i < 3 { r.push('.'); }
-        }
-        r.push(' ');
-        r.push_str(name.as_str());
-        r.push_str("\n");
-
-        file.write_all(r.as_bytes());
-        file.flush();
-
-        //if counter % 500_000 == 0 { println!("lines written: {}", counter)}
-        counter += 1;
-    }
-    //println!("writing to file - done");
+    println!("writing to file - done");
 }
 
 //#[test]
 fn gen_input_file() {
-    let src = SP_500_000;
+    let src = "testtesttesttest";
     fs::remove_file(src);
-    generate_source_file_with(src, 500_000,1..100,0..100, 4);
+    generate_source_file_with(src, 1000,2..2,2..2, 4);
 }
 
 //#[test]
