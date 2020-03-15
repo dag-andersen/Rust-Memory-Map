@@ -8,35 +8,48 @@ use crate::Tree::TreePrinter;
 use crate::Utils::get_memmap;
 use crate::FileGenerator::generate_source_file_with;
 
-const DO_Benchmark_test:   &str = "DO_Benchmark_test.txt";
+const DO_Benchmark_test_pre:   &str = "DO_Benchmark_test_pre.txt";
+const DO_Benchmark_test_src:   &str = "DO_Benchmark_test.txt";
 
 #[test]
 fn create_test_data() {
+
+    let n = 150_000_000;
+    let range = 1..1;
+    let padding = 28..28;
+    let name = 1;
+
     println!("## create_test_data");
-    let src = DO_Benchmark_test;
+    let src = DO_Benchmark_test_pre;
+
+    let file = File::create("perf.txt").unwrap();
+    let mut file = LineWriter::new(file);
+    file.write_all(format!("n: {}, range: {:#?}, padding: {:#?}, namesize: {} \n", &n,&range,&padding,&name).as_bytes());
+
     fs::remove_file(src);
-    FileGenerator::generate_source_file_with(src, 100_000,1..1,28..28, 1);
+    FileGenerator::generate_source_file_with(src, n,range,padding, name);
 }
 
 #[test]
 fn build_tree() {
     println!("## build_tree");
-    let src = DO_Benchmark_test;
+    let src = DO_Benchmark_test_src;
     load_to_tree(src, MAP_PATH, Tree::insert_entry);
 }
 
 #[test]
 fn build_table() {
-    let src = DO_Benchmark_test;
+    println!("## load_to_table");
+    let src = DO_Benchmark_test_src;
     load_to_table(src);
 }
 
 #[test]
 fn search_time_tree() {
-    println!("## search_time_tree_vs_table_no_file_gen");
-    let src = DO_Benchmark_test;
+    println!("## search_time_tree");
+    let src = DO_Benchmark_test_src;
 
-    let requests = FileGenerator::generate_lookup_testdata(src,100);
+    let requests = FileGenerator::generate_lookup_testdata(src,1000);
     let length = requests.len();
     assert!(length > 0);
 
@@ -60,8 +73,8 @@ fn search_time_tree() {
 
 #[test]
 fn search_time_table() {
-    println!("## search_time_tree_vs_table_no_file_gen");
-    let src = DO_Benchmark_test;
+    println!("## search_time_table");
+    let src = DO_Benchmark_test_src;
 
     let requests = FileGenerator::generate_lookup_testdata(src,100);
     let length = requests.len();

@@ -11,27 +11,30 @@ ssh root@$1 << EOF
   sleep 2
 
   sync; echo 3 > /proc/sys/vm/drop_caches
-  printf "\ncreate_test_data ----------------------------------------------------------------------------------------------------------------------------\n"
+  printf "\ncreate_test_data --------------------------------------------------------------------------------------------------------------------\n"
   $perf_cmd $cargo_pre_cmd DO_BenchmarkTests::create_test_data $cargo_post_cmd
   sleep 2
 
+  printf "shuffling"
+  shuf DO_Benchmark_test_pre.txt > DO_Benchmark_test.txt
+
   sync; echo 3 > /proc/sys/vm/drop_caches
-  printf "\nbuild_tree ----------------------------------------------------------------------------------------------------------------------------\n"
+  printf "\nbuild_tree --------------------------------------------------------------------------------------------------------------------------\n"
   $perf_cmd $cargo_pre_cmd DO_BenchmarkTests::build_tree $cargo_post_cmd
   sleep 2
 
   sync; echo 3 > /proc/sys/vm/drop_caches
-  printf "\nbuild_table ----------------------------------------------------------------------------------------------------------------------------\n"
+  printf "\nbuild_table -------------------------------------------------------------------------------------------------------------------------\n"
   $perf_cmd $cargo_pre_cmd DO_BenchmarkTests::build_table $cargo_post_cmd
   sleep 2
 
   sync; echo 3 > /proc/sys/vm/drop_caches
-  printf "\nsearch_time_table ----------------------------------------------------------------------------------------------------------------------------\n"
+  printf "\nsearch_time_table -------------------------------------------------------------------------------------------------------------------\n"
   $perf_cmd $cargo_pre_cmd DO_BenchmarkTests::search_time_table $cargo_post_cmd
   sleep 2
 
   sync; echo 3 > /proc/sys/vm/drop_caches
-  printf "\nsearch_time_tree ----------------------------------------------------------------------------------------------------------------------------\n"
+  printf "\nsearch_time_tree --------------------------------------------------------------------------------------------------------------------\n"
   $perf_cmd $cargo_pre_cmd DO_BenchmarkTests::search_time_tree $cargo_post_cmd
   sleep 2
 EOF
