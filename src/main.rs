@@ -1,10 +1,15 @@
 #![allow(box_pointers)]
+#![allow(irrefutable_let_patterns)]
 #![allow(dead_code)]
+#![allow(unused_mut)]
+#![allow(unused_variables)]
+#![allow(unused_must_use)]
 #![allow(missing_docs)]
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 #![allow(non_upper_case_globals)]
 #![allow(trivial_casts)]
+#![allow(unused_assignments)]
 #![allow(unsafe_code)]
 #![allow(unused_imports)]
 #![allow(unused_results)]
@@ -41,6 +46,7 @@ mod FileGenerator;
 mod Tree;
 mod Table;
 mod BenchmarkTests;
+mod DO_BenchmarkTests;
 mod Utils;
 
 use std::io::{BufRead, BufReader, LineWriter, Error, Lines};
@@ -86,6 +92,8 @@ fn load_to_tree(input: &str, map_path: &str, map_fn: fn(&mut MmapMut, usize, Ent
         if line.is_err() { continue }
         let l = line.unwrap();
         if l.is_empty() { continue; }
+
+        if i % 500_000 == 0 { println!("Tree: pushed {} lines", i)}
 
         let entry = Utils::get_entry_for_line(&ip_regex, &name_regex, &l);
         if entry.is_none() { continue }

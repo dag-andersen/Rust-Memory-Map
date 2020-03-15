@@ -159,7 +159,7 @@ fn search_time_tree_vs_table() {
         let value = Table::find_value_on_map(ip, &lookup_table, &ip_table);
         assert!(value.is_some());
         let value = value.unwrap();
-        //if counter % (length/10) == 0 { println!("Found: {}%", counter * (length/10)); }
+        if counter % (length/10) == 0 { println!("Found: {:.2}%", counter as f32/length as f32); }
         if name != value {
             println!("Wrong match - real: {} - found: {} - ip: {}", name, value, ip);
         }
@@ -168,6 +168,7 @@ fn search_time_tree_vs_table() {
     sw.stop();
     println!("--- table score: {}, #{} of requests ran", sw.elapsed().as_micros(), length);
 
+    counter = 0;
     load_to_tree(src, MAP_PATH, Tree::insert_entry);
     let mmap = Tree::gen_tree_map();
 
@@ -176,9 +177,11 @@ fn search_time_tree_vs_table() {
         let value = Tree::find_value_on_map(ip,&mmap);
         assert!(value.is_some());
         let value = value.unwrap();
+        if counter % (length/10) == 0 { println!("Found: {:.2}%", counter as f32/length as f32); }
         if name != value {
             println!("Wrong match - real: {} - found: {} - ip: {}", name, value, ip);
         }
+        counter += 1;
     }
     sw.stop();
     println!("--- tree score : {}, #{} of requests ran", sw.elapsed().as_micros(), length);
