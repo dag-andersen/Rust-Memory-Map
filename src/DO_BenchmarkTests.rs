@@ -10,27 +10,30 @@ use crate::FileGenerator::generate_source_file_with;
 
 const DO_Benchmark_test_pre:   &str = "DO_Benchmark_test_pre.txt";
 const DO_Benchmark_test_src:   &str = "DO_Benchmark_test.txt";
+const benchmark_output:        &str = "testdata/out/speed/benchmark.txt";
 
 #[test]
+//#[ignore]
 fn create_test_data() {
 
     let n = 150_000_000;
-    let range = 1..1;
-    let padding = 28..28;
-    let name = 1;
+    let range = 10..18;
+    let padding = 10..18;
+    let name = 2;
 
     println!("## create_test_data");
     let src = DO_Benchmark_test_pre;
 
-    let file = File::create("perf.txt").unwrap();
+    let file = File::create(benchmark_output).unwrap();
     let mut file = LineWriter::new(file);
-    file.write_all(format!("n: {}, range: {:#?}, padding: {:#?}, namesize: {} \n", &n,&range,&padding,&name).as_bytes());
+    file.write_all(format!("Benchmark input: n: {}, range: {:#?}, padding: {:#?}, namesize: {} \n\n", &n,&range,&padding,&name).as_bytes());
 
     fs::remove_file(src);
     FileGenerator::generate_source_file_with(src, n,range,padding, name);
 }
 
 #[test]
+//#[ignore]
 fn build_tree() {
     println!("## build_tree");
     let src = DO_Benchmark_test_src;
@@ -38,6 +41,7 @@ fn build_tree() {
 }
 
 #[test]
+//#[ignore]
 fn build_table() {
     println!("## load_to_table");
     let src = DO_Benchmark_test_src;
@@ -45,6 +49,7 @@ fn build_table() {
 }
 
 #[test]
+//#[ignore]
 fn search_time_tree() {
     println!("## search_time_tree");
     let src = DO_Benchmark_test_src;
@@ -68,15 +73,16 @@ fn search_time_tree() {
             }
         } else { println!("Found none - real name: {} - ip: {}", name, ip) }
     }
-    println!("--- Tree score : {}, #{} of requests ran, #{} skipped", sw.elapsed().as_micros(), length, numberSkipped);
+    println!("--- Tree : #{} micro seconds, #{} of requests ran, #{} skipped\n", sw.elapsed().as_micros(), length, numberSkipped);
 }
 
 #[test]
+//#[ignore]
 fn search_time_table() {
     println!("## search_time_table");
     let src = DO_Benchmark_test_src;
 
-    let requests = FileGenerator::generate_lookup_testdata(src,100);
+    let requests = FileGenerator::generate_lookup_testdata(src,1000);
     let length = requests.len();
     assert!(length > 0);
 
@@ -96,5 +102,5 @@ fn search_time_table() {
         } else { println!("Found none - real name: {} - ip: {}", name, ip) }
     }
     sw.stop();
-    println!("--- table score : {}, #{} of requests ran, #{} skipped", sw.elapsed().as_micros(), length, numberSkipped);
+    println!("--- table : #{} micro seconds, #{} of requests ran, #{} skipped\n", sw.elapsed().as_micros(), length, numberSkipped);
 }

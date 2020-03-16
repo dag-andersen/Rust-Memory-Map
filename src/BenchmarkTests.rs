@@ -63,8 +63,7 @@ fn build_time_table() {
     fs::remove_file(src);
 }
 
-#[test]
-#[ignore]
+//#[test]
 fn build_time_tree_vs_table() {
     println!("## build_time_tree_vs_table");
     let src = SP_100_000;
@@ -81,8 +80,8 @@ fn build_time_tree_vs_table() {
 }
 
 const PATH_SPEED_TEST_2:         &str = "testdata/out/speed/speed_test_2.txt";
-#[ignore]
-#[test]
+
+//#[test]
 fn speed_matrix_tree() {
     let in_src = thisFileWillBeDeleted;
     let out_src = PATH_SPEED_TEST_2;
