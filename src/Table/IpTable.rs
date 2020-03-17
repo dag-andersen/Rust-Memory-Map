@@ -17,10 +17,27 @@ pub fn get_name_on_map(ip: u32, lookup_table: &MmapMut, ip_table: &MmapMut) -> O
 }
 
 pub fn place_entry(mmap: &mut MmapMut, entry: &Entry, value: u32) {
-    for ip in entry.min_ip..entry.max_ip+1 {
-        Utils::place_item_raw(mmap, ip as usize * u32Size, &(value+1)); // +1 because we use 0 for tracking if there is no value reference
+
+    let mut offset= entry.min_ip as usize * u32Size;
+    let mut array = [0; 50];
+    let mut counter: usize = 0;
+
+    for _ in 0..entry.max_ip-entry.min_ip+1 {
+        array[counter] = value + 1;
+        counter += 1;
+        if counter == 50 {
+            let bytes = unsafe { Utils::any_as_u8_slice(&array) };
+            let bytes = &bytes[..50*u32Size];
+            mmap[offset..offset+bytes.len()].copy_from_slice(bytes);
+            offset += 50 * u32Size;
+            array = [0; 50];
+            counter = 0;
+        }
     }
-    //mmap.flush();
+    if counter == 0 { return }
+    let bytes = unsafe { Utils::any_as_u8_slice(&array) };
+    let bytes = &bytes[..counter*u32Size];
+    mmap[offset..offset+bytes.len()].copy_from_slice(bytes);
 }
 
 #[test]
@@ -38,17 +55,24 @@ fn place_entry_and_get_name() {
     IpTable::place_entry(&mut ip_table, &entry, courser as u32);
     courser = NameTable::place_name(&mut lookup_table, courser, entry.name.as_bytes());
     //println!("{:?}",&lookup_table[0..50]);
-    //println!("{:?}",&ip_table[0..200]);
+    //println!("{:?}",&ip_table[0..300]);
 
     let name2 = "Opvaskerne";
     let entry = Entry { min_ip: 6, max_ip: 10, name: name2.to_string() };
     IpTable::place_entry(&mut ip_table, &entry, courser as u32);
     courser = NameTable::place_name(&mut lookup_table, courser, entry.name.as_bytes());
     //println!("{:?}",&lookup_table[0..50]);
-    //println!("{:?}",&ip_table[0..200]);
+    //println!("{:?}",&ip_table[0..300]);
 
     let name3 = "Prop";
     let entry = Entry { min_ip: 20, max_ip: 20, name: name3.to_string() };
+    IpTable::place_entry(&mut ip_table, &entry, courser as u32);
+    courser = NameTable::place_name(&mut lookup_table, courser, entry.name.as_bytes());
+    //println!("{:?}",&lookup_table[0..50]);
+    //println!("{:?}",&ip_table[0..200]);
+
+    let name4 = "HejMedDig";
+    let entry = Entry { min_ip: 50, max_ip: 150, name: name4.to_string() };
     IpTable::place_entry(&mut ip_table, &entry, courser as u32);
     courser = NameTable::place_name(&mut lookup_table, courser, entry.name.as_bytes());
     //println!("{:?}",&lookup_table[0..50]);
@@ -58,17 +82,30 @@ fn place_entry_and_get_name() {
     let out_name1 = get_name_on_map(5, &lookup_table, &ip_table);
     let out_name2 = get_name_on_map(9, &lookup_table, &ip_table);
     let out_name3 = get_name_on_map(20, &lookup_table, &ip_table);
+    let out_name4 = get_name_on_map(50, &lookup_table, &ip_table);
+    let out_name5 = get_name_on_map(125, &lookup_table, &ip_table);
+    let out_name6 = get_name_on_map(150, &lookup_table, &ip_table);
     assert!(out_name0.is_some());
     assert!(out_name1.is_some());
     assert!(out_name2.is_some());
     assert!(out_name3.is_some());
+    assert!(out_name4.is_some());
+    assert!(out_name5.is_some());
+    assert!(out_name6.is_some());
     assert_eq!(out_name0.unwrap(),name1);
     assert_eq!(out_name1.unwrap(),name1);
     assert_eq!(out_name2.unwrap(),name2);
     assert_eq!(out_name3.unwrap(),name3);
+    assert_eq!(out_name4.unwrap(),name4);
+    assert_eq!(out_name5.unwrap(),name4);
+    assert_eq!(out_name6.unwrap(),name4);
 
-    let out_name4 = get_name_on_map(40,&lookup_table,&ip_table);
-    assert!(out_name4.is_none());
+    let out_name1 = get_name_on_map(40,&lookup_table,&ip_table);
+    let out_name2 = get_name_on_map(21, &lookup_table, &ip_table);
+    let out_name3 = get_name_on_map(151, &lookup_table, &ip_table);
+    assert!(out_name1.is_none());
+    assert!(out_name2.is_none());
+    assert!(out_name3.is_none());
 
     fs::remove_file(IP_TABLE);
     fs::remove_file(NAME_TABLE);
