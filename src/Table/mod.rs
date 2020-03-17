@@ -29,10 +29,13 @@ pub fn insert_entry_on_path<'a, I>(vals: I, ip_talbe: &str, name_table: &str)
     let mut lookup_table = gen_lookup_table_from_path(name_table);
     let mut ip_table = gen_ip_table_from_path(ip_talbe);
 
+    let mut counter = 0;
     let mut courser= 0;
     for entry in vals {
+        if counter % 500_000 == 0 { println!("Table: pushed {} lines", counter)}
         IpTable::place_entry(&mut ip_table, &entry, courser as u32);
         courser = NameTable::place_name(&mut lookup_table, courser, entry.name.as_bytes());
+        counter += 1;
     }
 }
 

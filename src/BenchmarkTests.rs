@@ -135,7 +135,8 @@ fn search_time_tree_vs_table() {
 
     println!("## search_time_tree_vs_table");
     let src = SP_100_000;
-    generate_source_file_with(src, 10_000_000,1..1,500_000..500_000, 4);
+    fs::remove_file(src);
+    generate_source_file_with(src, 100_000,1..1,1_000..1_000, 4);
     fs::remove_file(IP_TABLE);
     fs::remove_file(NAME_TABLE);
     fs::remove_file(MAP_PATH);

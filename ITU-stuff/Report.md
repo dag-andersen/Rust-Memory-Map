@@ -280,6 +280,23 @@ but on a more realistic scale (like in this project) this can become a factor wh
 
 The immediate thought would be that the tree would benefit from this, since the nodes closer to the root would be read much more often than the rest of the tree, meaning that the data stored in the upper nodes can be retrieved from the cache. 
 
+```
+root@ubuntu-s-4vcpu-8gb-fra1-01:~# perf stat -e task-clock,cycles,instructions,cache-references,cache-misses ./target/debug/rust_map
+
+ Performance counter stats for './target/debug/rust_map':
+
+         31.011974      task-clock (msec)         #    0.982 CPUs utilized
+          85453068      cycles                    #    2.755 GHz
+          90982375      instructions              #    1.06  insn per cycle
+            333436      cache-references          #   10.752 M/sec
+            171468      cache-misses              #   51.425 % of all cache refs
+
+       0.031567396 seconds time elapsed
+
+```
+
+`perf stat -e task-clock,cycles,instructions,cache-references,cache-misses cargo test --package rust_map --bin rust_map BenchmarkTests::speed_matrix_tree -- --exact`
+
 Tree
 ```
 system out something
@@ -294,7 +311,7 @@ System out something
 
 * Upgrade to redblack tree
 * Actually adding a nice api, instead of only running the code through testfuctions/benchmarks.
-* 
+* No reason to individually place each enty to the ip_table... i could just add them to an array in memory and then place that on disk
 
 # Conclusion  
 
