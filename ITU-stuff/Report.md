@@ -7,28 +7,27 @@ Speed is first priority
 
 ## Motivation
 
-when you want to quickly search through a big data-set that cant be store in ram.
-On this scale the answer easy answer could be to just buy a more powerful machine, but this is maybe not what you want. Should you choose to run a given service on a virtual machine on a cloud-provider like _digital ocean_ then running a rending a machine with many resources quickly becomes expensive. This is where this problem becomes relevant.
+What do you do when you want to quickly search through a big data-set that cant be store in ram?
+On a small scale the easy answer is to just buy a more powerful machine, but this is maybe not always what you want. Should you choose to run a given service on a virtual machine on a cloud-provider like _digital ocean_ then running a rending a machine with many resources quickly becomes expensive. This is where this problem becomes relevant.
 
 ## Problem explained in detail
 
-Siteimprove needs service where they can look up information of a given ip-address. The primary focus is quick lookup, so their customers can access their data as quickly as possible.
-
+Siteimprove needs service where they can look up information of a given ip-address. The primary focus is fast lookup so their customers can get a result as fast as possible.
 Preprocessing time is not important as long as it doesn't take over day. 
 Space wise it doesn't matter much either, but again it has to be a realistic/practical amount.
 
 ### Data
 
-Each entry consist of two ip addresses and some related data/payload. The first ip determens the lowerbound of the range and the second is the uppoer bound.
+Each entry consist of two ip addresses and some related data/payload. The first ip determents the lower bound of the range and the second is the upper bound.
 
-I cant get access to the real data due to confindatillity, but i know the number of entries and the amount of payload pr. entry. 
-The system needs to handle 150mil ipv4 ranges with a payload of 256 bytes. 
-35mil ipv6 ranges. 
+It is not possible to access to the real data due to confidentiality, but the number of entries and the amount of payload pr. entry. is available. 
+The system needs to handle 150mil ipv4 ranges and 35mil ipv6 ranges with a payload of 256 bytes.
 
 ### Assumptions
 * The input data contains no overlapping ranges
-* No range/entry contain the same payload
-* No ip range is excluded (No ip range should be ignore because of reserved ip-range-blocks)
+* No range/entry contain the same payload?
+* No ip range is excluded (No ip range should be ignore because of reserved ip-range-blocks) / in other words... all ip addresses are possible.
+* No need to remove or change entries.
 
 ### the goal
 Handle 150 mil entries
@@ -69,28 +68,72 @@ I couldn't test on Siteimprove's real data, since it confidential, but could get
 - lookup time
 - build time
 
-## Boundaries
-No need to remove or change entries.
-
-
-## why rust?
-
-### memory safety
-
-no dagling pointers, no data races, no buffer overflows 
-
-Guaranteed by Rust's ownership system - At compile time
-
-An exable of usefulness of this safety can be found a 
+## Why rust?
+"Rust is a multi-paradigm system programming language focused on safety, especially safe concurrency. Rust is syntactically similar to C, but is designed to provide better memory safety while maintaining high performance." - wiki
 
 In a survey done by XXX 51% of the security vulnerabilities in the linux kernel is coursed by concurrency and memory safety issues that are fundamentally impossible to get in rust (unless you use the `unsafe` keyword, which is not recommended)
 
-### debugging
+### Memory safety
+
+"Rust is designed to be memory safe, and thus it does not permit null pointers, dangling pointers, or data races in safe code. Data values can only be initialized through a fixed set of forms, all of which require their inputs to be already initialized." - wiki
+
+Guaranteed by Rust's ownership system - At compile time
+
+This means if I have an array `[T]` of items and I init a reference to one of those items `&T` then the that reference needs to go out of scope before the array - otherwise the rust compiler wont compile because it can't guarantee that the array isn't de-allocated or changed before accessing `T`.
+This is both a huge challenge when first starting to work with Rust, but also a really great safety.
+
+Since rust have real references that it check and don't really use & "raw pointers" that you move around in C, then i was hoping i could use references on my nodes...
+
+<table><tr><th>
+Compiles
+</th><th>
+Doesn't Compile
+</th></tr><tr><td><pre>
+pub struct Node {
+    pub min_ip: u32,
+    pub max_ip: u32,
+    pub left: usize,
+    pub right: usize,
+    pub name: [u8; 32],
+}</pre></td><td><pre>
+pub struct Node {
+    pub min_ip: u32,
+    pub max_ip: u32,
+    pub left: &Node,    // Error
+    pub right: &Node,   // Error
+    pub name: [u8; 32],
+}</pre></td></tr></table>
+Sadly storing pointers/referenes doesn't work, so i opted to just store the byte-index of the node in Tree Memory map. 
+
+
+### Error handling
+
+```rust
+pub(crate) fn get_u32_for_ip(v: &str) -> Option<u32> {
+    let v: Vec<&str> = v.split('.').collect();
+    if v.len() != 4 { return None }
+    let mut min_array: [u8; 4] = Default::default();
+    for i in 0..v.len() {
+        min_array[i] = match v[i].parse() {
+            Ok(n) => n,
+            Err(e) => return None
+        }
+    }
+    Some(u32::from_be_bytes(min_array))
+}
+```
+This function takes a string of 4 numbers separated by a dot `.` - e.g. `192.2.103.11` and returns unsigned integer wrapped in a option.
+
+instead of getting of semencation faults and similar, i can specifc
+`BufReader::new(File::open(file).expect("Could not find file"))`
 
 ### ownershitp
 https://medium.com/@thomascountz/ownership-in-rust-part-1-112036b1126b
 
-### where rust falls short
+
+`Rust has an ownership system where all values have a unique owner, and the scope of the value is the same as the scope of the owner. Values can be passed by immutable reference, using &T, by mutable reference, using &mut T, or by value, using T. At all times, there can either be multiple immutable references or one mutable reference (an implicit readers-writer lock). The Rust compiler enforces these rules at compile time and also checks that all references are valid.` - wiki
+### Where rust falls short
+Sadly sometimes we can cant use rust's safety, and this is where rust looks more like C
 ```rust
 pub(crate) unsafe fn bytes_to_type<T>(slice: &[u8]) -> &mut T {
     std::slice::from_raw_parts_mut(slice.as_ptr() as *mut T, std::mem::size_of::<T>())
@@ -98,7 +141,9 @@ pub(crate) unsafe fn bytes_to_type<T>(slice: &[u8]) -> &mut T {
         .unwrap()
 }
 ```
-Here we have no garantee of we are going to get, since it just a pointer and a length that we force to become a reference to type T.
+Here we have no guarantee of we are going to get, since it just a pointer and a length that we force to become a reference to type T. I this case we don't have any other way, since MememoryMap only know the concept of bytes.
+
+Overall i believe rust is a great language for low level programming and it's safety and guarantees are great, but in some cases it run short when you are working directly on disk. 
 
 
 
