@@ -28,6 +28,7 @@ The system needs to handle 150mil ipv4 ranges and 35mil ipv6 ranges with a paylo
 * No range/entry contain the same payload?
 * No ip range is excluded (No ip range should be ignore because of reserved ip-range-blocks) / in other words... all ip addresses are possible.
 * No need to remove or change entries.
+* The entries should should be able to be stream into the program so no way of knowing how many entries will actually go into the system
 
 ### the goal
 Handle 150 mil entries
@@ -264,24 +265,87 @@ dynamic payload
 
 # Testing
 
+The automated test script can be found in appendix X, but the overall structure is explained in this section. 
+
+## simple unit tests
+Most functions are tested by simple unit tests. 
+
+
+## speed testing
+All tests are executed on a droplet (virtual machine) on Digital Ocean, 
+Closed envorimentent and fixed resources. 
+
+Test process:
+* Copy src files to droplet with `SCP-command`
+* 
+
+clear cache between search through
+
+
+to mimic a real scenario, we you choose to go for such an implementation because of resource limitations.
+
 ```
 pub fn generate_source_file_with(s:&str, n: u32, range: Range<u32>, padding: Range<u32>, name_size: usize) { ... }
 ```
 
 ## Setup
 **Generating test files**
-Created a function that generate a text file where each line is 2 ips and 1 name
+Created a function that generate a text file where each line is 2 IP addresses and 1 name
 e.g.: `125.74.3.0 125.74.3.10 Siteimprove` 
+each line is written direcly to a file and
+and afterwards shuffled by using the unix command `shuf`. It was necessary to print them to the file immediately instead of shuffling them in ram, because all 150 million entries could be in ram at the same time.
 
 ## Build
 **When running:**
 The program iterate over each line reading them one by one with regex. <insert ref here>
-
+This step is derterimistic, so i only need to run this each time i generate a new source file. 
 
 ## lookup
-**choosing random lookups** 
-Collecting every x'th node and shuffling them afterwards. 
+**Choosing random lookups**
+The lookup ip are collected by running over the shuffled list of entries and collecting every 1000 entry. a random ip is picked between the upper and lower boinds. These ip are then shuffled again and then used for search lookups 
 
+## search
+
+
+This search through can be parallelized. Should this be used as a real service it can easliy be parallix as long as it only reads. 
+
+for testing/benchmarking perposeses the lookups are run sequentile to find the avarage lookup time pr request. 
+
+Both the tree and table search test goes through the same steps:
+* generated random requets
+* init memory map references
+* iterate over the requests check that all of them is found in in the table/tree
+* print the result
+
+```rust
+#[test]
+fn search_time_table() {
+    println!("## search_time_table");
+    let src = DO_Benchmark_test_src;
+
+    let requests = FileGenerator::generate_lookup_testdata(src,1000);
+    let length = requests.len();
+    assert!(length > 0);
+
+    let lookup_table = Table::gen_lookup_table();
+    let ip_table = Table::gen_ip_table();
+    let mut numberSkipped = 0;
+
+    let mut sw = Stopwatch::start_new();
+    for (ip, name) in requests {
+        let value = Table::find_value_on_map(ip, &lookup_table, &ip_table);
+        if value.is_some() {
+            let value = value.unwrap();
+            if name != value {
+                numberSkipped += 1;
+                //println!("Wrong match - real: {} - found: {} - ip: {}", name, value, ip);
+            }
+        } else { println!("Found none - real name: {} - ip: {}", name, ip) }
+    }
+    sw.stop();
+    println!("--- table score : {}, #{} of requests ran, #{} skipped", sw.elapsed().as_micros(), length, numberSkipped);
+}
+```
 
 ### Optimizations 
 
@@ -293,6 +357,8 @@ The profiler used for this project was the build-in profiler-tool in _Jetbrains 
 ![treeprofiler](../docs/images/treeProfiler.png)
 ![tableprofiler](../docs/images/tableProfiler.png)
 
+<nævn noget om hvilken type profiling det er >
+This was mainly used for seeing how much time the process spend in each scope/stackframe/function to find bottlenecks.
 
 ### Debugging
 * Stepping through the debugger
@@ -304,18 +370,42 @@ black
 -black 
 ```
 
-```
 
-```
 
 ## Test Results
 
+```
+## search_time_tree
+DO_BenchmarkTests::search_time_tree
+--- Tree : #79213144 micro seconds, #149850 of requests ran, #0 failed
+114.919801097 seconds time elapsed
+
+## search_time_table
+DO_BenchmarkTests::search_time_table
+--- table : #105057148 micro seconds, #149850 of requests ran, #0 failed
+```
+This means i am able to process 149850 ip adress request in 105057148 micro seconds milliseconds, which is XXX request/milliseconds
+
+
 # Evaluation
 
+Both table and the tree was under goal given from Siteimprove. 
+
+
+The table is clearly not practical for handling ipV6
+The table has duplicated data
+
+
 ## Code wise?
+
+
+
 ## design choices?
 
+
+
 ## Test Data
+
 
 ## Cache 
 
@@ -357,6 +447,8 @@ System out something
 * Upgrade to redblack tree
 * Actually adding a nice api, instead of only running the code through testfuctions/benchmarks.
 * No reason to individually place each enty to the ip_table... i could just add them to an array in memory and then place that on disk
+* detach the names from the tree itself
+
 
 # Conclusion  
 
