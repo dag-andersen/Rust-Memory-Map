@@ -120,7 +120,7 @@ fn gen_input_file() {
 //#[test]
 fn gen_tree() {
     let src = SP_1_000_000;
-    load_to_tree(src, TREE_MAP_1_000_000, Tree::insert_entry);
+    load_to_tree(src, TREE_MAP_1_000_000);
 }
 
 //#[test]

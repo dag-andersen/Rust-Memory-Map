@@ -62,7 +62,7 @@ use rand::distributions::Alphanumeric;
 use rand::prelude::ThreadRng;
 use crate::Tree::NodeToMem;
 use std::iter::{Map, FilterMap, Filter, FromIterator, Enumerate};
-use crate::Table::{gen_lookup_table_from_path, gen_lookup_table};
+use crate::Table::{gen_lookup_table_from_path, gen_lookup_table, gen_ip_table, gen_ip_table_from_path};
 
 pub struct Entry {
     pub min_ip: u32,
@@ -77,11 +77,11 @@ impl fmt::Display for Entry {
 }
 
 fn main() {
-    load_to_tree(SOURCE_PATH_1, MAP_PATH, Tree::insert_entry);
+    load_to_tree(SOURCE_PATH_1, MAP_PATH);
     load_to_table(SOURCE_PATH_1);
 }
 
-fn load_to_tree(input: &str, map_path: &str, map_fn: fn(&mut MmapMut, usize, Entry, usize)) {
+fn load_to_tree(input: &str, map_path: &str) {
     fs::remove_file(map_path);
 
     let mut mmap = Tree::gen_tree_map_on_path(map_path);
@@ -106,35 +106,42 @@ fn load_to_tree(input: &str, map_path: &str, map_fn: fn(&mut MmapMut, usize, Ent
         courser = NameTable::place_name(&mut lookup_table, courser, entry.name.as_bytes());
 
         let something = courser - entry.name.len();
-        map_fn(& mut mmap, i, entry, something);
+        Tree::insert_entry(& mut mmap, i, entry, something);
+    }
+}
+
+fn load_to_table_on_path(input: &str, ip_table: &str, name_table: &str) {
+
+    fs::remove_file(ip_table);
+    fs::remove_file(name_table);
+
+    let mut lookup_table = gen_lookup_table_from_path(name_table);
+    let mut ip_table = gen_ip_table_from_path(ip_table);
+
+    let ip_regex = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap();
+    let name_regex = Regex::new(r"\b(([A-z]|\d)+\s?)+\b").unwrap();
+
+    let mut courser= 0;
+
+    for (i, line) in get_buffer(input).lines().enumerate() {
+        if line.is_err() { continue }
+        let l = line.unwrap();
+        if l.is_empty() { continue; }
+
+        if i % 500_000 == 0 { println!("Tree: pushed {} lines", i)}
+
+        let entry = Utils::get_entry_for_line(&ip_regex, &name_regex, &l);
+        if entry.is_none() { continue }
+        let entry = entry.unwrap();
+
+        courser = NameTable::place_name(&mut lookup_table, courser, entry.name.as_bytes());
+        let something = courser - entry.name.len() - 1;
+        Table::insert_entry(&mut ip_table, entry, something);
     }
 }
 
 fn load_to_table(input: &str) {
     load_to_table_on_path(input, IP_TABLE, NAME_TABLE)
-}
-
-fn load_to_table_on_path(input: &str, ip_table: &str, name_table: &str) {
-
-    let bufReader_to_strings = |b:BufReader<File>| {
-        b.lines().map(|y| {
-            if y.is_err() { return None }
-            let y = y.unwrap();
-            if y.is_empty() { return None }
-            return Some(y);
-        }).filter(|x| x.is_some()).map(|x| x.unwrap())
-    };
-
-    let mut strings_to_entries = |x:BufReader<File>| {
-        let ip_regex = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap();
-        let name_regex = Regex::new(r"\b(([A-z]|\d)+\s?)+\b").unwrap();
-        bufReader_to_strings(x)
-            .map(move |x| Utils::get_entry_for_line(&ip_regex, &name_regex, &x))
-            .filter(|x| x.is_some())
-            .map(|x| x.unwrap())
-    };
-
-    Table::insert_entry_on_path(strings_to_entries(get_buffer(input)),ip_table,name_table);
 }
 
 fn get_buffer(file: &str) -> BufReader<std::fs::File> {
@@ -145,7 +152,7 @@ fn get_buffer(file: &str) -> BufReader<std::fs::File> {
 fn print_tree_to_file() {
     let src = thisFileWillBeDeleted;
     FileGenerator::generate_source_file_with(src, 100,1..2,99..100, 4);
-    load_to_tree(src, MAP_PATH, Tree::insert_entry);
+    load_to_tree(src, MAP_PATH);
     Tree::TreePrinter::print_tree_to_file(TREE_PRINT_PATH);
     fs::remove_file(src);
 }
@@ -155,7 +162,7 @@ fn find_hardcoded_node_in_tree() {
 
     fs::remove_file(NAME_TABLE);
     fs::remove_file(MAP_PATH);
-    load_to_tree(SOURCE_PATH_1, MAP_PATH, Tree::insert_entry);
+    load_to_tree(SOURCE_PATH_1, MAP_PATH);
 
     let name = Tree::find_value(Utils::get_u32_for_ip("000.000.000.015").unwrap());
     assert!(name.is_some());
@@ -198,7 +205,7 @@ fn find_hardcoded_node_in_table() {
 fn find_random_gen_requests_in_tree() {
 
     let scr = SP_10_000 ;
-    load_to_tree(scr, MAP_PATH, Tree::insert_entry);
+    load_to_tree(scr, MAP_PATH);
     let requests = FileGenerator::generate_lookup_testdata(scr,10);
 
     for (ip, name) in requests {

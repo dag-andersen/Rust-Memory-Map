@@ -37,7 +37,7 @@ fn create_test_data() {
 fn build_tree() {
     println!("## build_tree");
     let src = DO_Benchmark_test_src;
-    load_to_tree(src, MAP_PATH, Tree::insert_entry);
+    load_to_tree(src, MAP_PATH);
 }
 
 #[test]

@@ -15,21 +15,21 @@ fn build_time_tree() {
 
     FileGenerator::generate_source_file_with(src, 10,1..2,0..1, 4);
     let mut sw = Stopwatch::start_new();
-    load_to_tree(src, MAP_PATH, Tree::insert_entry);
+    load_to_tree(src, MAP_PATH);
     sw.stop();
     println!("score: {}", sw.elapsed().as_millis());
     fs::remove_file(src);
 
     FileGenerator::generate_source_file_with(src, 10000,1..2,99..100, 4);
     let mut sw = Stopwatch::start_new();
-    load_to_tree(src, MAP_PATH, Tree::insert_entry);
+    load_to_tree(src, MAP_PATH);
     sw.stop();
     println!("score: {}", sw.elapsed().as_millis());
     fs::remove_file(src);
 
     FileGenerator::generate_source_file_with(src, 10000,1..10000,99..100, 4);
     let mut sw = Stopwatch::start_new();
-    load_to_tree(src, MAP_PATH, Tree::insert_entry);
+    load_to_tree(src, MAP_PATH);
     sw.stop();
     println!("score: {}", sw.elapsed().as_millis());
     fs::remove_file(src);
@@ -69,7 +69,7 @@ fn build_time_tree_vs_table() {
     let src = SP_100_000;
 
     let mut sw = Stopwatch::start_new();
-    load_to_tree(src, MAP_PATH, Tree::insert_entry);
+    load_to_tree(src, MAP_PATH);
     sw.stop();
     println!("tree score:  {}", sw.elapsed().as_millis());
 
@@ -107,7 +107,7 @@ fn speed_matrix_tree() {
                     1..padding_length_scale.pow(padding_length),
                     4);
                 let mut sw = Stopwatch::start_new();
-                load_to_tree(in_src, map_src, Tree::insert_entry);
+                load_to_tree(in_src, map_src);
                 TreePrinter::print_tree_to_file(TREE_PRINT_PATH);
                 sw.stop();
                 writer.write_all(format!("------------------------------ {}",sw.elapsed().as_micros()).as_bytes());
@@ -167,7 +167,7 @@ fn search_time_tree_vs_table() {
     println!("--- table score: {}, #{} of requests ran", sw.elapsed().as_micros(), length);
 
     counter = 0;
-    load_to_tree(src, MAP_PATH, Tree::insert_entry);
+    load_to_tree(src, MAP_PATH);
     let mmap = Tree::gen_tree_map();
     let lookup_table = Table::gen_lookup_table();
 
@@ -238,7 +238,7 @@ fn search_time_tree_vs_table_no_file_gen() {
 fn test_print_tree_to_file() {
     let src = thisFileWillBeDeleted;
     FileGenerator::generate_source_file_with(src, 100,1..2,99..100, 4);
-    load_to_tree(src, MAP_PATH, Tree::insert_entry);
+    load_to_tree(src, MAP_PATH);
     TreePrinter::print_tree_to_file(TREE_PRINT_PATH);
     fs::remove_file(src);
 }
