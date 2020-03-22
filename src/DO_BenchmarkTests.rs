@@ -13,7 +13,7 @@ const DO_Benchmark_test_src:   &str = "DO_Benchmark_test.txt";
 const benchmark_output:        &str = "testdata/out/speed/benchmark.txt";
 
 #[test]
-//#[ignore]
+#[ignore]
 fn create_test_data() {
 
     let n = 150_000_000;
@@ -33,7 +33,7 @@ fn create_test_data() {
 }
 
 #[test]
-//#[ignore]
+#[ignore]
 fn build_tree() {
     println!("## build_tree");
     let src = DO_Benchmark_test_src;
@@ -41,7 +41,7 @@ fn build_tree() {
 }
 
 #[test]
-//#[ignore]
+#[ignore]
 fn build_table() {
     println!("## load_to_table");
     let src = DO_Benchmark_test_src;
@@ -49,7 +49,7 @@ fn build_table() {
 }
 
 #[test]
-//#[ignore]
+#[ignore]
 fn search_time_tree() {
     println!("## search_time_tree");
     let src = DO_Benchmark_test_src;
@@ -59,12 +59,13 @@ fn search_time_tree() {
     assert!(length > 0);
 
     let mmap = Tree::gen_tree_map();
+    let lookup_table = Table::gen_lookup_table();
 
     let mut numberSkipped = 0;
 
     let mut sw = Stopwatch::start_new();
     for (ip, name) in requests {
-        let value = Tree::find_value_on_map(ip, &mmap);
+        let value = Tree::find_value_on_map(ip, &mmap, &lookup_table);
         if value.is_some() {
             let value = value.unwrap();
             if name != value {
@@ -77,7 +78,7 @@ fn search_time_tree() {
 }
 
 #[test]
-//#[ignore]
+#[ignore]
 fn search_time_table() {
     println!("## search_time_table");
     let src = DO_Benchmark_test_src;

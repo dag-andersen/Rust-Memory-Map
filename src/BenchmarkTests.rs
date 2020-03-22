@@ -169,10 +169,11 @@ fn search_time_tree_vs_table() {
     counter = 0;
     load_to_tree(src, MAP_PATH, Tree::insert_entry);
     let mmap = Tree::gen_tree_map();
+    let lookup_table = Table::gen_lookup_table();
 
     let mut sw = Stopwatch::start_new();
     for (ip, name) in requests2 {
-        let value = Tree::find_value_on_map(ip,&mmap);
+        let value = Tree::find_value_on_map(ip,&mmap, &lookup_table);
         assert!(value.is_some());
         let value = value.unwrap();
         if counter % (length/10) == 0 { println!("Found: {:.2}%", counter as f32/length as f32); }
@@ -198,7 +199,6 @@ fn search_time_tree_vs_table_no_file_gen() {
 
     let lookup_table = Table::gen_lookup_table_from_path(NAME_TABLE_1_000_000);
     let ip_table = Table::gen_ip_table_from_path(IP_TABLE_1_000_000);
-    let mmap = Tree::gen_tree_map_on_path(TREE_MAP_1_000_000);
 
     let mut sw = Stopwatch::start_new();
     for (ip, name) in requests {
@@ -215,9 +215,12 @@ fn search_time_tree_vs_table_no_file_gen() {
 
     // ------------------------------------------------------
 
+    let lookup_table = Table::gen_lookup_table_from_path(NAME_TABLE_1_000_000);
+    let mmap = Tree::gen_tree_map_on_path(TREE_MAP_1_000_000);
+
     let mut sw = Stopwatch::start_new();
     for (ip, name) in requests2 {
-        let value = Tree::find_value_on_map(ip, &mmap);
+        let value = Tree::find_value_on_map(ip, &mmap, &lookup_table);
         if value.is_some() {
             let value = value.unwrap();
             if name != value {

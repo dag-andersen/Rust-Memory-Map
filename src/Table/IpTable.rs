@@ -1,5 +1,5 @@
-use crate::{IP_TABLE, NAME_TABLE, u32Size, Entry, FileGenerator, Table};
-use crate::Table::{NameTable, IpTable};
+use crate::{IP_TABLE, NAME_TABLE, u32Size, Entry, FileGenerator, Table, NameTable};
+use crate::Table::{IpTable};
 use crate::Utils;
 use memmap::MmapMut;
 use std::fs;

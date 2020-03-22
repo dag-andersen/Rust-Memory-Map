@@ -1,11 +1,10 @@
 use core::fmt;
-use crate::{Entry, Utils, IP_TABLE, NAME_TABLE};
+use crate::{Entry, Utils, IP_TABLE, NAME_TABLE, NameTable};
 use memmap::MmapMut;
 use std::fs;
 use crate::Table;
 
 mod IpTable;
-pub mod NameTable;
 
 const NODE_SIZE : usize = std::mem::size_of::<Node>();
 

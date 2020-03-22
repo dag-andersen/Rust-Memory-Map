@@ -24,11 +24,10 @@ pub fn place_node(mmap: & mut MmapMut, index: usize, node: & Node) {
 #[test]
 fn test_correct_placement() {
     fs::remove_file(MAP_PATH);
-    let mut name: [u8; 32] = Default::default();
-    Utils::insert_array_in_array(& mut name, "name".as_bytes());
+    let mut name: usize = 5;
 
     let node1 = super::Node { min_ip: 20, max_ip: 20, left: 0, right: 0, name: Default::default(), };
-    let node2 = super::Node { min_ip: 20, max_ip: 20, left: 0, right: 0, name: name, };
+    let node2 = super::Node { min_ip: 20, max_ip: 20, left: 0, right: 0, name };
 
     let mut first_map = Utils::get_memmap(MAP_PATH, 300000000);
     place_node(& mut first_map, 0, &node1);
@@ -37,7 +36,7 @@ fn test_correct_placement() {
     let another_map = Utils::get_memmap(MAP_PATH, 300000000);
     let getnode = get_node(&another_map, 1);
 
-    let left = std::str::from_utf8(&name).unwrap();
-    let right = std::str::from_utf8(&getnode.name).unwrap();
-    assert_eq!(left, right);
+    //let left = std::str::from_utf8(&name).unwrap();
+    //let right = std::str::from_utf8(&getnode.name).unwrap();
+    assert_eq!(name, getnode.name);
 }

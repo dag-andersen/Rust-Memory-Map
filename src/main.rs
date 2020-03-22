@@ -47,6 +47,7 @@ mod Table;
 mod BenchmarkTests;
 mod DO_BenchmarkTests;
 mod Utils;
+mod NameTable;
 
 use std::io::{BufRead, BufReader, LineWriter, Error, Lines};
 use std::ops::Add;
@@ -61,6 +62,7 @@ use rand::distributions::Alphanumeric;
 use rand::prelude::ThreadRng;
 use crate::Tree::NodeToMem;
 use std::iter::{Map, FilterMap, Filter, FromIterator, Enumerate};
+use crate::Table::{gen_lookup_table_from_path, gen_lookup_table};
 
 pub struct Entry {
     pub min_ip: u32,
@@ -79,13 +81,16 @@ fn main() {
     load_to_table(SOURCE_PATH_1);
 }
 
-fn load_to_tree(input: &str, map_path: &str, map_fn: fn(&mut MmapMut, usize, Entry)) {
+fn load_to_tree(input: &str, map_path: &str, map_fn: fn(&mut MmapMut, usize, Entry, usize)) {
     fs::remove_file(map_path);
 
     let mut mmap = Tree::gen_tree_map_on_path(map_path);
+    let mut lookup_table = gen_lookup_table();
 
     let ip_regex = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap();
     let name_regex = Regex::new(r"\b(([A-z]|\d)+\s?)+\b").unwrap();
+
+    let mut courser= 0;
 
     for (i, line) in get_buffer(input).lines().enumerate() {
         if line.is_err() { continue }
@@ -98,7 +103,10 @@ fn load_to_tree(input: &str, map_path: &str, map_fn: fn(&mut MmapMut, usize, Ent
         if entry.is_none() { continue }
         let entry = entry.unwrap();
 
-        map_fn(& mut mmap, i, entry);
+        courser = NameTable::place_name(&mut lookup_table, courser, entry.name.as_bytes());
+
+        let something = courser - entry.name.len();
+        map_fn(& mut mmap, i, entry, something);
     }
 }
 
@@ -145,27 +153,24 @@ fn print_tree_to_file() {
 #[test]
 fn find_hardcoded_node_in_tree() {
 
-    let insert: fn(&mut MmapMut, usize, Entry) = Tree::insert_entry;
-    let get: fn(ip: u32) -> Option<String> = Tree::find_value;
+    fs::remove_file(NAME_TABLE);
+    fs::remove_file(MAP_PATH);
+    load_to_tree(SOURCE_PATH_1, MAP_PATH, Tree::insert_entry);
 
-    load_to_tree(SOURCE_PATH_1, MAP_PATH, insert);
-
-    let name = get(Utils::get_u32_for_ip("000.000.000.015").unwrap());
+    let name = Tree::find_value(Utils::get_u32_for_ip("000.000.000.015").unwrap());
     assert!(name.is_some());
     let name = name.unwrap();
-    //let strName = name.trim_matches(char::from(0));
     assert_eq!(name,"Siteimprove");
 
-    let name = get(Utils::get_u32_for_ip("000.000.002.015").unwrap());
+    let name = Tree::find_value(Utils::get_u32_for_ip("000.000.002.015").unwrap());
     assert!(name.is_some());
     let name = name.unwrap();
-    //let strName = name.trim_matches(char::from(0));
     assert_eq!(name,"Olesen");
 
-    let name = get(Utils::get_u32_for_ip("000.000.000.001").unwrap());
+    let name = Tree::find_value(Utils::get_u32_for_ip("000.000.000.001").unwrap());
     assert!(name.is_none());
 
-    let name = get(Utils::get_u32_for_ip("001.000.000.000").unwrap());
+    let name = Tree::find_value(Utils::get_u32_for_ip("001.000.000.000").unwrap());
     assert!(name.is_none());
 }
 
@@ -190,7 +195,7 @@ fn find_hardcoded_node_in_table() {
 }
 
 #[test]
-fn find_random_gen_requests_in_map() {
+fn find_random_gen_requests_in_tree() {
 
     let scr = SP_10_000 ;
     load_to_tree(scr, MAP_PATH, Tree::insert_entry);
@@ -203,6 +208,7 @@ fn find_random_gen_requests_in_map() {
         //println!("Found: {} - {}", ip, value);
         assert_eq!(name, value)
     }
+
 }
 
 #[test]
@@ -216,60 +222,6 @@ fn find_random_gen_requests_in_table() {
         let value = Table::find_value(ip);
         assert!(value.is_some());
         let value = value.unwrap();
-        //println!("Found: {} - {}", ip, value);
         assert_eq!(name, value)
     }
 }
-
-#[test]
-fn find_inserted_node_in_tree() {
-
-    let insert: fn(&mut MmapMut, usize, Entry) = Tree::insert_entry;
-    let get: fn(ip: u32) -> Option<String> = Tree::find_value;
-
-    let src = "test_find_random";
-    let numberOfLines = 100;
-    FileGenerator::generate_source_file(numberOfLines, src);
-    load_to_tree(src, MAP_PATH, insert);
-
-    let mut name: [u8; 32] = Default::default();
-    Utils::insert_array_in_array(& mut name, "testname".as_bytes());
-
-    let ip = 34568;
-
-    let entry = Entry { min_ip: ip-1, max_ip: ip+1, name: String::from("testname") };
-
-    let mut mmap = Tree::gen_tree_map();
-    insert(&mut mmap, numberOfLines, entry);
-
-    let getNode = get(ip);
-    assert!(getNode.is_some());
-    let getNode = getNode.unwrap();
-    let name = std::str::from_utf8(&name).unwrap().trim_matches(char::from(0)).to_string();
-    assert_eq!(name, getNode);
-
-    fs::remove_file(src);
-}
-
-
-
-
-//(\d{1,3}[.]){3}(\d{1,3})|(\w+\s?)+
-//(\d{1,3}[.]){3}(\d{1,3})\s
-//let minNumber = u32::from_be_bytes(a);
-
-//let test = std::str::from_utf8(&a).unwrap();
-//println!("crazy test: {}",test);
-
-//let len = cmp::min(a.len(), asdf);
-//bytes::copy_memory(a.mut_slice_to(len), &name.as_bytes()[0..4].slice_to(len));
-
-//let strrr = String::from(l);
-//strrr.s
-
-//a.copy_from_slice(&name.as_bytes()[..(min(10,length-1))]);
-//let minNumber = u32::from_be_bytes(a);
-//println!("test:{}", minNumber);
-
-//let test = std::str::from_utf8(&a).unwrap();
-//println!("crazy test: {}",test);

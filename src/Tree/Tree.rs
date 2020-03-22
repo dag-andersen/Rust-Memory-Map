@@ -15,7 +15,7 @@ fn insert_node_on_node(mmap: & MmapMut, parent: &mut Node, index: usize, child: 
     let mut offset_from_node = 0;
 
     if parent.min_ip <= child.min_ip && child.max_ip <= parent.max_ip {
-        println!("Overlap: {}", std::str::from_utf8(&child.name).expect("Overlap expect"));
+        println!("Overlap for child: {}",child.name);
         return
     }
 
@@ -37,7 +37,7 @@ fn insert_node_on_node(mmap: & MmapMut, parent: &mut Node, index: usize, child: 
     insert_node_on_node(mmap, node, index, &child);
 }
 
-pub fn find_node_on_map(ip: u32, mmap: &MmapMut) -> Option<[u8; 32]> {
+pub fn find_node_on_map(ip: u32, mmap: &MmapMut) -> Option<usize> {
     let mut accNode = NodeToMem::get_node(&mmap, 0);
 
     loop {
