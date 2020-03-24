@@ -13,7 +13,7 @@ const DO_Benchmark_test_src:   &str = "DO_Benchmark_test.txt";
 const benchmark_output:        &str = "testdata/out/speed/benchmark.txt";
 
 #[test]
-//#[ignore]
+#[ignore]
 fn create_test_data() {
 
     let n = 150_000_000;
@@ -33,7 +33,7 @@ fn create_test_data() {
 }
 
 #[test]
-//#[ignore]
+#[ignore]
 fn build_tree() {
     println!("## build_tree");
     let src = DO_Benchmark_test_src;
@@ -41,7 +41,7 @@ fn build_tree() {
 }
 
 #[test]
-//#[ignore]
+#[ignore]
 fn build_table() {
     println!("## load_to_table");
     let src = DO_Benchmark_test_src;
@@ -49,7 +49,7 @@ fn build_table() {
 }
 
 #[test]
-//#[ignore]
+#[ignore]
 fn search_time_tree() {
     println!("## search_time_tree");
     let src = DO_Benchmark_test_src;
@@ -71,13 +71,13 @@ fn search_time_tree() {
                 numberSkipped += 1;
                 //println!("Wrong match - real name: {} - found name: {} - ip: {}", name, value, ip);
             }
-        } else { println!("Found none - real name: {} - ip: {}", name, ip) }
+        } else { numberSkipped += 1; println!("Found none - real name: {} - ip: {}", name, ip) }
     }
     println!("--- Tree : #{} micro seconds, #{} of requests ran, #{} skipped\n", sw.elapsed().as_micros(), length, numberSkipped);
 }
 
 #[test]
-//#[ignore]
+#[ignore]
 fn search_time_table() {
     println!("## search_time_table");
     let src = DO_Benchmark_test_src;
@@ -99,7 +99,7 @@ fn search_time_table() {
                 numberSkipped += 1;
                 //println!("Wrong match - real: {} - found: {} - ip: {}", name, value, ip);
             }
-        } else { println!("Found none - real name: {} - ip: {}", name, ip) }
+        } else { numberSkipped += 1; println!("Found none - real name: {} - ip: {}", name, ip) }
     }
     sw.stop();
     println!("--- table : #{} micro seconds, #{} of requests ran, #{} skipped\n", sw.elapsed().as_micros(), length, numberSkipped);
