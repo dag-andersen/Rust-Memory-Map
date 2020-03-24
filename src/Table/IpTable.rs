@@ -18,7 +18,7 @@ pub fn get_name_on_map(ip: u32, lookup_table: &MmapMut, ip_table: &MmapMut) -> O
 
 pub fn place_entry(mmap: &mut MmapMut, entry: &Entry, value: u32) {
 
-    const buffer: usize = 250;
+    const buffer: usize = 500;
     let mut offset= entry.min_ip as usize * u32Size;
     let mut array = [0; buffer];
     let mut counter: usize = 0;

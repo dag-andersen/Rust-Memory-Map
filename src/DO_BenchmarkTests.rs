@@ -72,7 +72,7 @@ fn search_time_tree() {
                 numberSkipped += 1;
                 //println!("Wrong match - real name: {} - found name: {} - ip: {}", name, value, ip);
             }
-        } else { println!("Found none - real name: {} - ip: {}", name, ip) }
+        } else { numberSkipped += 1; println!("Found none - real name: {} - ip: {}", name, ip) }
     }
     println!("--- Tree : #{} micro seconds, #{} of requests ran, #{} skipped\n", sw.elapsed().as_micros(), length, numberSkipped);
 }
@@ -100,7 +100,7 @@ fn search_time_table() {
                 numberSkipped += 1;
                 //println!("Wrong match - real: {} - found: {} - ip: {}", name, value, ip);
             }
-        } else { println!("Found none - real name: {} - ip: {}", name, ip) }
+        } else { numberSkipped += 1; println!("Found none - real name: {} - ip: {}", name, ip) }
     }
     sw.stop();
     println!("--- table : #{} micro seconds, #{} of requests ran, #{} skipped\n", sw.elapsed().as_micros(), length, numberSkipped);

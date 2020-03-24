@@ -6,7 +6,7 @@ use std::io::{LineWriter, Write};
 use crate::Tree;
 use crate::Tree::TreePrinter;
 use crate::Utils::get_memmap;
-use crate::FileGenerator::generate_source_file_with;
+use crate::FileGenerator::{generate_source_file_with, generate_source_file_with_in_mem};
 
 #[test]
 fn build_time_tree() {
@@ -127,7 +127,7 @@ fn genfile() {
     generate_source_file_with(src, 10_000_000,1..100,0..100, 4);
 }
 
-//#[test]
+#[test]
 fn search_time_tree_vs_table() {
 
     //let src = "genfile";
@@ -135,12 +135,12 @@ fn search_time_tree_vs_table() {
     println!("## search_time_tree_vs_table");
     let src = SP_100_000;
     fs::remove_file(src);
-    generate_source_file_with(src, 100_000,1..1,1_000..1_000, 4);
+    generate_source_file_with_in_mem(src, 150_000,10..18,10..18, 4);
     fs::remove_file(IP_TABLE);
     fs::remove_file(NAME_TABLE);
     fs::remove_file(MAP_PATH);
 
-    let requests1 = FileGenerator::generate_lookup_testdata(src,5000);
+    let requests1 = FileGenerator::generate_lookup_testdata(src,500);
     let requests2 = requests1.clone();
     let length = requests1.len();
     println!("#{} requests created", length);
@@ -164,7 +164,8 @@ fn search_time_tree_vs_table() {
         counter += 1;
     }
     sw.stop();
-    println!("--- table score: {}, #{} of requests ran", sw.elapsed().as_micros(), length);
+    let tableTime = sw.elapsed().as_micros();
+    println!("--- table score: {}, #{} of requests ran", tableTime, length);
 
     counter = 0;
     load_to_tree(src, MAP_PATH);
@@ -183,7 +184,9 @@ fn search_time_tree_vs_table() {
         counter += 1;
     }
     sw.stop();
-    println!("--- tree score : {}, #{} of requests ran", sw.elapsed().as_micros(), length);
+    let treeTime = sw.elapsed().as_micros();
+    println!("--- tree score : {}, #{} of requests ran", treeTime, length);
+    assert!(tableTime < treeTime)
 }
 
 //#[test]

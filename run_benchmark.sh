@@ -1,7 +1,7 @@
 output='testdata/out/speed/benchmark.txt'
 perf_cmd="perf stat -o $output --append -e task-clock,cycles,instructions,cache-references,cache-misses"
 cargo_pre_cmd='cargo test --release --color=always --package rust_map --bin rust_map'
-cargo_post_cmd='-- --ignored --exact --nocapture'
+cargo_post_cmd='-- --exact --nocapture --ignored'
 
 rm $output
 
