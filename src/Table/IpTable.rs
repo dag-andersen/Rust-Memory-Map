@@ -46,7 +46,7 @@ fn place_entry_and_get_name() {
     fs::remove_file(IP_TABLE);
     fs::remove_file(NAME_TABLE);
 
-    let mut lookup_table = Table::gen_lookup_table();
+    let mut lookup_table = NameTable::gen_name_table();
     let mut ip_table = Table::gen_ip_table();
 
     let mut courser= 0;

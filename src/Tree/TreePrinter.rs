@@ -27,7 +27,7 @@ pub(crate) fn print_tree_to_file(s: &str) {
     let file = File::create(s).unwrap();
     let mut file = LineWriter::new(file);
     let mmap = Tree::gen_tree_map();
-    let lookup = Table::gen_lookup_table();
+    let lookup = NameTable::gen_name_table();
     let root = get_node(&mmap, 0);
     print_node_to_file(&mmap, &lookup, &root, 0, &mut file);
 }

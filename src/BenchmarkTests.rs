@@ -1,5 +1,5 @@
 use stopwatch::Stopwatch;
-use crate::{FileGenerator, TREE_PRINT_PATH, MAP_PATH, load_to_tree, load_to_table, Utils, NAME_TABLE, IP_TABLE, u32Size, SP_100_000, SP_10_000, thisFileWillBeDeleted, Table, SP_1_000_000, SP_500_000, SP_50_000, IP_TABLE_1_000_000, NAME_TABLE_1_000_000, TREE_MAP_1_000_000};
+use crate::{FileGenerator, TREE_PRINT_PATH, MAP_PATH, load_to_tree, load_to_table, Utils, NAME_TABLE, IP_TABLE, u32Size, SP_100_000, SP_10_000, thisFileWillBeDeleted, Table, SP_1_000_000, SP_500_000, SP_50_000, IP_TABLE_1_000_000, NAME_TABLE_1_000_000, TREE_MAP_1_000_000, NameTable};
 use std::fs;
 use std::fs::File;
 use std::io::{LineWriter, Write};
@@ -133,20 +133,20 @@ fn search_time_tree_vs_table() {
     //let src = "genfile";
 
     println!("## search_time_tree_vs_table");
-    let src = SP_100_000;
+    let src = thisFileWillBeDeleted;
     fs::remove_file(src);
-    generate_source_file_with_in_mem(src, 150_000,10..18,10..18, 4);
+    generate_source_file_with_in_mem(src, 15_000,10..18,10..18, 2);
     fs::remove_file(IP_TABLE);
     fs::remove_file(NAME_TABLE);
     fs::remove_file(MAP_PATH);
 
-    let requests1 = FileGenerator::generate_lookup_testdata(src,500);
+    let requests1 = FileGenerator::generate_lookup_testdata(src,100);
     let requests2 = requests1.clone();
     let length = requests1.len();
     println!("#{} requests created", length);
 
     load_to_table(src);
-    let lookup_table = Table::gen_lookup_table();
+    let lookup_table = NameTable::gen_name_table();
     let ip_table = Table::gen_ip_table();
 
     let mut counter = 0;
@@ -170,7 +170,7 @@ fn search_time_tree_vs_table() {
     counter = 0;
     load_to_tree(src, MAP_PATH);
     let mmap = Tree::gen_tree_map();
-    let lookup_table = Table::gen_lookup_table();
+    let lookup_table = NameTable::gen_name_table();
 
     let mut sw = Stopwatch::start_new();
     for (ip, name) in requests2 {
@@ -200,7 +200,7 @@ fn search_time_tree_vs_table_no_file_gen() {
 
     // ------------------------------------------------------
 
-    let lookup_table = Table::gen_lookup_table_from_path(NAME_TABLE_1_000_000);
+    let lookup_table = NameTable::gen_name_table_from_path(NAME_TABLE_1_000_000);
     let ip_table = Table::gen_ip_table_from_path(IP_TABLE_1_000_000);
 
     let mut sw = Stopwatch::start_new();
@@ -218,7 +218,7 @@ fn search_time_tree_vs_table_no_file_gen() {
 
     // ------------------------------------------------------
 
-    let lookup_table = Table::gen_lookup_table_from_path(NAME_TABLE_1_000_000);
+    let lookup_table = NameTable::gen_name_table_from_path(NAME_TABLE_1_000_000);
     let mmap = Tree::gen_tree_map_on_path(TREE_MAP_1_000_000);
 
     let mut sw = Stopwatch::start_new();

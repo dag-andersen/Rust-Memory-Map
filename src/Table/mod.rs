@@ -17,18 +17,15 @@ pub fn insert_entry(ip_table: &mut MmapMut, entry: Entry, courser: usize) {
     IpTable::place_entry(ip_table, &entry, courser as u32);
 }
 
-pub fn gen_lookup_table() -> MmapMut { gen_lookup_table_from_path(NAME_TABLE) }
-pub fn gen_lookup_table_from_path(path: &str) -> MmapMut { Utils::get_memmap(path, 40_000_000_000) }
-
 pub fn gen_ip_table() -> MmapMut { gen_ip_table_from_path(IP_TABLE) }
 pub fn gen_ip_table_from_path(path: &str) -> MmapMut { Utils::get_memmap(path, 20_000_000_000) }
 
 pub fn find_value(ip: u32) -> Option<String> {
-    let lookup_table = gen_lookup_table();
+    let name_table = NameTable::gen_name_table();
     let ip_table = gen_ip_table();
-    find_value_on_map(ip, &lookup_table,&ip_table)
+    find_value_on_map(ip, &name_table,&ip_table)
 }
 
-pub fn find_value_on_map(ip: u32, lookup_table: &MmapMut, ip_table: &MmapMut) -> Option<String> {
-    IpTable::get_name_on_map(ip,lookup_table,ip_table)
+pub fn find_value_on_map(ip: u32, name_table: &MmapMut, ip_table: &MmapMut) -> Option<String> {
+    IpTable::get_name_on_map(ip,name_table,ip_table)
 }

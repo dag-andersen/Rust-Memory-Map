@@ -33,11 +33,11 @@ pub fn gen_tree_map_on_path(path: &str) -> MmapMut { Utils::get_memmap(path, 20_
 
 pub fn find_value(ip: u32) -> Option<String> {
     let mmap = gen_tree_map();
-    let name_table = Table::gen_lookup_table();
+    let name_table = NameTable::gen_name_table();
     find_value_on_map(ip,&mmap, &name_table)
 }
 
-pub fn find_value_on_map(ip: u32, mmap: &MmapMut, lookup_table: &MmapMut) -> Option<String> {
+pub fn find_value_on_map(ip: u32, mmap: &MmapMut, name_table: &MmapMut) -> Option<String> {
     let node = Tree::find_node_on_map(ip, mmap);
     if node.is_none() { return None }
     let index = node.unwrap();
@@ -45,5 +45,5 @@ pub fn find_value_on_map(ip: u32, mmap: &MmapMut, lookup_table: &MmapMut) -> Opt
     if index == 0 { return None }
     let index = index as usize -1; // -1 because we use 0 for tracking if there is no value reference
 
-    NameTable::get_name(&lookup_table, index)
+    NameTable::get_name(&name_table, index)
 }
