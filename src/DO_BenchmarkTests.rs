@@ -1,5 +1,5 @@
 use stopwatch::Stopwatch;
-use crate::{FileGenerator, TREE_PRINT_PATH, MAP_PATH, load_to_tree, load_to_table, Utils, NAME_TABLE, IP_TABLE, u32Size, SP_100_000, SP_10_000, thisFileWillBeDeleted, Table, SP_500_000, SP_50_000, IP_TABLE_1_000_000, NAME_TABLE_1_000_000, TREE_MAP_1_000_000};
+use crate::{FileGenerator, TREE_PRINT_PATH, TREE_PATH, load_to_tree_on_path, load_to_table, Utils, NAME_TABLE, IP_TABLE, u32Size, SP_100_000, SP_10_000, thisFileWillBeDeleted, Table, SP_500_000, SP_50_000, IP_TABLE_1_000_000, NAME_TABLE_1_000_000, TREE_MAP_1_000_000, NameTable, load_to_tree};
 use std::fs;
 use std::fs::File;
 use std::io::{LineWriter, Write};
@@ -37,7 +37,7 @@ fn create_test_data() {
 fn build_tree() {
     println!("## build_tree");
     let src = DO_Benchmark_test_src;
-    load_to_tree(src, MAP_PATH, Tree::insert_entry);
+    load_to_tree(src);
 }
 
 #[test]
@@ -59,12 +59,13 @@ fn search_time_tree() {
     assert!(length > 0);
 
     let mmap = Tree::gen_tree_map();
+    let lookup_table = NameTable::gen_name_table();
 
     let mut numberSkipped = 0;
 
     let mut sw = Stopwatch::start_new();
     for (ip, name) in requests {
-        let value = Tree::find_value_on_map(ip, &mmap);
+        let value = Tree::find_value_on_map(ip, &mmap, &lookup_table);
         if value.is_some() {
             let value = value.unwrap();
             if name != value {
@@ -86,7 +87,7 @@ fn search_time_table() {
     let length = requests.len();
     assert!(length > 0);
 
-    let lookup_table = Table::gen_lookup_table();
+    let lookup_table = NameTable::gen_name_table();
     let ip_table = Table::gen_ip_table();
     let mut numberSkipped = 0;
 
