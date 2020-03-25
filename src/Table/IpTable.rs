@@ -46,38 +46,38 @@ fn place_entry_and_get_name() {
     fs::remove_file(IP_TABLE);
     fs::remove_file(NAME_TABLE);
 
-    let mut lookup_table = NameTable::gen_name_table();
-    let mut ip_table = Table::gen_ip_table();
+    let mut name_table = NameTable::gen_name_table();
+    let mut ip_table = super::gen_ip_table();
 
     let mut courser= 0;
 
     let name1 = "Hans Hansen";
     let entry = Entry { min_ip: 0, max_ip: 5, name: name1.to_string() };
-    IpTable::place_entry(&mut ip_table, &entry, courser as u32);
-    courser = NameTable::place_name(&mut lookup_table, courser, entry.name.as_bytes());
+    place_entry(&mut ip_table, &entry, courser as u32);
+    courser = NameTable::place_name(&mut name_table, courser, entry.name.as_bytes());
 
     let name2 = "Opvaskerne";
     let entry = Entry { min_ip: 6, max_ip: 10, name: name2.to_string() };
-    IpTable::place_entry(&mut ip_table, &entry, courser as u32);
-    courser = NameTable::place_name(&mut lookup_table, courser, entry.name.as_bytes());
+    place_entry(&mut ip_table, &entry, courser as u32);
+    courser = NameTable::place_name(&mut name_table, courser, entry.name.as_bytes());
 
     let name3 = "Prop";
     let entry = Entry { min_ip: 20, max_ip: 20, name: name3.to_string() };
-    IpTable::place_entry(&mut ip_table, &entry, courser as u32);
-    courser = NameTable::place_name(&mut lookup_table, courser, entry.name.as_bytes());
+    place_entry(&mut ip_table, &entry, courser as u32);
+    courser = NameTable::place_name(&mut name_table, courser, entry.name.as_bytes());
 
     let name4 = "HejMedDig";
     let entry = Entry { min_ip: 50, max_ip: 650, name: name4.to_string() };
-    IpTable::place_entry(&mut ip_table, &entry, courser as u32);
-    courser = NameTable::place_name(&mut lookup_table, courser, entry.name.as_bytes());
+    place_entry(&mut ip_table, &entry, courser as u32);
+    courser = NameTable::place_name(&mut name_table, courser, entry.name.as_bytes());
 
-    let out_name0 = get_name_on_map(0, &lookup_table, &ip_table);
-    let out_name1 = get_name_on_map(5, &lookup_table, &ip_table);
-    let out_name2 = get_name_on_map(9, &lookup_table, &ip_table);
-    let out_name3 = get_name_on_map(20, &lookup_table, &ip_table);
-    let out_name4 = get_name_on_map(50, &lookup_table, &ip_table);
-    let out_name5 = get_name_on_map(144, &lookup_table, &ip_table);
-    let out_name6 = get_name_on_map(650, &lookup_table, &ip_table);
+    let out_name0 = get_name_on_map(0, &name_table, &ip_table);
+    let out_name1 = get_name_on_map(5, &name_table, &ip_table);
+    let out_name2 = get_name_on_map(9, &name_table, &ip_table);
+    let out_name3 = get_name_on_map(20, &name_table, &ip_table);
+    let out_name4 = get_name_on_map(50, &name_table, &ip_table);
+    let out_name5 = get_name_on_map(144, &name_table, &ip_table);
+    let out_name6 = get_name_on_map(650, &name_table, &ip_table);
     assert!(out_name0.is_some());
     assert!(out_name1.is_some());
     assert!(out_name2.is_some());
@@ -93,9 +93,9 @@ fn place_entry_and_get_name() {
     assert_eq!(out_name5.unwrap(),name4);
     assert_eq!(out_name6.unwrap(),name4);
 
-    let out_name1 = get_name_on_map(40, &lookup_table,&ip_table);
-    let out_name2 = get_name_on_map(21, &lookup_table, &ip_table);
-    let out_name3 = get_name_on_map(651, &lookup_table, &ip_table);
+    let out_name1 = get_name_on_map(40, &name_table, &ip_table);
+    let out_name2 = get_name_on_map(21, &name_table, &ip_table);
+    let out_name3 = get_name_on_map(651, &name_table, &ip_table);
     assert!(out_name1.is_none());
     assert!(out_name2.is_none());
     assert!(out_name3.is_none());
