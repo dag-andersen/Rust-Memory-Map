@@ -111,7 +111,7 @@ fn load_to_tree_on_path(input: &str, map_path: &str, name_table: &str) {
         courser = NameTable::place_name(&mut name_table, courser, entry.name.as_bytes());
 
         let something = courser - entry.name.len();
-        Tree::insert_entry(& mut mmap, i, entry, something);
+        Tree::insert_entry(& mut mmap, i+1, entry, something);
     }
 }
 
@@ -200,11 +200,11 @@ fn find_hardcoded_node_in_table() {
 #[test]
 fn find_random_gen_requests_in_tree() {
 
-    let scr = SP_10_000 ;
-    load_to_tree(scr);
-    let requests = FileGenerator::generate_lookup_testdata(scr,50);
+    let src = SP_10_000 ;
+    load_to_tree(src);
+    let requests = FileGenerator::generate_lookup_testdata(src,50);
 
-    load_to_tree(src, MAP_PATH, Tree::insert_entry);
+    load_to_tree(src);
     let requests = FileGenerator::generate_lookup_testdata(src,2);
 
     for (ip, name) in requests {
