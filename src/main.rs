@@ -24,7 +24,7 @@ const SP_100_000:               &str    = "testdata/in/100_000.txt";
 const SP_500_000:               &str    = "testdata/in/500_000.txt";
 const SP_1_000_000:             &str    = "testdata/in/1_000_000.txt";
 const SP_5_000_000:             &str    = "testdata/in/5_000_000.txt";
-const MAP_PATH:                 &str    = "testdata/out/tree/map.txt";
+const TREE_PATH:                 &str    = "testdata/out/tree/map.txt";
 const TREE_MAP_500_000:         &str    = "testdata/out/tree/map_500_000.txt";
 const TREE_MAP_1_000_000:       &str    = "testdata/out/tree/map_1_000_000.txt";
 const TREE_PRINT_PATH:          &str    = "testdata/out/tree/tree_print.txt";
@@ -48,6 +48,7 @@ mod Table;
 mod BenchmarkTests;
 mod DO_BenchmarkTests;
 mod Utils;
+mod NameTable;
 
 use std::io::{BufRead, BufReader, LineWriter, Error, Lines};
 use std::ops::Add;
@@ -76,17 +77,25 @@ impl fmt::Display for Entry {
 }
 
 fn main() {
-    load_to_tree(SOURCE_PATH_1, MAP_PATH, Tree::insert_entry);
+    load_to_tree(SOURCE_PATH_1);
     load_to_table(SOURCE_PATH_1);
 }
 
-fn load_to_tree(input: &str, map_path: &str, map_fn: fn(&mut MmapMut, usize, Entry)) {
+fn load_to_tree(input: &str) {
+    load_to_tree_on_path(input, TREE_PATH, NAME_TABLE)
+}
+
+fn load_to_tree_on_path(input: &str, map_path: &str, name_table: &str) {
     fs::remove_file(map_path);
+    fs::remove_file(name_table);
 
     let mut mmap = Tree::gen_tree_map_on_path(map_path);
+    let mut name_table = NameTable::gen_name_table();
 
     let ip_regex = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap();
     let name_regex = Regex::new(r"\b(([A-z]|\d)+\s?)+\b").unwrap();
+
+    let mut courser= 0;
 
     for (i, line) in get_buffer(input).lines().enumerate() {
         if line.is_err() { continue }
@@ -99,7 +108,10 @@ fn load_to_tree(input: &str, map_path: &str, map_fn: fn(&mut MmapMut, usize, Ent
         if entry.is_none() { continue }
         let entry = entry.unwrap();
 
-        map_fn(& mut mmap, i+1, entry);
+        courser = NameTable::place_name(&mut name_table, courser, entry.name.as_bytes());
+
+        let something = courser - entry.name.len();
+        Tree::insert_entry(& mut mmap, i, entry, something);
     }
 }
 
@@ -109,25 +121,32 @@ fn load_to_table(input: &str) {
 
 fn load_to_table_on_path(input: &str, ip_table: &str, name_table: &str) {
 
-    let bufReader_to_strings = |b:BufReader<File>| {
-        b.lines().map(|y| {
-            if y.is_err() { return None }
-            let y = y.unwrap();
-            if y.is_empty() { return None }
-            return Some(y);
-        }).filter(|x| x.is_some()).map(|x| x.unwrap())
-    };
+    fs::remove_file(ip_table);
+    fs::remove_file(name_table);
 
-    let mut strings_to_entries = |x:BufReader<File>| {
-        let ip_regex = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap();
-        let name_regex = Regex::new(r"\b(([A-z]|\d)+\s?)+\b").unwrap();
-        bufReader_to_strings(x)
-            .map(move |x| Utils::get_entry_for_line(&ip_regex, &name_regex, &x))
-            .filter(|x| x.is_some())
-            .map(|x| x.unwrap())
-    };
+    let mut lookup_table = NameTable::gen_name_table_from_path(name_table);
+    let mut ip_table = Table::gen_ip_table_from_path(ip_table);
 
-    Table::insert_entry_on_path(strings_to_entries(get_buffer(input)),ip_table,name_table);
+    let ip_regex = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap();
+    let name_regex = Regex::new(r"\b(([A-z]|\d)+\s?)+\b").unwrap();
+
+    let mut courser= 0;
+
+    for (i, line) in get_buffer(input).lines().enumerate() {
+        if line.is_err() { continue }
+        let l = line.unwrap();
+        if l.is_empty() { continue; }
+
+        if i % 500_000 == 0 { println!("Tree: pushed {} lines", i)}
+
+        let entry = Utils::get_entry_for_line(&ip_regex, &name_regex, &l);
+        if entry.is_none() { continue }
+        let entry = entry.unwrap();
+
+        courser = NameTable::place_name(&mut lookup_table, courser, entry.name.as_bytes());
+        let something = courser - entry.name.len() - 1;
+        Table::insert_entry(&mut ip_table, entry, something);
+    }
 }
 
 fn get_buffer(file: &str) -> BufReader<std::fs::File> {
@@ -135,40 +154,26 @@ fn get_buffer(file: &str) -> BufReader<std::fs::File> {
 }
 
 #[test]
-fn print_tree_to_file() {
-    let src = thisFileWillBeDeleted;
-    FileGenerator::generate_source_file_with(src, 100,1..2,99..100, 4);
-    load_to_tree(src, MAP_PATH, Tree::insert_entry);
-    Tree::TreePrinter::print_tree_to_file(TREE_PRINT_PATH);
-    fs::remove_file(src);
-}
-
-#[test]
 fn find_hardcoded_node_in_tree() {
 
-    let insert: fn(&mut MmapMut, usize, Entry) = Tree::insert_entry;
-    let get: fn(ip: u32) -> Option<String> = Tree::find_value;
+    fs::remove_file(NAME_TABLE);
+    fs::remove_file(TREE_PATH);
+    load_to_tree(SOURCE_PATH_1);
 
-    fs::remove_file(MAP_PATH);
-    load_to_tree(SOURCE_PATH_3, MAP_PATH, insert);
-    Tree::TreePrinter::print_tree_to_file(TREE_PRINT_PATH);
-
-    let name = get(Utils::get_u32_for_ip("000.000.000.015").unwrap());
+    let name = Tree::find_value(Utils::get_u32_for_ip("000.000.000.015").unwrap());
     assert!(name.is_some());
     let name = name.unwrap();
-    //let strName = name.trim_matches(char::from(0));
     assert_eq!(name,"Siteimprove");
 
-    let name = get(Utils::get_u32_for_ip("000.000.002.015").unwrap());
+    let name = Tree::find_value(Utils::get_u32_for_ip("000.000.002.015").unwrap());
     assert!(name.is_some());
     let name = name.unwrap();
-    //let strName = name.trim_matches(char::from(0));
     assert_eq!(name,"Olesen");
 
-    let name = get(Utils::get_u32_for_ip("000.000.000.001").unwrap());
+    let name = Tree::find_value(Utils::get_u32_for_ip("000.000.000.001").unwrap());
     assert!(name.is_none());
 
-    let name = get(Utils::get_u32_for_ip("001.000.000.000").unwrap());
+    let name = Tree::find_value(Utils::get_u32_for_ip("001.000.000.000").unwrap());
     assert!(name.is_none());
 }
 
@@ -193,11 +198,11 @@ fn find_hardcoded_node_in_table() {
 }
 
 #[test]
-fn find_random_gen_requests_in_map() {
+fn find_random_gen_requests_in_tree() {
 
-    fs::remove_file(thisFileWillBeDeleted);
-    let src = thisFileWillBeDeleted;
-    FileGenerator::generate_source_file_with(src, 200,1..2,99..100, 4);
+    let scr = SP_10_000 ;
+    load_to_tree(scr);
+    let requests = FileGenerator::generate_lookup_testdata(scr,50);
 
     load_to_tree(src, MAP_PATH, Tree::insert_entry);
     let requests = FileGenerator::generate_lookup_testdata(src,2);
@@ -205,7 +210,7 @@ fn find_random_gen_requests_in_map() {
     for (ip, name) in requests {
         let value = Tree::find_value(ip);
         assert!(value.is_some());
-        let value = value.unwrap();println!("Found: {} - {}", ip, value);
+        let value = value.unwrap();
         assert_eq!(name, value)
     }
     fs::remove_file(thisFileWillBeDeleted);
@@ -222,61 +227,6 @@ fn find_random_gen_requests_in_table() {
         let value = Table::find_value(ip);
         assert!(value.is_some());
         let value = value.unwrap();
-        //println!("Found: {} - {}", ip, value);
         assert_eq!(name, value)
     }
 }
-
-#[test]
-fn find_inserted_node_in_tree() {
-
-    let insert: fn(&mut MmapMut, usize, Entry) = Tree::insert_entry;
-    let get: fn(ip: u32) -> Option<String> = Tree::find_value;
-
-    let src = "test_find_random";
-    fs::remove_file(src);
-    let numberOfLines = 10;
-    FileGenerator::generate_source_file(numberOfLines, src);
-    load_to_tree(src, MAP_PATH, insert);
-
-    let mut name: [u8; 32] = Default::default();
-    Utils::insert_array_in_array(& mut name, "testname".as_bytes());
-
-    let ip = 34568;
-
-    let entry = Entry { min_ip: ip-1, max_ip: ip+1, name: String::from("testname") };
-
-    let mut mmap = Tree::gen_tree_map();
-    insert(&mut mmap, numberOfLines, entry);
-
-    let getNode = get(ip);
-    assert!(getNode.is_some());
-    let getNode = getNode.unwrap();
-    let name = std::str::from_utf8(&name).unwrap().trim_matches(char::from(0)).to_string();
-    assert_eq!(name, getNode);
-
-    fs::remove_file(src);
-}
-
-
-
-
-//(\d{1,3}[.]){3}(\d{1,3})|(\w+\s?)+
-//(\d{1,3}[.]){3}(\d{1,3})\s
-//let minNumber = u32::from_be_bytes(a);
-
-//let test = std::str::from_utf8(&a).unwrap();
-//println!("crazy test: {}",test);
-
-//let len = cmp::min(a.len(), asdf);
-//bytes::copy_memory(a.mut_slice_to(len), &name.as_bytes()[0..4].slice_to(len));
-
-//let strrr = String::from(l);
-//strrr.s
-
-//a.copy_from_slice(&name.as_bytes()[..(min(10,length-1))]);
-//let minNumber = u32::from_be_bytes(a);
-//println!("test:{}", minNumber);
-
-//let test = std::str::from_utf8(&a).unwrap();
-//println!("crazy test: {}",test);

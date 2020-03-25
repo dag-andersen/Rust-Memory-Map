@@ -8,7 +8,7 @@ use rand::seq::SliceRandom;
 use rand::thread_rng;
 use std::cmp::min;
 use std::fs;
-use crate::{SP_100_000, thisFileWillBeDeleted, get_buffer, Utils, Entry, SP_500_000, SP_5_000_000, SP_50_000, MAP_PATH, load_to_tree, Tree, SP_10_000, SP_1_000_000, load_to_table, IP_TABLE_1_000_000, NAME_TABLE_1_000_000, load_to_table_on_path, TREE_MAP_1_000_000, TREE_MAP_500_000};
+use crate::{SP_100_000, thisFileWillBeDeleted, get_buffer, Utils, Entry, SP_500_000, SP_5_000_000, SP_50_000, TREE_PATH, load_to_tree_on_path, Tree, SP_10_000, SP_1_000_000, load_to_table, IP_TABLE_1_000_000, NAME_TABLE_1_000_000, load_to_table_on_path, TREE_MAP_1_000_000, TREE_MAP_500_000, NAME_TABLE};
 use regex::bytes::Regex;
 
 fn generate_random_ip_firm(rng: &mut ThreadRng) -> String {
@@ -110,6 +110,66 @@ pub fn generate_source_file_with(s:&str, n: u32, range: Range<u32>, padding: Ran
     println!("writing to file - done");
 }
 
+pub fn generate_source_file_with_in_mem(s:&str, n: u32, range: Range<u32>, padding: Range<u32>, name_size: usize) {
+    let mut rng = thread_rng();
+    //println!("generate_source_file_with");
+
+    let mut vec : Vec<(u32,u32,String)> = Vec::new();
+    let mut ip_curser: u32 = 0;
+
+    for i in 0..n {
+        let r: u32 = if range.start == range.end { range.start } else { rng.gen_range(range.start, range.end) };
+        let p: u32 = if padding.start == padding.end { range.start } else { rng.gen_range(padding.start, padding.end) };
+        let min_ip: u32 = ip_curser;
+        if std::u32::MAX - r < min_ip { println!("broke after {} iterations", i); break; }
+        let max_ip: u32 = min_ip + r;
+        if std::u32::MAX - p < max_ip { println!("broke after {} iterations", i); break; }
+        ip_curser = max_ip + p;
+
+        if std::u32::MAX < max_ip { println!("broke after {} iterations", i); break; }
+
+        //if i % 500_000 == 0 { println!("lines generated: {}", i)}
+
+        let name = gen_firm(& rng, name_size);
+
+        vec.push((min_ip,max_ip,name));
+    }
+
+    println!("highest ip: {}", ip_curser);
+    //println!("shuffle start");
+    vec.shuffle(&mut rng);
+    //println!("writing to file");
+    let file = File::create(s).unwrap();
+    let mut file = LineWriter::new(file);
+
+    let mut counter = 0;
+    for (min, max, name) in vec.into_iter() {
+        let min_ip: [u8; 4] = transform_u32_to_array_of_u8( min);
+        let max_ip: [u8; 4] = transform_u32_to_array_of_u8(max);
+        let mut r = String::new();
+
+        for i in 0..4 {
+            r.push_str(&format!("{}",min_ip[i]));
+            if i < 3 { r.push('.'); }
+        }
+        r.push(' ');
+        for i in 0..4 {
+            r.push_str(&format!("{}",max_ip[i]));
+            if i < 3 { r.push('.'); }
+        }
+        r.push(' ');
+        r.push_str(name.as_str());
+        r.push_str("\n");
+
+        file.write_all(r.as_bytes());
+        file.flush();
+
+        //if counter % 500_000 == 0 { println!("lines written: {}", counter)}
+        counter += 1;
+    }
+    //println!("writing to file - done");
+}
+
 //#[test]
 fn gen_input_file() {
     let src = "testtesttesttest";
@@ -120,7 +180,7 @@ fn gen_input_file() {
 //#[test]
 fn gen_tree() {
     let src = SP_1_000_000;
-    load_to_tree(src, TREE_MAP_1_000_000, Tree::insert_entry);
+    load_to_tree_on_path(src, TREE_MAP_1_000_000, NAME_TABLE);
 }
 
 //#[test]

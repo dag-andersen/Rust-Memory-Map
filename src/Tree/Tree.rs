@@ -1,8 +1,9 @@
-use crate::{NodeToMem, MAP_PATH};
+use crate::{NodeToMem, TREE_PATH, NameTable, TREE_MAP_500_000, NAME_TABLE, Entry};
 use memmap::MmapMut;
 use crate::Tree::{Node, NODE_SIZE, gen_tree_map};
 use std::ops::Deref;
 use crate::Tree::TreePrinter::{print_tree, print_tree_from_map};
+use std::fs;
 
 pub fn insert_node(mmap: &mut MmapMut, index: usize, node: &mut Node) {
     NodeToMem::place_node(mmap, index, node);
@@ -14,8 +15,6 @@ pub fn insert_node(mmap: &mut MmapMut, index: usize, node: &mut Node) {
         insert_node_on_node(mmap, root, 1, node, index);
     }
     balance(mmap, node, index)
-
-    //print!("-{}",offset);
 }
 
 fn insert_node_on_node(mmap: &MmapMut, parent: &mut Node, parentIndex: usize, node: &mut Node, nodeIndex: usize) {
@@ -23,7 +22,7 @@ fn insert_node_on_node(mmap: &MmapMut, parent: &mut Node, parentIndex: usize, no
     let mut offset_from_node = 0;
 
     if parent.min_ip <= node.min_ip && node.max_ip <= parent.max_ip {
-        println!("Overlap: {}", std::str::from_utf8(&node.name).expect("Overlap expect"));
+        println!("Overlap for child: {}",node.name);
         return
     }
 
@@ -187,7 +186,7 @@ fn rightRotate(mmap: &MmapMut, node: &mut Node, parent: &mut Node) {
     }
 }
 
-pub fn find_node_on_map(ip: u32, mmap: &MmapMut) -> Option<[u8; 32]> {
+pub fn find_node_on_map(ip: u32, mmap: &MmapMut) -> Option<usize> {
     let mut accNode = NodeToMem::get_node(mmap, unsafe { root_index });
 
     loop {
@@ -206,4 +205,124 @@ pub fn find_node_on_map(ip: u32, mmap: &MmapMut) -> Option<[u8; 32]> {
         accNode = NodeToMem::get_node(&mmap, offset_from_node);
     }
     None
+}
+
+
+#[test]
+fn insert_node_and_find_it() {
+    fs::remove_file(TREE_PATH);
+    fs::remove_file(NAME_TABLE);
+
+    let mut tree_map = super::gen_tree_map();
+
+    let name1 = 10;
+    let mut entry = Node { red: true, min_ip: 0, max_ip: 5, left: 0, right: 0, parent: 0, name: name1 };
+    insert_node(&mut tree_map, 1, &mut entry);
+
+    let name2 = 20;
+    let mut entry = Node { red: true, min_ip: 6, max_ip: 10, left: 0, right: 0, parent: 0, name: name2 };
+    insert_node(&mut tree_map, 2, &mut entry);
+
+    let name3 = 30;
+    let mut entry = Node { red: true, min_ip: 20, max_ip: 20, left: 0, right: 0, parent: 0, name: name3 };
+    insert_node(&mut tree_map, 3, &mut entry);
+
+    let name4 = 40;
+    let mut entry = Node { red: true, min_ip: 50, max_ip: 650, left: 0, right: 0, parent: 0, name: name4 };
+    insert_node(&mut tree_map, 4, &mut entry);
+
+    let out_name0 = find_node_on_map(0, &tree_map);
+    let out_name1 = find_node_on_map(5, &tree_map);
+    let out_name2 = find_node_on_map(9, &tree_map);
+    let out_name3 = find_node_on_map(20, &tree_map);
+    let out_name4 = find_node_on_map(50, &tree_map);
+    let out_name5 = find_node_on_map(144, &tree_map);
+    let out_name6 = find_node_on_map(650, &tree_map);
+    assert!(out_name0.is_some());
+    assert!(out_name1.is_some());
+    assert!(out_name2.is_some());
+    assert!(out_name3.is_some());
+    assert!(out_name4.is_some());
+    assert!(out_name5.is_some());
+    assert!(out_name6.is_some());
+    assert_eq!(out_name0.unwrap(),name1);
+    assert_eq!(out_name1.unwrap(),name1);
+    assert_eq!(out_name2.unwrap(),name2);
+    assert_eq!(out_name3.unwrap(),name3);
+    assert_eq!(out_name4.unwrap(),name4);
+    assert_eq!(out_name5.unwrap(),name4);
+    assert_eq!(out_name6.unwrap(),name4);
+
+    let out_name1 = find_node_on_map(40,&tree_map);
+    let out_name2 = find_node_on_map(21, &tree_map);
+    let out_name3 = find_node_on_map(651, &tree_map);
+    assert!(out_name1.is_none());
+    assert!(out_name2.is_none());
+    assert!(out_name3.is_none());
+
+    fs::remove_file(TREE_PATH);
+    fs::remove_file(NAME_TABLE);
+}
+
+#[test]
+fn insert_node_random_order_and_find_it() {
+    fs::remove_file(TREE_PATH);
+    fs::remove_file(NAME_TABLE);
+
+    let mut tree_map = super::gen_tree_map();
+
+    let name3 = 30;
+    let mut entry = Node { red: true, min_ip: 20, max_ip: 20, left: 0, right: 0, parent: 0, name: name3 };
+    insert_node(&mut tree_map, 1, &mut entry);
+
+    let name6 = 40;
+    let mut entry = Node { red: true, min_ip: 802, max_ip: 820, left: 0, right: 0, parent: 0, name: name6 };
+    insert_node(&mut tree_map, 2, &mut entry);
+
+    let name4 = 40;
+    let mut entry = Node { red: true, min_ip: 50, max_ip: 650, left: 0, right: 0, parent: 0, name: name4 };
+    insert_node(&mut tree_map, 3, &mut entry);
+
+    let name2 = 20;
+    let mut entry = Node { red: true, min_ip: 6, max_ip: 10, left: 0, right: 0, parent: 0, name: name2 };
+    insert_node(&mut tree_map, 4, &mut entry);
+
+    let name5 = 40;
+    let mut entry = Node { red: true, min_ip: 800, max_ip: 801, left: 0, right: 0, parent: 0, name: name5 };
+    insert_node(&mut tree_map, 5, &mut entry);
+
+    let name1 = 10;
+    let mut entry = Node { red: true, min_ip: 0, max_ip: 5, left: 0, right: 0, parent: 0, name: name1 };
+    insert_node(&mut tree_map, 6, &mut entry);
+
+    let out_name0 = find_node_on_map(0, &tree_map);
+    let out_name1 = find_node_on_map(5, &tree_map);
+    let out_name2 = find_node_on_map(9, &tree_map);
+    let out_name3 = find_node_on_map(20, &tree_map);
+    let out_name4 = find_node_on_map(50, &tree_map);
+    let out_name5 = find_node_on_map(144, &tree_map);
+    let out_name6 = find_node_on_map(650, &tree_map);
+    let out_name7 = find_node_on_map(800, &tree_map);
+    let out_name8 = find_node_on_map(815, &tree_map);
+    assert!(out_name0.is_some());
+    assert!(out_name1.is_some());
+    assert!(out_name2.is_some());
+    assert!(out_name3.is_some());
+    assert!(out_name4.is_some());
+    assert!(out_name5.is_some());
+    assert!(out_name6.is_some());
+    assert!(out_name7.is_some());
+    assert!(out_name8.is_some());
+    assert_eq!(out_name0.unwrap(),name1);
+    assert_eq!(out_name1.unwrap(),name1);
+    assert_eq!(out_name2.unwrap(),name2);
+    assert_eq!(out_name3.unwrap(),name3);
+    assert_eq!(out_name4.unwrap(),name4);
+    assert_eq!(out_name5.unwrap(),name4);
+    assert_eq!(out_name6.unwrap(),name4);
+    assert_eq!(out_name7.unwrap(),name5);
+    assert_eq!(out_name8.unwrap(),name6);
+
+    fs::remove_file(TREE_PATH);
+    fs::remove_file(NAME_TABLE);
 }

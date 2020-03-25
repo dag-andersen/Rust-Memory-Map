@@ -7,28 +7,28 @@ Speed is first priority
 
 ## Motivation
 
-when you want to quickly search through a big data-set that cant be store in ram.
-On this scale the answer easy answer could be to just buy a more powerful machine, but this is maybe not what you want. Should you choose to run a given service on a virtual machine on a cloud-provider like _digital ocean_ then running a rending a machine with many resources quickly becomes expensive. This is where this problem becomes relevant.
+What do you do when you want to quickly search through a big data-set that cant be store in ram?
+On a small scale the easy answer is to just buy a more powerful machine, but this is maybe not always what you want. Should you choose to run a given service on a virtual machine on a cloud-provider like _digital ocean_ then running a rending a machine with many resources quickly becomes expensive. This is where this problem becomes relevant.
 
 ## Problem explained in detail
 
-Siteimprove needs service where they can look up information of a given ip-address. The primary focus is quick lookup, so their customers can access their data as quickly as possible.
-
+Siteimprove needs service where they can look up information of a given ip-address. The primary focus is fast lookup so their customers can get a result as fast as possible.
 Preprocessing time is not important as long as it doesn't take over day. 
 Space wise it doesn't matter much either, but again it has to be a realistic/practical amount.
 
 ### Data
 
-Each entry consist of two ip addresses and some related data/payload. The first ip determens the lowerbound of the range and the second is the uppoer bound.
+Each entry consist of two ip addresses and some related data/payload. The first ip determents the lower bound of the range and the second is the upper bound.
 
-I cant get access to the real data due to confindatillity, but i know the number of entries and the amount of payload pr. entry. 
-The system needs to handle 150mil ipv4 ranges with a payload of 256 bytes. 
-35mil ipv6 ranges. 
+It is not possible to access to the real data due to confidentiality, but the number of entries and the amount of payload pr. entry. is available. 
+The system needs to handle 150mil ipv4 ranges and 35mil ipv6 ranges with a payload of 256 bytes.
 
 ### Assumptions
 * The input data contains no overlapping ranges
-* No range/entry contain the same payload
-* No ip range is excluded (No ip range should be ignore because of reserved ip-range-blocks)
+* No range/entry contain the same payload?
+* No ip range is excluded (No ip range should be ignore because of reserved ip-range-blocks) / in other words... all ip addresses are possible.
+* No need to remove or change entries.
+* The entries should should be able to be stream into the program so no way of knowing how many entries will actually go into the system
 
 ### the goal
 Handle 150 mil entries
@@ -69,28 +69,72 @@ I couldn't test on Siteimprove's real data, since it confidential, but could get
 - lookup time
 - build time
 
-## Boundaries
-No need to remove or change entries.
-
-
-## why rust?
-
-### memory safety
-
-no dagling pointers, no data races, no buffer overflows 
-
-Guaranteed by Rust's ownership system - At compile time
-
-An exable of usefulness of this safety can be found a 
+## Why rust?
+"Rust is a multi-paradigm system programming language focused on safety, especially safe concurrency. Rust is syntactically similar to C, but is designed to provide better memory safety while maintaining high performance." - wiki
 
 In a survey done by XXX 51% of the security vulnerabilities in the linux kernel is coursed by concurrency and memory safety issues that are fundamentally impossible to get in rust (unless you use the `unsafe` keyword, which is not recommended)
 
-### debugging
+### Memory safety
+
+"Rust is designed to be memory safe, and thus it does not permit null pointers, dangling pointers, or data races in safe code. Data values can only be initialized through a fixed set of forms, all of which require their inputs to be already initialized." - wiki
+
+Guaranteed by Rust's ownership system - At compile time
+
+This means if I have an array `[T]` of items and I init a reference to one of those items `&T` then the that reference needs to go out of scope before the array - otherwise the rust compiler wont compile because it can't guarantee that the array isn't de-allocated or changed before accessing `T`.
+This is both a huge challenge when first starting to work with Rust, but also a really great safety.
+
+Since rust have real references that it check and don't really use & "raw pointers" that you move around in C, then i was hoping i could use references on my nodes...
+
+<table><tr><th>
+Compiles
+</th><th>
+Doesn't Compile
+</th></tr><tr><td><pre>
+pub struct Node {
+    pub min_ip: u32,
+    pub max_ip: u32,
+    pub left: usize,
+    pub right: usize,
+    pub name: [u8; 32],
+}</pre></td><td><pre>
+pub struct Node {
+    pub min_ip: u32,
+    pub max_ip: u32,
+    pub left: &Node,    // Error
+    pub right: &Node,   // Error
+    pub name: [u8; 32],
+}</pre></td></tr></table>
+Sadly storing pointers/referenes doesn't work, so i opted to just store the byte-index of the node in Tree Memory map. 
+
+
+### Error handling
+
+```rust
+pub(crate) fn get_u32_for_ip(v: &str) -> Option<u32> {
+    let v: Vec<&str> = v.split('.').collect();
+    if v.len() != 4 { return None }
+    let mut min_array: [u8; 4] = Default::default();
+    for i in 0..v.len() {
+        min_array[i] = match v[i].parse() {
+            Ok(n) => n,
+            Err(e) => return None
+        }
+    }
+    Some(u32::from_be_bytes(min_array))
+}
+```
+This function takes a string of 4 numbers separated by a dot `.` - e.g. `192.2.103.11` and returns unsigned integer wrapped in a option.
+
+instead of getting of semencation faults and similar, i can specifc
+`BufReader::new(File::open(file).expect("Could not find file"))`
 
 ### ownershitp
 https://medium.com/@thomascountz/ownership-in-rust-part-1-112036b1126b
 
-### where rust falls short
+
+`Rust has an ownership system where all values have a unique owner, and the scope of the value is the same as the scope of the owner. Values can be passed by immutable reference, using &T, by mutable reference, using &mut T, or by value, using T. At all times, there can either be multiple immutable references or one mutable reference (an implicit readers-writer lock). The Rust compiler enforces these rules at compile time and also checks that all references are valid.` - wiki
+### Where rust falls short
+Sadly sometimes we can cant use rust's safety, and this is where rust looks more like C
 ```rust
 pub(crate) unsafe fn bytes_to_type<T>(slice: &[u8]) -> &mut T {
     std::slice::from_raw_parts_mut(slice.as_ptr() as *mut T, std::mem::size_of::<T>())
@@ -98,7 +142,9 @@ pub(crate) unsafe fn bytes_to_type<T>(slice: &[u8]) -> &mut T {
         .unwrap()
 }
 ```
-Here we have no garantee of we are going to get, since it just a pointer and a length that we force to become a reference to type T.
+Here we have no guarantee of we are going to get, since it just a pointer and a length that we force to become a reference to type T. I this case we don't have any other way, since MememoryMap only know the concept of bytes.
+
+Overall i believe rust is a great language for low level programming and it's safety and guarantees are great, but in some cases it run short when you are working directly on disk. 
 
 
 
@@ -219,24 +265,87 @@ dynamic payload
 
 # Testing
 
+The automated test script can be found in appendix X, but the overall structure is explained in this section. 
+
+## simple unit tests
+Most functions are tested by simple unit tests. 
+
+
+## speed testing
+All tests are executed on a droplet (virtual machine) on Digital Ocean, 
+Closed envorimentent and fixed resources. 
+
+Test process:
+* Copy src files to droplet with `SCP-command`
+* 
+
+clear cache between search through
+
+
+to mimic a real scenario, we you choose to go for such an implementation because of resource limitations.
+
 ```
 pub fn generate_source_file_with(s:&str, n: u32, range: Range<u32>, padding: Range<u32>, name_size: usize) { ... }
 ```
 
 ## Setup
 **Generating test files**
-Created a function that generate a text file where each line is 2 ips and 1 name
+Created a function that generate a text file where each line is 2 IP addresses and 1 name
 e.g.: `125.74.3.0 125.74.3.10 Siteimprove` 
+each line is written direcly to a file and
+and afterwards shuffled by using the unix command `shuf`. It was necessary to print them to the file immediately instead of shuffling them in ram, because all 150 million entries could be in ram at the same time.
 
 ## Build
 **When running:**
 The program iterate over each line reading them one by one with regex. <insert ref here>
-
+This step is derterimistic, so i only need to run this each time i generate a new source file. 
 
 ## lookup
-**choosing random lookups** 
-Collecting every x'th node and shuffling them afterwards. 
+**Choosing random lookups**
+The lookup ip are collected by running over the shuffled list of entries and collecting every 1000 entry. a random ip is picked between the upper and lower boinds. These ip are then shuffled again and then used for search lookups 
 
+## search
+
+
+This search through can be parallelized. Should this be used as a real service it can easliy be parallix as long as it only reads. 
+
+for testing/benchmarking perposeses the lookups are run sequentile to find the avarage lookup time pr request. 
+
+Both the tree and table search test goes through the same steps:
+* generated random requets
+* init memory map references
+* iterate over the requests check that all of them is found in in the table/tree
+* print the result
+
+```rust
+#[test]
+fn search_time_table() {
+    println!("## search_time_table");
+    let src = DO_Benchmark_test_src;
+
+    let requests = FileGenerator::generate_lookup_testdata(src,1000);
+    let length = requests.len();
+    assert!(length > 0);
+
+    let lookup_table = Table::gen_lookup_table();
+    let ip_table = Table::gen_ip_table();
+    let mut numberSkipped = 0;
+
+    let mut sw = Stopwatch::start_new();
+    for (ip, name) in requests {
+        let value = Table::find_value_on_map(ip, &lookup_table, &ip_table);
+        if value.is_some() {
+            let value = value.unwrap();
+            if name != value {
+                numberSkipped += 1;
+                //println!("Wrong match - real: {} - found: {} - ip: {}", name, value, ip);
+            }
+        } else { println!("Found none - real name: {} - ip: {}", name, ip) }
+    }
+    sw.stop();
+    println!("--- table score : {}, #{} of requests ran, #{} skipped", sw.elapsed().as_micros(), length, numberSkipped);
+}
+```
 
 ### Optimizations 
 
@@ -248,6 +357,8 @@ The profiler used for this project was the build-in profiler-tool in _Jetbrains 
 ![treeprofiler](../docs/images/treeProfiler.png)
 ![tableprofiler](../docs/images/tableProfiler.png)
 
+<nævn noget om hvilken type profiling det er >
+This was mainly used for seeing how much time the process spend in each scope/stackframe/function to find bottlenecks.
 
 ### Debugging
 * Stepping through the debugger
@@ -259,18 +370,42 @@ black
 -black 
 ```
 
-```
 
-```
 
 ## Test Results
 
+```
+## search_time_tree
+DO_BenchmarkTests::search_time_tree
+--- Tree : #79213144 micro seconds, #149850 of requests ran, #0 failed
+114.919801097 seconds time elapsed
+
+## search_time_table
+DO_BenchmarkTests::search_time_table
+--- table : #105057148 micro seconds, #149850 of requests ran, #0 failed
+```
+This means i am able to process 149850 ip adress request in 105057148 micro seconds milliseconds, which is XXX request/milliseconds
+
+
 # Evaluation
 
+Both table and the tree was under goal given from Siteimprove. 
+
+
+The table is clearly not practical for handling ipV6
+The table has duplicated data
+
+
 ## Code wise?
+
+
+
 ## design choices?
 
+
+
 ## Test Data
+
 
 ## Cache 
 
@@ -279,6 +414,23 @@ In theory the cache shouldn't matter if the data-set consists of an infinitely l
 but on a more realistic scale (like in this project) this can become a factor when i comes to speed.
 
 The immediate thought would be that the tree would benefit from this, since the nodes closer to the root would be read much more often than the rest of the tree, meaning that the data stored in the upper nodes can be retrieved from the cache. 
+
+```
+root@ubuntu-s-4vcpu-8gb-fra1-01:~# perf stat -e task-clock,cycles,instructions,cache-references,cache-misses ./target/debug/rust_map
+
+ Performance counter stats for './target/debug/rust_map':
+
+         31.011974      task-clock (msec)         #    0.982 CPUs utilized
+          85453068      cycles                    #    2.755 GHz
+          90982375      instructions              #    1.06  insn per cycle
+            333436      cache-references          #   10.752 M/sec
+            171468      cache-misses              #   51.425 % of all cache refs
+
+       0.031567396 seconds time elapsed
+
+```
+
+`perf stat -e task-clock,cycles,instructions,cache-references,cache-misses cargo test --package rust_map --bin rust_map BenchmarkTests::speed_matrix_tree -- --exact`
 
 Tree
 ```
@@ -294,7 +446,9 @@ System out something
 
 * Upgrade to redblack tree
 * Actually adding a nice api, instead of only running the code through testfuctions/benchmarks.
-* 
+* No reason to individually place each enty to the ip_table... i could just add them to an array in memory and then place that on disk
+* detach the names from the tree itself
+
 
 # Conclusion  
 
