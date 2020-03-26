@@ -38,8 +38,8 @@ pub(crate) fn get_u32_for_ip(v: &str ) -> Option<u32> {
     Some(u32::from_be_bytes(min_array))
 }
 
-pub(crate) fn entry_to_node(entry: crate::Entry, index: usize) -> Tree::Node {
-    Tree::Node { min_ip: entry.min_ip, max_ip: entry.max_ip, left: 0, right: 0, name: index }
+pub(crate) fn entry_to_node(entry: crate::Entry, name_index: usize) -> Tree::Node {
+    Tree::Node { min_ip: entry.min_ip, max_ip: entry.max_ip, left: 0, right: 0, name: name_index }
 }
 
 pub(crate) fn get_memmap(source: &str, size: u64) -> MmapMut {
@@ -67,7 +67,6 @@ pub(crate) fn place_item_raw<T>(mmap: & mut MmapMut, offset: usize, t: &T) {
     let bytes = unsafe { any_as_u8_slice(t) };
     mmap[offset..(offset+bytes.len())].copy_from_slice(bytes);
 }
-
 
 #[test]
 fn test_get_ip_for_line() {

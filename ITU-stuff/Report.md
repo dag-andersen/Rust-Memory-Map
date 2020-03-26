@@ -263,6 +263,21 @@ dynamic payload
 
 # Design
 
+
+here we have a simple example of what it would look like if the first entries were
+```
+0.0.0.50 0.0.0.55 SKAT
+0.0.0.0 0.0.0.2 Siteimprove
+0.0.1.20 0.0.1.20 PWC
+...
+```
+
+## Tree
+![Tree disk usage](../docs/images/bachelor-02.png)
+
+## Table
+![Tree disk usage](../docs/images/bachelor-03.png)
+
 # Testing
 
 The automated test script can be found in appendix X, but the overall structure is explained in this section. 
@@ -307,7 +322,7 @@ The lookup ip are collected by running over the shuffled list of entries and col
 ## search
 
 
-This search through can be parallelized. Should this be used as a real service it can easliy be parallix as long as it only reads. 
+This search through can be parallelized. Should this be used as a real service it can easily be parallix as long as it only reads. 
 
 for testing/benchmarking perposeses the lookups are run sequentile to find the avarage lookup time pr request. 
 
