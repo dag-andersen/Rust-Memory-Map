@@ -62,14 +62,14 @@ fn balance(mmap: &MmapMut, node: &mut Node, nodeIndex: usize) {
         //println!("root speciel on: \n {:?}",&mmap[NODE_SIZE..NODE_SIZE*5]);
         //mmap.flush();
 
-        print_tree_from_map(&mmap);
-        println!();
+        //print_tree_from_map(&mmap);
+        //println!();
 
     }
 
-    println!("Index: {}, Node: {}", nodeIndex, node);
-    println!();
-    print_tree_from_map(&mmap);
+    //println!("Index: {}, Node: {}", nodeIndex, node);
+    //println!();
+    //print_tree_from_map(&mmap);
     mmap.flush().expect("didnt flush!!");
 
     if node.parent != 0 {
@@ -82,7 +82,7 @@ fn balance(mmap: &MmapMut, node: &mut Node, nodeIndex: usize) {
             if uncleIndex != 0 {
                 let mut uncle = NodeToMem::get_node(mmap, uncleIndex);
                 if uncle.red {
-                    println!("### Uncle");
+                    //println!("### Uncle");
                     uncle.red = false;
                     parent.red = false;
                     grandparent.red = true;
@@ -93,13 +93,13 @@ fn balance(mmap: &MmapMut, node: &mut Node, nodeIndex: usize) {
             }
             if node.parent == grandparent.left {
                 if parent.left == nodeIndex {
-                    println!("### left left");
+                    //println!("### left left");
                     rightRotate(mmap, parent, grandparent);
                     swapColor(parent,grandparent);
                     mmap.flush().expect("didnt flush!!");
                 } else if parent.right == nodeIndex {
                     //left right
-                    println!("### left right");
+                    //println!("### left right");
                     leftRotate(mmap,node, parent);
                     rightRotate(mmap, node, grandparent);
                     swapColor(node,grandparent);
@@ -107,12 +107,12 @@ fn balance(mmap: &MmapMut, node: &mut Node, nodeIndex: usize) {
                 } else { panic!() }
             } else if node.parent == grandparent.right {
                 if parent.right == nodeIndex {
-                    println!("### right right");
+                    //println!("### right right");
                     leftRotate(mmap,parent, grandparent);
                     swapColor(parent, grandparent);
                     mmap.flush().expect("didnt flush!!");
                 } else if parent.left == nodeIndex {
-                    println!("### right left");
+                    //println!("### right left");
                     rightRotate(mmap,node, parent);
                     leftRotate(mmap,node,grandparent);
                     swapColor(node, grandparent);
@@ -128,8 +128,9 @@ fn balance(mmap: &MmapMut, node: &mut Node, nodeIndex: usize) {
 }
 
 fn swapColor(node1: & mut Node, node2: &mut Node) {
+    let c = node1.red;
     node1.red = node2.red;
-    node2.red = !node1.red;
+    node2.red = c;
 }
 
 pub static mut root_index: usize = 1;
