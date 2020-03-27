@@ -1,12 +1,15 @@
 use core::fmt;
 use crate::{Entry, Utils, TREE_PATH, NameTable, Table};
 use memmap::MmapMut;
+use crate::RedBlackTree::Tree::root_index;
 
 pub mod NodeToMem;
 mod Tree;
 pub mod TreePrinter;
 
 const NODE_SIZE : usize = std::mem::size_of::<Node>();
+
+pub fn reset_root_index() { unsafe { root_index = 1 }; }
 
 pub struct Node {
     pub red: bool,

@@ -43,7 +43,7 @@ const u16Size:          usize   = std::mem::size_of::<u16>();
 const u8Size:           usize   = std::mem::size_of::<u8>();
 
 mod FileGenerator;
-mod Tree;
+mod RedBlackTree;
 mod Table;
 mod BenchmarkTests;
 mod DO_BenchmarkTests;
@@ -61,7 +61,7 @@ use rand::{Rng, random};
 use std::io::prelude::*;
 use rand::distributions::Alphanumeric;
 use rand::prelude::ThreadRng;
-use crate::Tree::NodeToMem;
+use crate::RedBlackTree::NodeToMem;
 use std::iter::{Map, FilterMap, Filter, FromIterator, Enumerate};
 
 pub struct Entry {
@@ -89,7 +89,7 @@ fn load_to_tree_on_path(input: &str, map_path: &str, name_table: &str) {
     fs::remove_file(map_path);
     fs::remove_file(name_table);
 
-    let mut mmap = Tree::gen_tree_map_on_path(map_path);
+    let mut mmap = RedBlackTree::gen_tree_map_on_path(map_path);
     let mut name_table = NameTable::gen_name_table();
 
     let ip_regex = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap();
@@ -102,7 +102,7 @@ fn load_to_tree_on_path(input: &str, map_path: &str, name_table: &str) {
         let l = line.unwrap();
         if l.is_empty() { continue; }
 
-        if i % 500_000 == 0 { println!("Tree: pushed {} lines", i)}
+        if i % 500_000 == 0 { println!("RedBlackTree: pushed {} lines", i)}
 
         let entry = Utils::get_entry_for_line(&ip_regex, &name_regex, &l);
         if entry.is_none() { continue }
@@ -111,7 +111,7 @@ fn load_to_tree_on_path(input: &str, map_path: &str, name_table: &str) {
         courser = NameTable::place_name(&mut name_table, courser, entry.name.as_bytes());
 
         let something = courser - entry.name.len();
-        Tree::insert_entry(& mut mmap, i+1, entry, something);
+        RedBlackTree::insert_entry(& mut mmap, i+1, entry, something);
     }
 }
 
@@ -137,7 +137,7 @@ fn load_to_table_on_path(input: &str, ip_table: &str, name_table: &str) {
         let l = line.unwrap();
         if l.is_empty() { continue; }
 
-        if i % 500_000 == 0 { println!("Tree: pushed {} lines", i)}
+        if i % 500_000 == 0 { println!("RedBlackTree: pushed {} lines", i)}
 
         let entry = Utils::get_entry_for_line(&ip_regex, &name_regex, &l);
         if entry.is_none() { continue }
@@ -155,25 +155,26 @@ fn get_buffer(file: &str) -> BufReader<std::fs::File> {
 
 #[test]
 fn find_hardcoded_node_in_tree() {
+    RedBlackTree::reset_root_index();
 
     fs::remove_file(NAME_TABLE);
     fs::remove_file(TREE_PATH);
     load_to_tree(SOURCE_PATH_1);
 
-    let name = Tree::find_value(Utils::get_u32_for_ip("000.000.000.015").unwrap());
+    let name = RedBlackTree::find_value(Utils::get_u32_for_ip("000.000.000.015").unwrap());
     assert!(name.is_some());
     let name = name.unwrap();
     assert_eq!(name,"Siteimprove");
 
-    let name = Tree::find_value(Utils::get_u32_for_ip("000.000.002.015").unwrap());
+    let name = RedBlackTree::find_value(Utils::get_u32_for_ip("000.000.002.015").unwrap());
     assert!(name.is_some());
     let name = name.unwrap();
     assert_eq!(name,"Olesen");
 
-    let name = Tree::find_value(Utils::get_u32_for_ip("000.000.000.001").unwrap());
+    let name = RedBlackTree::find_value(Utils::get_u32_for_ip("000.000.000.001").unwrap());
     assert!(name.is_none());
 
-    let name = Tree::find_value(Utils::get_u32_for_ip("001.000.000.000").unwrap());
+    let name = RedBlackTree::find_value(Utils::get_u32_for_ip("001.000.000.000").unwrap());
     assert!(name.is_none());
 }
 
@@ -200,15 +201,13 @@ fn find_hardcoded_node_in_table() {
 #[test]
 fn find_random_gen_requests_in_tree() {
 
+    RedBlackTree::reset_root_index();
     let src = SP_10_000 ;
     load_to_tree(src);
     let requests = FileGenerator::generate_lookup_testdata(src,50);
 
-    load_to_tree(src);
-    let requests = FileGenerator::generate_lookup_testdata(src,2);
-
     for (ip, name) in requests {
-        let value = Tree::find_value(ip);
+        let value = RedBlackTree::find_value(ip);
         assert!(value.is_some());
         let value = value.unwrap();
         assert_eq!(name, value)

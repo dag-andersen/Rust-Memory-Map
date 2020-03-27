@@ -1,5 +1,5 @@
 use memmap::MmapMut;
-use crate::Tree::{NODE_SIZE, Node};
+use crate::RedBlackTree::{NODE_SIZE, Node};
 use std::fs;
 use crate::{Utils, TREE_PATH};
 

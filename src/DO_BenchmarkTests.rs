@@ -3,8 +3,8 @@ use crate::{FileGenerator, TREE_PRINT_PATH, TREE_PATH, load_to_tree_on_path, loa
 use std::fs;
 use std::fs::File;
 use std::io::{LineWriter, Write};
-use crate::Tree;
-use crate::Tree::TreePrinter;
+use crate::RedBlackTree;
+use crate::RedBlackTree::TreePrinter;
 use crate::Utils::get_memmap;
 use crate::FileGenerator::generate_source_file_with;
 
@@ -58,14 +58,14 @@ fn search_time_tree() {
     let length = requests.len();
     assert!(length > 0);
 
-    let mmap = Tree::gen_tree_map();
+    let mmap = RedBlackTree::gen_tree_map();
     let lookup_table = NameTable::gen_name_table();
 
     let mut numberSkipped = 0;
 
     let mut sw = Stopwatch::start_new();
     for (ip, name) in requests {
-        let value = Tree::find_value_on_map(ip, &mmap, &lookup_table);
+        let value = RedBlackTree::find_value_on_map(ip, &mmap, &lookup_table);
         if value.is_some() {
             let value = value.unwrap();
             if name != value {
@@ -74,7 +74,7 @@ fn search_time_tree() {
             }
         } else { numberSkipped += 1; println!("Found none - real name: {} - ip: {}", name, ip) }
     }
-    println!("--- Tree : #{} micro seconds, #{} of requests ran, #{} skipped\n", sw.elapsed().as_micros(), length, numberSkipped);
+    println!("--- RedBlackTree : #{} micro seconds, #{} of requests ran, #{} skipped\n", sw.elapsed().as_micros(), length, numberSkipped);
 }
 
 #[test]

@@ -3,10 +3,11 @@ use crate::{FileGenerator, TREE_PRINT_PATH, TREE_PATH, load_to_tree_on_path, loa
 use std::fs;
 use std::fs::File;
 use std::io::{LineWriter, Write};
-use crate::Tree;
-use crate::Tree::TreePrinter;
+use crate::RedBlackTree;
+use crate::RedBlackTree::TreePrinter;
 use crate::Utils::get_memmap;
 use crate::FileGenerator::{generate_source_file_with, generate_source_file_with_in_mem};
+use crate::RedBlackTree::TreePrinter::{print_tree, print_tree_to_file};
 
 #[ignore]
 #[test]
@@ -125,7 +126,7 @@ fn search_time_tree_vs_table() {
     println!("## search_time_tree_vs_table");
     let src = thisFileWillBeDeleted;
     fs::remove_file(src);
-    generate_source_file_with_in_mem(src, 100,10..18,10..18, 2);
+    generate_source_file_with_in_mem(src, 2000,10..18,10..18, 2);
     fs::remove_file(IP_TABLE);
     fs::remove_file(NAME_TABLE);
     fs::remove_file(TREE_PATH);
@@ -159,12 +160,12 @@ fn search_time_tree_vs_table() {
 
     counter = 0;
     load_to_tree(src);
-    let mmap = Tree::gen_tree_map();
+    let mmap = RedBlackTree::gen_tree_map();
     let lookup_table = NameTable::gen_name_table();
 
     let mut sw = Stopwatch::start_new();
     for (ip, name) in requests2 {
-        let value = Tree::find_value_on_map(ip, &mmap, &lookup_table);
+        let value = RedBlackTree::find_value_on_map(ip, &mmap, &lookup_table);
         assert!(value.is_some());
         let value = value.unwrap();
         //if counter % (length/10) == 0 { println!("Found: {:.2}%", counter as f32/length as f32); }
@@ -177,7 +178,7 @@ fn search_time_tree_vs_table() {
     sw.stop();
     let treeTime = sw.elapsed().as_micros();
     println!("--- tree score : {}, #{} of requests ran", treeTime, length);
-    assert!(tableTime < treeTime)
+    assert!(tableTime < treeTime);
 }
 
 #[test]

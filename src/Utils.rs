@@ -1,7 +1,7 @@
 use memmap::{MmapMut, MmapOptions};
 use std::fs::OpenOptions;
 use std::io::{SeekFrom, Write, Seek};
-use crate::{Tree, Entry};
+use crate::{RedBlackTree, Entry};
 use regex::bytes::Regex;
 
 pub(crate) fn insert_array_in_array(one: & mut [u8; 32], two: &[u8])  {
@@ -38,8 +38,8 @@ pub(crate) fn get_u32_for_ip(v: &str ) -> Option<u32> {
     Some(u32::from_be_bytes(min_array))
 }
 
-pub(crate) fn entry_to_node(entry: crate::Entry, index: usize) -> Tree::Node {
-    Tree::Node { red: true, min_ip: entry.min_ip, max_ip: entry.max_ip, left: 0, right: 0, parent: 0, name: index }
+pub(crate) fn entry_to_node(entry: crate::Entry, index: usize) -> RedBlackTree::Node {
+    RedBlackTree::Node { red: true, min_ip: entry.min_ip, max_ip: entry.max_ip, left: 0, right: 0, parent: 0, name: index }
 }
 
 pub(crate) fn get_memmap(source: &str, size: u64) -> MmapMut {

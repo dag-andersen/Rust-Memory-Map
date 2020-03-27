@@ -1,9 +1,11 @@
-use crate::{NodeToMem, TREE_PATH, NameTable, TREE_MAP_500_000, NAME_TABLE, Entry};
+use crate::{NodeToMem, TREE_PATH, NameTable, TREE_MAP_500_000, NAME_TABLE, Entry, RedBlackTree};
 use memmap::MmapMut;
-use crate::Tree::{Node, NODE_SIZE, gen_tree_map};
+use crate::RedBlackTree::{Node, NODE_SIZE, gen_tree_map};
 use std::ops::Deref;
-use crate::Tree::TreePrinter::{print_tree, print_tree_from_map};
+use crate::RedBlackTree::TreePrinter::{print_tree, print_tree_from_map};
 use std::fs;
+
+pub static mut root_index: usize = 1;
 
 pub fn insert_node(mmap: &mut MmapMut, index: usize, node: &mut Node) {
     NodeToMem::place_node(mmap, index, node);
@@ -54,23 +56,7 @@ fn insert_node_on_node(mmap: &MmapMut, parent: &mut Node, parentIndex: usize, no
 fn balance(mmap: &MmapMut, node: &mut Node, nodeIndex: usize) {
     if nodeIndex == unsafe { root_index } {
         node.red = false;
-        //node.max_ip = 2;
-        //let mut mmap2 = super::gen_tree_map();
-        //NodeToMem::place_node(&mut mmap2, nodeIndex, &node);
-
-        //println!("Root - Index: {}, Node: {}", nodeIndex, node);
-        //println!("root speciel on: \n {:?}",&mmap[NODE_SIZE..NODE_SIZE*5]);
-        //mmap.flush();
-
-        //print_tree_from_map(&mmap);
-        //println!();
-
     }
-
-    //println!("Index: {}, Node: {}", nodeIndex, node);
-    //println!();
-    //print_tree_from_map(&mmap);
-    mmap.flush().expect("didnt flush!!");
 
     if node.parent != 0 {
         let mut parent = NodeToMem::get_node(mmap, node.parent);
@@ -86,7 +72,6 @@ fn balance(mmap: &MmapMut, node: &mut Node, nodeIndex: usize) {
                     uncle.red = false;
                     parent.red = false;
                     grandparent.red = true;
-                    mmap.flush().expect("didnt flush!!");
                     balance(mmap, grandparent, parent.parent);
                     return;
                 }
@@ -96,35 +81,29 @@ fn balance(mmap: &MmapMut, node: &mut Node, nodeIndex: usize) {
                     //println!("### left left");
                     rightRotate(mmap, parent, grandparent);
                     swapColor(parent,grandparent);
-                    mmap.flush().expect("didnt flush!!");
+                    //mmap.flush().expect("didnt flush!!");
                 } else if parent.right == nodeIndex {
-                    //left right
                     //println!("### left right");
                     leftRotate(mmap,node, parent);
                     rightRotate(mmap, node, grandparent);
                     swapColor(node,grandparent);
-                    mmap.flush().expect("didnt flush!!");
-                } else { panic!() }
+                } else { panic!("wrong family relation") }
             } else if node.parent == grandparent.right {
                 if parent.right == nodeIndex {
                     //println!("### right right");
                     leftRotate(mmap,parent, grandparent);
                     swapColor(parent, grandparent);
-                    mmap.flush().expect("didnt flush!!");
                 } else if parent.left == nodeIndex {
                     //println!("### right left");
                     rightRotate(mmap,node, parent);
                     leftRotate(mmap,node,grandparent);
                     swapColor(node, grandparent);
-                    mmap.flush().expect("didnt flush!!");
-                } else { panic!() }
+                } else { panic!("wrong family relation") }
             }
         }
     }
     let mut mmap2 = super::gen_tree_map();
     NodeToMem::place_node(&mut mmap2, nodeIndex, &node);
-    //println!();
-    //print_tree_from_map(&mmap);
 }
 
 fn swapColor(node1: & mut Node, node2: &mut Node) {
@@ -132,8 +111,6 @@ fn swapColor(node1: & mut Node, node2: &mut Node) {
     node1.red = node2.red;
     node2.red = c;
 }
-
-pub static mut root_index: usize = 1;
 
 fn leftRotate(mmap: &MmapMut, node: &mut Node, parent: &mut Node) {
     if node.left != 0 {
@@ -211,6 +188,7 @@ pub fn find_node_on_map(ip: u32, mmap: &MmapMut) -> Option<usize> {
 
 #[test]
 fn insert_node_and_find_it() {
+    RedBlackTree::reset_root_index();
     fs::remove_file(TREE_PATH);
     fs::remove_file(NAME_TABLE);
 
@@ -267,6 +245,7 @@ fn insert_node_and_find_it() {
 
 #[test]
 fn insert_node_random_order_and_find_it() {
+    unsafe { root_index = 1 };
     fs::remove_file(TREE_PATH);
     fs::remove_file(NAME_TABLE);
 
