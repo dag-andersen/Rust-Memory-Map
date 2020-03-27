@@ -1,7 +1,7 @@
 use core::fmt;
-use crate::{Entry, Utils, TREE_PATH, NameTable, Table};
+use crate::{Entry, Utils, REDBLACK_PATH, NameTable, Table};
 use memmap::MmapMut;
-use crate::RedBlackTree::Tree::root_index;
+use crate::RedBlack::Tree::root_index;
 
 mod NodeToMem;
 mod Tree;
@@ -37,8 +37,8 @@ pub fn insert_entry(mmap: &mut MmapMut, index: usize, entry: Entry, name_index: 
     Tree::insert_node(mmap, index, &mut node);
 }
 
-pub fn gen_tree_map() -> MmapMut { gen_tree_map_on_path(TREE_PATH) }
-pub fn gen_tree_map_on_path(path: &str) -> MmapMut { Utils::get_memmap(path, 20_000_000_000) }
+pub fn gen_tree_map() -> MmapMut { gen_tree_map_on_path(REDBLACK_PATH) }
+pub fn gen_tree_map_on_path(path: &str) -> MmapMut { Utils::get_memmap(path, 7_000_000_000) }
 
 pub fn find_value(ip: u32) -> Option<String> {
     let mmap = gen_tree_map();

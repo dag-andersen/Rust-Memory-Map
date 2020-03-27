@@ -4,11 +4,11 @@ use std::io::{SeekFrom, Write, Seek};
 use crate::{Tree, Entry};
 use regex::bytes::Regex;
 
-pub(crate) fn insert_array_in_array(one: & mut [u8; 32], two: &[u8])  {
-    for (place, data) in one.iter_mut().zip(two.iter()) {
-        *place = *data
-    }
-}
+// pub(crate) fn insert_array_in_array(one: & mut [u8; 32], two: &[u8])  {
+//     for (place, data) in one.iter_mut().zip(two.iter()) {
+//         *place = *data
+//     }
+// }
 
 pub(crate) fn get_entry_for_line(ip_regex: &Regex, name_regex: &Regex, l: &String) -> Option<Entry> {
 

@@ -24,13 +24,10 @@ const SP_500_000:               &str    = "testdata/in/500_000.txt";
 const SP_1_000_000:             &str    = "testdata/in/1_000_000.txt";
 const SP_5_000_000:             &str    = "testdata/in/5_000_000.txt";
 const TREE_PATH:                &str    = "testdata/out/tree/map.txt";
-const TREE_MAP_500_000:         &str    = "testdata/out/tree/map_500_000.txt";
-const TREE_MAP_1_000_000:       &str    = "testdata/out/tree/map_1_000_000.txt";
+const REDBLACK_PATH:            &str    = "testdata/out/redblack/map.txt";
 const TREE_PRINT_PATH:          &str    = "testdata/out/tree/tree_print.txt";
 const IP_TABLE:                 &str    = "testdata/out/table/IP_TABLE.txt";
-const IP_TABLE_1_000_000:       &str    = "testdata/out/table/IP_TABLE_1_000_000.txt";
 const NAME_TABLE:               &str    = "testdata/out/table/NAME_TABLE.txt";
-const NAME_TABLE_1_000_000:     &str    = "testdata/out/table/NAME_TABLE_1_000_000.txt";
 
 const thisFileWillBeDeleted: &str = "thisFileWillBeDeleted";
 
@@ -43,7 +40,7 @@ const u8Size:           usize   = std::mem::size_of::<u8>();
 
 mod FileGenerator;
 mod Tree;
-mod RedBlackTree;
+mod RedBlack;
 mod Table;
 mod BenchmarkTests;
 mod DO_BenchmarkTests;
@@ -114,15 +111,15 @@ fn load_to_tree_on_path(input: &str, map_path: &str, name_table: &str) {
     }
 }
 
-fn load_to_redblacktree(input: &str) {
-    load_to_redblacktree_on_path(input, TREE_PATH, NAME_TABLE)
+fn load_to_redblack(input: &str) {
+    load_to_redblacktree_on_path(input, REDBLACK_PATH, NAME_TABLE)
 }
 
 fn load_to_redblacktree_on_path(input: &str, map_path: &str, name_table: &str) {
     fs::remove_file(map_path);
     fs::remove_file(name_table);
 
-    let mut mmap = RedBlackTree::gen_tree_map_on_path(map_path);
+    let mut mmap = RedBlack::gen_tree_map_on_path(map_path);
     let mut name_table = NameTable::gen_name_table();
 
     let ip_regex = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap();
@@ -135,7 +132,7 @@ fn load_to_redblacktree_on_path(input: &str, map_path: &str, name_table: &str) {
         let l = line.unwrap();
         if l.is_empty() { continue; }
 
-        if i % 500_000 == 0 { println!("RedBlackTree: pushed {} lines", i)}
+        if i % 500_000 == 0 { println!("RedBlack: pushed {} lines", i)}
 
         let entry = Utils::get_entry_for_line(&ip_regex, &name_regex, &l);
         if entry.is_none() { continue }
@@ -144,7 +141,7 @@ fn load_to_redblacktree_on_path(input: &str, map_path: &str, name_table: &str) {
         courser = NameTable::place_name(&mut name_table, courser, entry.name.as_bytes());
 
         let something = courser - entry.name.len();
-        RedBlackTree::insert_entry(& mut mmap, i+1, entry, something);
+        RedBlack::insert_entry(& mut mmap, i+1, entry, something);
     }
 }
 
@@ -211,6 +208,31 @@ fn find_hardcoded_node_in_tree() {
 }
 
 #[test]
+fn find_hardcoded_node_in_redblack() {
+
+    fs::remove_file(NAME_TABLE);
+    fs::remove_file(REDBLACK_PATH);
+    RedBlack::reset_root_index();
+    load_to_redblack(SOURCE_PATH_1);
+
+    let name = RedBlack::find_value(Utils::get_u32_for_ip("000.000.000.015").unwrap());
+    assert!(name.is_some());
+    let name = name.unwrap();
+    assert_eq!(name,"Siteimprove");
+
+    let name = RedBlack::find_value(Utils::get_u32_for_ip("000.000.002.015").unwrap());
+    assert!(name.is_some());
+    let name = name.unwrap();
+    assert_eq!(name,"Olesen");
+
+    let name = RedBlack::find_value(Utils::get_u32_for_ip("000.000.000.001").unwrap());
+    assert!(name.is_none());
+
+    let name = RedBlack::find_value(Utils::get_u32_for_ip("001.000.000.000").unwrap());
+    assert!(name.is_none());
+}
+
+#[test]
 fn find_hardcoded_node_in_table() {
 
     load_to_table(SOURCE_PATH_1);
@@ -239,6 +261,22 @@ fn find_random_gen_requests_in_tree() {
 
     for (ip, name) in requests {
         let value = Tree::find_value(ip);
+        assert!(value.is_some());
+        let value = value.unwrap();
+        assert_eq!(name, value)
+    }
+}
+
+#[test]
+fn find_random_gen_requests_in_redblack() {
+
+    RedBlack::reset_root_index();
+    let scr = SP_10_000 ;
+    load_to_redblack(scr);
+    let requests = FileGenerator::generate_lookup_testdata(scr,50);
+
+    for (ip, name) in requests {
+        let value = RedBlack::find_value(ip);
         assert!(value.is_some());
         let value = value.unwrap();
         assert_eq!(name, value)

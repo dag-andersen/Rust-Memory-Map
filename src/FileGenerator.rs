@@ -8,7 +8,7 @@ use rand::seq::SliceRandom;
 use rand::thread_rng;
 use std::cmp::min;
 use std::fs;
-use crate::{SP_100_000, thisFileWillBeDeleted, get_buffer, Utils, Entry, SP_500_000, SP_5_000_000, SP_50_000, TREE_PATH, load_to_tree_on_path, Tree, SP_10_000, SP_1_000_000, load_to_table, IP_TABLE_1_000_000, NAME_TABLE_1_000_000, load_to_table_on_path, TREE_MAP_1_000_000, TREE_MAP_500_000, NAME_TABLE};
+use crate::{SP_100_000, thisFileWillBeDeleted, get_buffer, Utils, Entry, SP_500_000, SP_5_000_000, SP_50_000, TREE_PATH, load_to_tree_on_path, Tree, SP_10_000, SP_1_000_000, load_to_table, load_to_table_on_path, NAME_TABLE, IP_TABLE};
 use regex::bytes::Regex;
 
 fn generate_random_ip_firm(rng: &mut ThreadRng) -> String {
@@ -97,7 +97,7 @@ pub fn generate_source_file_with(s:&str, n: u32, range: Range<u32>, padding: Ran
         s.push_str(name.as_str());
         s.push_str("\n");
 
-        if i % (n/10) == 0 { println!("Done: {:.2}%", i as f32/n as f32); }
+        //if i % (n/10) == 0 { println!("Done: {:.2}%", i as f32/n as f32); }
 
         if i % 100 == 0 {
             file.write_all(s.as_bytes());
@@ -180,16 +180,15 @@ fn gen_input_file() {
 //#[test]
 fn gen_tree() {
     let src = SP_1_000_000;
-    load_to_tree_on_path(src, TREE_MAP_1_000_000, NAME_TABLE);
+    load_to_tree_on_path(src, TREE_PATH, NAME_TABLE);
 }
 
 //#[test]
 fn gen_table() {
     let src = SP_1_000_000;
-    load_to_table_on_path(src, IP_TABLE_1_000_000, NAME_TABLE_1_000_000);
+    load_to_table_on_path(src, IP_TABLE, NAME_TABLE);
 }
 
-//#[test]
 pub fn generate_lookup_testdata(src: &str, gap: usize) -> Vec<(u32,String)>{
 
     let ip_regex = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap();

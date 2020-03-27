@@ -1,8 +1,8 @@
-use crate::{TREE_PATH, NameTable, TREE_MAP_500_000, NAME_TABLE, Entry, RedBlackTree};
+use crate::{NameTable, NAME_TABLE, Entry, RedBlack, REDBLACK_PATH};
 use memmap::MmapMut;
-use crate::RedBlackTree::{Node, NODE_SIZE, gen_tree_map, NodeToMem};
+use crate::RedBlack::{Node, NODE_SIZE, gen_tree_map, NodeToMem};
 use std::ops::Deref;
-use crate::RedBlackTree::TreePrinter::{print_tree, print_tree_from_map};
+use crate::RedBlack::TreePrinter::{print_tree, print_tree_from_map};
 use std::fs;
 
 pub static mut root_index: usize = 1;
@@ -188,8 +188,8 @@ pub fn find_node_on_map(ip: u32, mmap: &MmapMut) -> Option<usize> {
 
 #[test]
 fn insert_node_and_find_it() {
-    RedBlackTree::reset_root_index();
-    fs::remove_file(TREE_PATH);
+    RedBlack::reset_root_index();
+    fs::remove_file(REDBLACK_PATH);
     fs::remove_file(NAME_TABLE);
 
     let mut tree_map = super::gen_tree_map();
@@ -239,14 +239,14 @@ fn insert_node_and_find_it() {
     assert!(out_name2.is_none());
     assert!(out_name3.is_none());
 
-    fs::remove_file(TREE_PATH);
+    fs::remove_file(REDBLACK_PATH);
     fs::remove_file(NAME_TABLE);
 }
 
 #[test]
 fn insert_node_random_order_and_find_it() {
     unsafe { root_index = 1 };
-    fs::remove_file(TREE_PATH);
+    fs::remove_file(REDBLACK_PATH);
     fs::remove_file(NAME_TABLE);
 
     let mut tree_map = super::gen_tree_map();
@@ -303,6 +303,6 @@ fn insert_node_random_order_and_find_it() {
     assert_eq!(out_name7.unwrap(),name5);
     assert_eq!(out_name8.unwrap(),name6);
 
-    fs::remove_file(TREE_PATH);
+    fs::remove_file(REDBLACK_PATH);
     fs::remove_file(NAME_TABLE);
 }
