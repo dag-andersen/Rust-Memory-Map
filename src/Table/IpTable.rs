@@ -4,21 +4,8 @@ use crate::Utils;
 use memmap::MmapMut;
 use std::fs;
 
-pub fn get_name_on_map(ip: u32, lookup_table: &MmapMut, ip_table: &MmapMut) -> Option<String> {
-    let ip_address = ip as usize * u32Size;
-
-    let addr = &ip_table[ip_address..ip_address + u32Size];
-    let index = unsafe { *Utils::bytes_to_type::<u32>(addr) };
-
-    if index == 0 { return None }
-    let index = index as usize -1; // -1 because we use 0 for tracking if there is no value reference
-
-    NameTable::get_name(&lookup_table, index)
-}
-
 pub fn place_entry(mmap: &mut MmapMut, entry: &Entry, value: u32) {
-
-    const buffer: usize = 500;
+    const buffer: usize = 50;
     let mut offset= entry.min_ip as usize * u32Size;
     let mut array = [0; buffer];
     let mut counter: usize = 0;
@@ -41,6 +28,15 @@ pub fn place_entry(mmap: &mut MmapMut, entry: &Entry, value: u32) {
     mmap[offset..offset+bytes.len()].copy_from_slice(bytes);
 }
 
+pub fn get_name_on_map(ip: u32, ip_table: &MmapMut) -> Option<usize> {
+    let ip_address = ip as usize * u32Size;
+    let addr = &ip_table[ip_address..ip_address + u32Size];
+    let index = unsafe { *Utils::bytes_to_type_mut::<u32>(addr) };
+    if index == 0 { return None }
+    Some(index as usize - 1) // -1 because we use 0 for tracking if there is no value reference
+}
+
+/*
 #[test]
 fn place_entry_and_get_name() {
     fs::remove_file(IP_TABLE);
@@ -103,3 +99,4 @@ fn place_entry_and_get_name() {
     fs::remove_file(IP_TABLE);
     fs::remove_file(NAME_TABLE);
 }
+*/

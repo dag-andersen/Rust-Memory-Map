@@ -23,7 +23,7 @@ const SP_100_000:               &str    = "testdata/in/100_000.txt";
 const SP_500_000:               &str    = "testdata/in/500_000.txt";
 const SP_1_000_000:             &str    = "testdata/in/1_000_000.txt";
 const SP_5_000_000:             &str    = "testdata/in/5_000_000.txt";
-const TREE_PATH:                 &str    = "testdata/out/tree/map.txt";
+const TREE_PATH:                &str    = "testdata/out/tree/map.txt";
 const TREE_MAP_500_000:         &str    = "testdata/out/tree/map_500_000.txt";
 const TREE_MAP_1_000_000:       &str    = "testdata/out/tree/map_1_000_000.txt";
 const TREE_PRINT_PATH:          &str    = "testdata/out/tree/tree_print.txt";
@@ -136,7 +136,7 @@ fn load_to_table_on_path(input: &str, ip_table: &str, name_table: &str) {
         let l = line.unwrap();
         if l.is_empty() { continue; }
 
-        if i % 500_000 == 0 { println!("Tree: pushed {} lines", i)}
+        if i % 500_000 == 0 { println!("table: pushed {} lines", i)}
 
         let entry = Utils::get_entry_for_line(&ip_regex, &name_regex, &l);
         if entry.is_none() { continue }

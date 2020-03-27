@@ -57,7 +57,13 @@ pub(crate) unsafe fn any_as_u8_slice<T: Sized>(p: &T) -> &[u8] {
     std::slice::from_raw_parts((p as *const T) as *const u8, std::mem::size_of::<T>())
 }
 
-pub(crate) unsafe fn bytes_to_type<T>(slice: &[u8]) -> &mut T {
+pub(crate) unsafe fn bytes_to_type<T>(slice: &[u8]) -> &T {
+    std::slice::from_raw_parts(slice.as_ptr() as *const T, std::mem::size_of::<T>())
+        .get(0)
+        .unwrap()
+}
+
+pub(crate) unsafe fn bytes_to_type_mut<T>(slice: &[u8]) -> &mut T {
     std::slice::from_raw_parts_mut(slice.as_ptr() as *mut T, std::mem::size_of::<T>())
         .get_mut(0)
         .unwrap()

@@ -25,8 +25,8 @@ fn create_test_data() {
     let src = DO_Benchmark_test_pre;
 
     let file = File::create(benchmark_output).unwrap();
-    let mut file = LineWriter::new(file);
-    file.write_all(format!("Benchmark input: n: {}, range: {:#?}, padding: {:#?}, namesize: {} \n\n", &n,&range,&padding,&name).as_bytes());
+    let mut line_writer = LineWriter::new(file);
+    line_writer.write_all(format!("Benchmark input: n: {}, range: {:#?}, padding: {:#?}, namesize: {} \n\n", &n, &range, &padding, &name).as_bytes());
 
     fs::remove_file(src);
     FileGenerator::generate_source_file_with(src, n,range,padding, name);
@@ -54,13 +54,12 @@ fn search_time_tree() {
     println!("## search_time_tree");
     let src = DO_Benchmark_test_src;
 
-    let requests = FileGenerator::generate_lookup_testdata(src,1000);
+    let requests = FileGenerator::generate_lookup_testdata(src,50);
     let length = requests.len();
     assert!(length > 0);
 
     let mmap = Tree::gen_tree_map();
     let lookup_table = NameTable::gen_name_table();
-
     let mut numberSkipped = 0;
 
     let mut sw = Stopwatch::start_new();

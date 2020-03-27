@@ -27,5 +27,6 @@ pub fn find_value(ip: u32) -> Option<String> {
 }
 
 pub fn find_value_on_map(ip: u32, name_table: &MmapMut, ip_table: &MmapMut) -> Option<String> {
-    IpTable::get_name_on_map(ip,name_table,ip_table)
+    let index = IpTable::get_name_on_map(ip,ip_table)?;
+    NameTable::get_name(&name_table, index)
 }

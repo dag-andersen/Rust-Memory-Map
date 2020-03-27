@@ -3,7 +3,7 @@ use std::fs;
 use memmap::MmapMut;
 
 pub fn gen_name_table() -> MmapMut { gen_name_table_from_path(NAME_TABLE) }
-pub fn gen_name_table_from_path(path: &str) -> MmapMut { Utils::get_memmap(path, 40_000_000_000) }
+pub fn gen_name_table_from_path(path: &str) -> MmapMut { Utils::get_memmap(path, 5_000_000_000) }
 
 pub fn place_name(mmap: &mut MmapMut, offset: usize, name: &[u8]) -> usize {
     let len = name.len();
@@ -14,7 +14,7 @@ pub fn place_name(mmap: &mut MmapMut, offset: usize, name: &[u8]) -> usize {
 }
 
 pub fn get_name(mmap: &MmapMut, offset: usize) -> Option<String> {
-    let name_size: u8 = unsafe { *Utils::bytes_to_type(&mmap[offset..(offset+u8Size)]) };
+    let name_size: u8 = unsafe { *Utils::bytes_to_type_mut(&mmap[offset..(offset+u8Size)]) };
     if name_size == 0 { return None }
     let nameAsBytes = &mmap[offset+u8Size..offset+u8Size+(name_size as usize)];
     match std::str::from_utf8(nameAsBytes) {
