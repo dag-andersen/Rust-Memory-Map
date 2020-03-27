@@ -1,6 +1,7 @@
 use core::fmt;
 use crate::{Entry, Utils, TREE_PATH, NameTable, Table};
 use memmap::MmapMut;
+use crate::RedBlackTree::Tree::root_index;
 
 mod NodeToMem;
 mod Tree;
@@ -8,32 +9,36 @@ pub mod TreePrinter;
 
 const NODE_SIZE : usize = std::mem::size_of::<Node>();
 
-pub fn entry_to_node(entry: crate::Entry, name_index: usize) -> Node {
-    Node { min_ip: entry.min_ip, max_ip: entry.max_ip, left: 0, right: 0, name: name_index }
+pub fn reset_root_index() { unsafe { root_index = 1 }; }
+
+pub fn entry_to_node(entry: crate::Entry, index: usize) -> Node {
+    Node { red: true, min_ip: entry.min_ip, max_ip: entry.max_ip, left: 0, right: 0, parent: 0, name: index }
 }
 
 pub struct Node {
+    pub red: bool,
     pub min_ip: u32,
     pub max_ip: u32,
     pub left: usize,
     pub right: usize,
+    pub parent: usize,
     pub name: usize,
 }
 
 impl fmt::Display for Node {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:p}, n: {}, min: {}, max: {}, l: {}, r: {}", &self, &self.name, self.min_ip, self.max_ip, self.left, self.right)
+        write!(f, "{:p}, n: {}, min: {}, max: {}, l: {}, r: {}, p: {}", &self, &self.name, self.min_ip, self.max_ip, self.left, self.right, self.parent)
     }
 }
 
 pub fn insert_entry(mmap: &mut MmapMut, index: usize, entry: Entry, name_index: usize) {
-    let mut node = entry_to_node(entry, name_index);
+    let mut node: Node = entry_to_node(entry, name_index);
     node.name = name_index;
-    Tree::insert_node(mmap, index, &node);
+    Tree::insert_node(mmap, index, &mut node);
 }
 
 pub fn gen_tree_map() -> MmapMut { gen_tree_map_on_path(TREE_PATH) }
-pub fn gen_tree_map_on_path(path: &str) -> MmapMut { Utils::get_memmap(path, 5_000_000_000) }
+pub fn gen_tree_map_on_path(path: &str) -> MmapMut { Utils::get_memmap(path, 20_000_000_000) }
 
 pub fn find_value(ip: u32) -> Option<String> {
     let mmap = gen_tree_map();

@@ -43,6 +43,7 @@ const u8Size:           usize   = std::mem::size_of::<u8>();
 
 mod FileGenerator;
 mod Tree;
+mod RedBlackTree;
 mod Table;
 mod BenchmarkTests;
 mod DO_BenchmarkTests;
@@ -60,7 +61,6 @@ use rand::{Rng, random};
 use std::io::prelude::*;
 use rand::distributions::Alphanumeric;
 use rand::prelude::ThreadRng;
-use crate::Tree::NodeToMem;
 use std::iter::{Map, FilterMap, Filter, FromIterator, Enumerate};
 
 pub struct Entry {
@@ -111,6 +111,40 @@ fn load_to_tree_on_path(input: &str, map_path: &str, name_table: &str) {
 
         let something = courser - entry.name.len();
         Tree::insert_entry(& mut mmap, i, entry, something);
+    }
+}
+
+fn load_to_redblacktree(input: &str) {
+    load_to_redblacktree_on_path(input, TREE_PATH, NAME_TABLE)
+}
+
+fn load_to_redblacktree_on_path(input: &str, map_path: &str, name_table: &str) {
+    fs::remove_file(map_path);
+    fs::remove_file(name_table);
+
+    let mut mmap = RedBlackTree::gen_tree_map_on_path(map_path);
+    let mut name_table = NameTable::gen_name_table();
+
+    let ip_regex = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap();
+    let name_regex = Regex::new(r"\b(([A-z]|\d)+\s?)+\b").unwrap();
+
+    let mut courser= 0;
+
+    for (i, line) in get_buffer(input).lines().enumerate() {
+        if line.is_err() { continue }
+        let l = line.unwrap();
+        if l.is_empty() { continue; }
+
+        if i % 500_000 == 0 { println!("RedBlackTree: pushed {} lines", i)}
+
+        let entry = Utils::get_entry_for_line(&ip_regex, &name_regex, &l);
+        if entry.is_none() { continue }
+        let entry = entry.unwrap();
+
+        courser = NameTable::place_name(&mut name_table, courser, entry.name.as_bytes());
+
+        let something = courser - entry.name.len();
+        RedBlackTree::insert_entry(& mut mmap, i+1, entry, something);
     }
 }
 

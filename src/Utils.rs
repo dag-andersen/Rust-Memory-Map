@@ -38,10 +38,6 @@ pub(crate) fn get_u32_for_ip(v: &str ) -> Option<u32> {
     Some(u32::from_be_bytes(min_array))
 }
 
-pub(crate) fn entry_to_node(entry: crate::Entry, name_index: usize) -> Tree::Node {
-    Tree::Node { min_ip: entry.min_ip, max_ip: entry.max_ip, left: 0, right: 0, name: name_index }
-}
-
 pub(crate) fn get_memmap(source: &str, size: u64) -> MmapMut {
     let file = OpenOptions::new()
         .read(true)
