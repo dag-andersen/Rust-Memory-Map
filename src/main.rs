@@ -117,7 +117,7 @@ fn load_to_data_structure(input: &str, structure: MmapMut, inserter: fn(&mut Mma
         let l = line.unwrap();
         if l.is_empty() { continue; }
 
-        if i % 500_000 == 0 { println!("Pushed {} lines", i)}
+        if i % 5_000 == 0 { println!("Pushed {} lines", i)}
 
         let entry = Utils::get_entry_for_line(&ip_regex, &name_regex, &l);
         if entry.is_none() { continue }
