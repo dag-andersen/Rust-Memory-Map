@@ -75,85 +75,42 @@ impl fmt::Display for Entry {
 fn main() {
     load_to_tree(SOURCE_PATH_1);
     load_to_table(SOURCE_PATH_1);
+    load_to_redblack(SOURCE_PATH_1)
 }
 
 fn load_to_tree(input: &str) {
-    load_to_tree_on_path(input, TREE_PATH, NAME_TABLE)
+    load_to_tree_on_path(input, TREE_PATH)
 }
 
-fn load_to_tree_on_path(input: &str, map_path: &str, name_table: &str) {
+fn load_to_tree_on_path(input: &str, map_path: &str) {
     fs::remove_file(map_path);
-    fs::remove_file(name_table);
-
-    let mut mmap = Tree::gen_tree_map_on_path(map_path);
-    let mut name_table = NameTable::gen_name_table();
-
-    let ip_regex = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap();
-    let name_regex = Regex::new(r"\b(([A-z]|\d)+\s?)+\b").unwrap();
-
-    let mut courser= 0;
-
-    for (i, line) in get_buffer(input).lines().enumerate() {
-        if line.is_err() { continue }
-        let l = line.unwrap();
-        if l.is_empty() { continue; }
-
-        if i % 500_000 == 0 { println!("Tree: pushed {} lines", i)}
-
-        let entry = Utils::get_entry_for_line(&ip_regex, &name_regex, &l);
-        if entry.is_none() { continue }
-        let entry = entry.unwrap();
-
-        courser = NameTable::place_name(&mut name_table, courser, entry.name.as_bytes());
-        let something = courser - entry.name.len();
-        Tree::insert_entry(& mut mmap, i, entry, something);
-    }
+    load_to_data_structure(input, Tree::gen_tree_map_on_path(map_path), Tree::insert_entry)
 }
 
 fn load_to_redblack(input: &str) {
-    load_to_redblacktree_on_path(input, REDBLACK_PATH, NAME_TABLE)
+    load_to_redblacktree_on_path(input, REDBLACK_PATH)
 }
 
-fn load_to_redblacktree_on_path(input: &str, map_path: &str, name_table: &str) {
+fn load_to_redblacktree_on_path(input: &str, map_path: &str) {
+    RedBlack::reset_root_index();
     fs::remove_file(map_path);
-    fs::remove_file(name_table);
-
-    let mut mmap = RedBlack::gen_tree_map_on_path(map_path);
-    let mut name_table = NameTable::gen_name_table();
-
-    let ip_regex = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap();
-    let name_regex = Regex::new(r"\b(([A-z]|\d)+\s?)+\b").unwrap();
-
-    let mut courser= 0;
-
-    for (i, line) in get_buffer(input).lines().enumerate() {
-        if line.is_err() { continue }
-        let l = line.unwrap();
-        if l.is_empty() { continue; }
-
-        if i % 500_000 == 0 { println!("RedBlack: pushed {} lines", i)}
-
-        let entry = Utils::get_entry_for_line(&ip_regex, &name_regex, &l);
-        if entry.is_none() { continue }
-        let entry = entry.unwrap();
-
-        courser = NameTable::place_name(&mut name_table, courser, entry.name.as_bytes());
-        let something = courser - entry.name.len();
-        RedBlack::insert_entry(& mut mmap, i+1, entry, something);
-    }
+    load_to_data_structure(input, RedBlack::gen_tree_map_on_path(map_path), RedBlack::insert_entry)
 }
 
 fn load_to_table(input: &str) {
-    load_to_table_on_path(input, IP_TABLE, NAME_TABLE)
+    load_to_table_on_path(input, IP_TABLE)
 }
 
-fn load_to_table_on_path(input: &str, ip_table: &str, name_table: &str) {
-
+fn load_to_table_on_path(input: &str, ip_table: &str) {
     fs::remove_file(ip_table);
-    fs::remove_file(name_table);
+    load_to_data_structure(input, Table::gen_ip_table_from_path(ip_table), Table::insert_entry)
+}
 
-    let mut name_table = NameTable::gen_name_table_from_path(name_table);
-    let mut ip_table = Table::gen_ip_table_from_path(ip_table);
+fn load_to_data_structure(input: &str, structure: MmapMut, inserter: fn(&mut MmapMut, usize, Entry, usize)) {
+
+    fs::remove_file(NAME_TABLE);
+    let mut structure = structure;
+    let mut name_table = NameTable::gen_name_table_from_path(NAME_TABLE);
 
     let ip_regex = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap();
     let name_regex = Regex::new(r"\b(([A-z]|\d)+\s?)+\b").unwrap();
@@ -165,7 +122,7 @@ fn load_to_table_on_path(input: &str, ip_table: &str, name_table: &str) {
         let l = line.unwrap();
         if l.is_empty() { continue; }
 
-        if i % 500_000 == 0 { println!("table: pushed {} lines", i)}
+        if i % 500_000 == 0 { println!("Pushed {} lines", i)}
 
         let entry = Utils::get_entry_for_line(&ip_regex, &name_regex, &l);
         if entry.is_none() { continue }
@@ -173,7 +130,7 @@ fn load_to_table_on_path(input: &str, ip_table: &str, name_table: &str) {
 
         courser = NameTable::place_name(&mut name_table, courser, entry.name.as_bytes());
         let something = courser - entry.name.len() - 1;
-        Table::insert_entry(&mut ip_table, entry, something);
+        inserter(&mut structure, i, entry, something);
     }
 }
 
@@ -183,113 +140,56 @@ fn get_buffer(file: &str) -> BufReader<std::fs::File> {
 
 #[test]
 fn find_hardcoded_node_in_tree() {
-
-    fs::remove_file(NAME_TABLE);
-    fs::remove_file(TREE_PATH);
-    load_to_tree(SOURCE_PATH_1);
-
-    let name = Tree::find_value(Utils::get_u32_for_ip("000.000.000.015").unwrap());
-    assert!(name.is_some());
-    let name = name.unwrap();
-    assert_eq!(name,"Siteimprove");
-
-    let name = Tree::find_value(Utils::get_u32_for_ip("000.000.002.015").unwrap());
-    assert!(name.is_some());
-    let name = name.unwrap();
-    assert_eq!(name,"Olesen");
-
-    let name = Tree::find_value(Utils::get_u32_for_ip("000.000.000.001").unwrap());
-    assert!(name.is_none());
-
-    let name = Tree::find_value(Utils::get_u32_for_ip("001.000.000.000").unwrap());
-    assert!(name.is_none());
+    find_hardcoded_node(load_to_tree,Tree::find_value)
 }
 
 #[test]
 fn find_hardcoded_node_in_redblack() {
-
-    fs::remove_file(NAME_TABLE);
-    fs::remove_file(REDBLACK_PATH);
-    RedBlack::reset_root_index();
-    load_to_redblack(SOURCE_PATH_1);
-
-    let name = RedBlack::find_value(Utils::get_u32_for_ip("000.000.000.015").unwrap());
-    assert!(name.is_some());
-    let name = name.unwrap();
-    assert_eq!(name,"Siteimprove");
-
-    let name = RedBlack::find_value(Utils::get_u32_for_ip("000.000.002.015").unwrap());
-    assert!(name.is_some());
-    let name = name.unwrap();
-    assert_eq!(name,"Olesen");
-
-    let name = RedBlack::find_value(Utils::get_u32_for_ip("000.000.000.001").unwrap());
-    assert!(name.is_none());
-
-    let name = RedBlack::find_value(Utils::get_u32_for_ip("001.000.000.000").unwrap());
-    assert!(name.is_none());
+    find_hardcoded_node(load_to_redblack,RedBlack::find_value)
 }
 
 #[test]
 fn find_hardcoded_node_in_table() {
+    find_hardcoded_node(load_to_table,Table::find_value)
+}
 
-    load_to_table(SOURCE_PATH_1);
+fn find_hardcoded_node(loader: fn(&str), finder: fn(u32) -> Option<String>) {
+    loader(SOURCE_PATH_1);
 
-    let name = Table::find_value(Utils::get_u32_for_ip("000.000.000.015").unwrap());
+    let name = finder(Utils::get_u32_for_ip("000.000.000.015").unwrap());
     assert!(name.is_some());
     assert_eq!(name.unwrap(),"Siteimprove");
 
-    let name = Table::find_value(Utils::get_u32_for_ip("000.000.002.015").unwrap());
+    let name = finder(Utils::get_u32_for_ip("000.000.002.015").unwrap());
     assert!(name.is_some());
     assert_eq!(name.unwrap(),"Olesen");
 
-    let name = Table::find_value(Utils::get_u32_for_ip("000.000.000.001").unwrap());
-    assert!(name.is_none());
-
-    let name = Table::find_value(Utils::get_u32_for_ip("001.000.000.000").unwrap());
-    assert!(name.is_none());
+    assert!(finder(Utils::get_u32_for_ip("000.000.000.001").unwrap()).is_none());
+    assert!(finder(Utils::get_u32_for_ip("001.000.000.000").unwrap()).is_none());
 }
 
 #[test]
 fn find_random_gen_requests_in_tree() {
-
-    let scr = SP_10_000 ;
-    load_to_tree(scr);
-    let requests = FileGenerator::generate_lookup_testdata(scr,50);
-
-    for (ip, name) in requests {
-        let value = Tree::find_value(ip);
-        assert!(value.is_some());
-        let value = value.unwrap();
-        assert_eq!(name, value)
-    }
+    find_random_gen_request(load_to_tree,Tree::find_value);
 }
 
 #[test]
 fn find_random_gen_requests_in_redblack() {
-
-    RedBlack::reset_root_index();
-    let scr = SP_10_000 ;
-    load_to_redblack(scr);
-    let requests = FileGenerator::generate_lookup_testdata(scr,50);
-
-    for (ip, name) in requests {
-        let value = RedBlack::find_value(ip);
-        assert!(value.is_some());
-        let value = value.unwrap();
-        assert_eq!(name, value)
-    }
+    find_random_gen_request(load_to_redblack,RedBlack::find_value);
 }
 
 #[test]
 fn find_random_gen_requests_in_table() {
+    find_random_gen_request(load_to_table,Table::find_value);
+}
 
+fn find_random_gen_request(loader: fn(&str), finder: fn(u32) -> Option<String>) {
     let scr = SP_10_000 ;
-    load_to_table(scr);
+    loader(scr);
     let requests = FileGenerator::generate_lookup_testdata(scr,50);
 
     for (ip, name) in requests {
-        let value = Table::find_value(ip);
+        let value = finder(ip);
         assert!(value.is_some());
         let value = value.unwrap();
         assert_eq!(name, value)

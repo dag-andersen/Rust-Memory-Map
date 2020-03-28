@@ -32,9 +32,9 @@ impl fmt::Display for Node {
 }
 
 pub fn insert_entry(mmap: &mut MmapMut, index: usize, entry: Entry, name_index: usize) {
-    let mut node: Node = entry_to_node(entry, name_index);
-    node.name = name_index;
-    Tree::insert_node(mmap, index, &mut node);
+    let mut node: Node = entry_to_node(entry, name_index + 1);
+    node.name = name_index + 1;
+    Tree::insert_node(mmap, index + 1, &mut node);
 }
 
 pub fn gen_tree_map() -> MmapMut { gen_tree_map_on_path(REDBLACK_PATH) }

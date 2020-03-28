@@ -177,7 +177,6 @@ fn search_time_tree_vs_RedBlack_vs_table() {
     println!("--- Tree time : {}, #{} of requests ran", treeTime, length);
 
     counter = 0;
-    RedBlack::reset_root_index();
     load_to_redblack(src);
     let mmap = RedBlack::gen_tree_map();
     let name_table = NameTable::gen_name_table();

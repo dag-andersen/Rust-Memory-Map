@@ -57,7 +57,6 @@ fn print_node_to_file(mmap: &MmapMut, name_table: &MmapMut, node: &Node, n: usiz
 
 #[test]
 fn print_tree_and_read() {
-    RedBlack::reset_root_index();
     let src = thisFileWillBeDeleted;
     fs::remove_file(REDBLACK_PATH);
     crate::load_to_redblack(SOURCE_PATH_1);
@@ -75,7 +74,6 @@ fn print_tree_and_read() {
 
 #[test]
 fn print_tree_and_read_2() {
-    RedBlack::reset_root_index();
     let src = thisFileWillBeDeleted;
     fs::remove_file(REDBLACK_PATH);
     crate::load_to_redblack(SOURCE_PATH_3);

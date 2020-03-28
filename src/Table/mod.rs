@@ -13,7 +13,7 @@ pub struct Node {
     pub value: usize,
 }
 
-pub fn insert_entry(ip_table: &mut MmapMut, entry: Entry, courser: usize) {
+pub fn insert_entry(ip_table: &mut MmapMut, index: usize, entry: Entry, courser: usize) {
     IpTable::place_entry(ip_table, &entry, courser as u32);
 }
 
