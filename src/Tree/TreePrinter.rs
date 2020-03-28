@@ -51,7 +51,7 @@ fn print_tree_and_read() {
     let src = thisFileWillBeDeleted;
     fs::remove_file(TREE_PATH);
     crate::load_to_tree(SOURCE_PATH_1);
-    Tree::TreePrinter::print_tree_to_file(TREE_PRINT_PATH);
+    print_tree_to_file(TREE_PRINT_PATH);
     let mut iter = crate::get_buffer(TREE_PRINT_PATH).lines().map(|x| x.unwrap() );
     assert_eq!(iter.next(), Some("----christoffersen".to_string()));
     assert_eq!(iter.next(), Some("---Pedersen".to_string()));
@@ -68,7 +68,7 @@ fn print_tree_and_read_2() {
     let src = thisFileWillBeDeleted;
     fs::remove_file(TREE_PATH);
     crate::load_to_tree(SOURCE_PATH_3);
-    Tree::TreePrinter::print_tree_to_file(TREE_PRINT_PATH);
+    print_tree_to_file(TREE_PRINT_PATH);
     let mut iter = crate::get_buffer(TREE_PRINT_PATH).lines().map(|x| x.unwrap() );
     assert_eq!(iter.next(), Some("--christoffersen".to_string()));
     assert_eq!(iter.next(), Some("---Pedersen".to_string()));

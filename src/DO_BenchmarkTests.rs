@@ -1,7 +1,7 @@
 use stopwatch::Stopwatch;
 use crate::{FileGenerator, load_to_tree_on_path, load_to_table, Utils, Table, NameTable, load_to_tree, RedBlack, load_to_redblack, REDBLACK_PATH, Tree};
 use std::fs;
-use std::fs::File;
+use std::fs::{File, OpenOptions};
 use std::io::{LineWriter, Write};
 use crate::Tree::TreePrinter;
 use memmap::MmapMut;
@@ -11,9 +11,9 @@ const DO_Benchmark_test_pre:   &str = "DO_Benchmark_test_pre.txt";
 const DO_Benchmark_test_src:   &str = "DO_Benchmark_test.txt";
 const benchmark_output:        &str = "testdata/out/speed/benchmark.txt";
 
-const n:                        u32 = 20_000;
-const range:             Range<u32> = 10..18;
-const padding:           Range<u32> = 10..18;
+const n:                        u32 = 1_000_000;
+const range:             Range<u32> = 1..1;
+const padding:           Range<u32> = 40..40;
 const nameLength:             usize = 2;
 const gap:                    usize = 100;
 
@@ -24,7 +24,7 @@ fn create_test_data() {
     println!("## create_test_data");
     let src = DO_Benchmark_test_pre;
 
-    let file = File::create(benchmark_output).unwrap();
+    let file = OpenOptions::new().write(true).append(true).open(benchmark_output).unwrap();
     let mut line_writer = LineWriter::new(file);
     line_writer.write_all(format!("Benchmark input: n: {}, range: {:#?}, padding: {:#?}, namesize: {} \n\n", &n, &range, &padding, &nameLength).as_bytes());
 
