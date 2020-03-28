@@ -1,5 +1,5 @@
 use stopwatch::Stopwatch;
-use crate::{FileGenerator, TREE_PRINT_PATH, TREE_PATH, load_to_tree_on_path, load_to_table, Utils, NAME_TABLE, IP_TABLE, u32Size, SP_100_000, SP_10_000, thisFileWillBeDeleted, Table, SP_500_000, SP_50_000, NameTable, load_to_tree, RedBlack};
+use crate::{FileGenerator, TREE_PRINT_PATH, TREE_PATH, load_to_tree_on_path, load_to_table, Utils, NAME_TABLE, IP_TABLE, u32Size, SP_100_000, SP_10_000, thisFileWillBeDeleted, Table, SP_500_000, SP_50_000, NameTable, load_to_tree, RedBlack, load_to_redblack};
 use std::fs;
 use std::fs::File;
 use std::io::{LineWriter, Write};
@@ -36,16 +36,21 @@ fn create_test_data() {
 #[ignore]
 fn build_tree() {
     println!("## build_tree");
-    let src = DO_Benchmark_test_src;
-    load_to_tree(src);
+    load_to_tree(DO_Benchmark_test_src);
 }
 
 #[test]
 #[ignore]
 fn build_table() {
     println!("## load_to_table");
-    let src = DO_Benchmark_test_src;
-    load_to_table(src);
+    load_to_table(DO_Benchmark_test_src);
+}
+
+#[test]
+#[ignore]
+fn build_redblack() {
+    println!("## load_to_table");
+    load_to_redblack(DO_Benchmark_test_src);
 }
 
 #[test]
@@ -59,12 +64,12 @@ fn search_time_tree() {
     assert!(length > 0);
 
     let mmap = Tree::gen_tree_map();
-    let lookup_table = NameTable::gen_name_table();
+    let name_table = NameTable::gen_name_table();
     let mut numberSkipped = 0;
 
     let mut sw = Stopwatch::start_new();
     for (ip, name) in requests {
-        let value = Tree::find_value_on_map(ip, &mmap, &lookup_table);
+        let value = Tree::find_value_on_map(ip, &mmap, &name_table);
         if value.is_some() {
             let value = value.unwrap();
             if name != value {
@@ -78,6 +83,34 @@ fn search_time_tree() {
 
 #[test]
 #[ignore]
+fn search_time_redblack() {
+    println!("## search_time_redblack");
+    let src = DO_Benchmark_test_src;
+
+    let requests = FileGenerator::generate_lookup_testdata(src,50);
+    let length = requests.len();
+    assert!(length > 0);
+
+    let mmap = RedBlack::gen_tree_map();
+    let name_table = NameTable::gen_name_table();
+    let mut numberSkipped = 0;
+
+    let mut sw = Stopwatch::start_new();
+    for (ip, name) in requests {
+        let value = RedBlack::find_value_on_map(ip, &mmap, &name_table);
+        if value.is_some() {
+            let value = value.unwrap();
+            if name != value {
+                numberSkipped += 1;
+                //println!("Wrong match - real name: {} - found name: {} - ip: {}", name, value, ip);
+            }
+        } else { numberSkipped += 1; /*println!("Found none - real name: {} - ip: {}", name, ip) */}
+    }
+    println!("--- RedBlack : #{} micro seconds, #{} of requests ran, #{} skipped\n", sw.elapsed().as_micros(), length, numberSkipped);
+}
+
+#[test]
+#[ignore]
 fn search_time_table() {
     println!("## search_time_table");
     let src = DO_Benchmark_test_src;
@@ -86,13 +119,13 @@ fn search_time_table() {
     let length = requests.len();
     assert!(length > 0);
 
-    let lookup_table = NameTable::gen_name_table();
+    let name_table = NameTable::gen_name_table();
     let ip_table = Table::gen_ip_table();
     let mut numberSkipped = 0;
 
     let mut sw = Stopwatch::start_new();
     for (ip, name) in requests {
-        let value = Table::find_value_on_map(ip, &lookup_table, &ip_table);
+        let value = Table::find_value_on_map(ip, &ip_table, &name_table);
         if value.is_some() {
             let value = value.unwrap();
             if name != value {

@@ -133,7 +133,7 @@ fn search_time_tree_vs_RedBlack_vs_table() {
     println!("#{} requests created", length);
 
     load_to_table(src);
-    let lookup_table = NameTable::gen_name_table();
+    let name_table = NameTable::gen_name_table();
     let ip_table = Table::gen_ip_table();
 
     let mut counter = 0;
@@ -141,7 +141,7 @@ fn search_time_tree_vs_RedBlack_vs_table() {
     println!("start searching");
     let mut sw = Stopwatch::start_new();
     for (ip, name) in requests1 {
-        let value = Table::find_value_on_map(ip, &lookup_table, &ip_table);
+        let value = Table::find_value_on_map(ip, &ip_table, &name_table);
         assert!(value.is_some());
         let value = value.unwrap();
         //if counter % (length/10) == 0 { println!("Found: {:.2}%", counter as f32/length as f32); }
@@ -158,11 +158,11 @@ fn search_time_tree_vs_RedBlack_vs_table() {
     counter = 0;
     load_to_tree(src);
     let mmap = Tree::gen_tree_map();
-    let lookup_table = NameTable::gen_name_table();
+    let name_table = NameTable::gen_name_table();
 
     let mut sw = Stopwatch::start_new();
     for (ip, name) in requests2 {
-        let value = Tree::find_value_on_map(ip, &mmap, &lookup_table);
+        let value = Tree::find_value_on_map(ip, &mmap, &name_table);
         assert!(value.is_some());
         let value = value.unwrap();
         //if counter % (length/10) == 0 { println!("Found: {:.2}%", counter as f32/length as f32); }
@@ -180,11 +180,11 @@ fn search_time_tree_vs_RedBlack_vs_table() {
     RedBlack::reset_root_index();
     load_to_redblack(src);
     let mmap = RedBlack::gen_tree_map();
-    let lookup_table = NameTable::gen_name_table();
+    let name_table = NameTable::gen_name_table();
 
     let mut sw = Stopwatch::start_new();
     for (ip, name) in requests3 {
-        let value = RedBlack::find_value_on_map(ip, &mmap, &lookup_table);
+        let value = RedBlack::find_value_on_map(ip, &mmap, &name_table);
         assert!(value.is_some());
         let value = value.unwrap();
         //if counter % (length/10) == 0 { println!("Found: {:.2}%", counter as f32/length as f32); }
@@ -196,7 +196,7 @@ fn search_time_tree_vs_RedBlack_vs_table() {
     }
     sw.stop();
     let treeTime = sw.elapsed().as_micros();
-    println!("--- ReadBlackTree time : {}, #{} of requests ran", treeTime, length);
+    println!("--- ReadBlack time : {}, #{} of requests ran", treeTime, length);
     //assert!(tableTime < treeTime)
 }
 

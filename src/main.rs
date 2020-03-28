@@ -105,7 +105,6 @@ fn load_to_tree_on_path(input: &str, map_path: &str, name_table: &str) {
         let entry = entry.unwrap();
 
         courser = NameTable::place_name(&mut name_table, courser, entry.name.as_bytes());
-
         let something = courser - entry.name.len();
         Tree::insert_entry(& mut mmap, i, entry, something);
     }
@@ -139,7 +138,6 @@ fn load_to_redblacktree_on_path(input: &str, map_path: &str, name_table: &str) {
         let entry = entry.unwrap();
 
         courser = NameTable::place_name(&mut name_table, courser, entry.name.as_bytes());
-
         let something = courser - entry.name.len();
         RedBlack::insert_entry(& mut mmap, i+1, entry, something);
     }
@@ -154,7 +152,7 @@ fn load_to_table_on_path(input: &str, ip_table: &str, name_table: &str) {
     fs::remove_file(ip_table);
     fs::remove_file(name_table);
 
-    let mut lookup_table = NameTable::gen_name_table_from_path(name_table);
+    let mut name_table = NameTable::gen_name_table_from_path(name_table);
     let mut ip_table = Table::gen_ip_table_from_path(ip_table);
 
     let ip_regex = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap();
@@ -173,7 +171,7 @@ fn load_to_table_on_path(input: &str, ip_table: &str, name_table: &str) {
         if entry.is_none() { continue }
         let entry = entry.unwrap();
 
-        courser = NameTable::place_name(&mut lookup_table, courser, entry.name.as_bytes());
+        courser = NameTable::place_name(&mut name_table, courser, entry.name.as_bytes());
         let something = courser - entry.name.len() - 1;
         Table::insert_entry(&mut ip_table, entry, something);
     }

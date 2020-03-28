@@ -41,17 +41,17 @@ pub(crate) fn print_tree_to_file(s: &str) {
     print_node_to_file(&tree_map, &name_table, &root, 0, &mut line_writer);
 }
 
-fn print_node_to_file(mmap: &MmapMut, lookup: &MmapMut, node: &Node, n: usize, writer: &mut LineWriter<File>) {
+fn print_node_to_file(mmap: &MmapMut, name_table: &MmapMut, node: &Node, n: usize, writer: &mut LineWriter<File>) {
     if node.right != 0 {
-        print_node_to_file(mmap, lookup, &NodeToMem::get_node(&mmap, node.right), n + 1, writer);
+        print_node_to_file(mmap, name_table, &NodeToMem::get_node(&mmap, node.right), n + 1, writer);
     }
     let indention: String = (0..n).map(|_| "---").collect();
     writer.write_all(indention.as_bytes());
     writer.write_all(if node.red { "X " } else { "O " }.as_bytes());
-    writer.write_all(NameTable::get_name(&lookup, node.name - 1).unwrap().as_bytes());
+    writer.write_all(NameTable::get_name(&name_table, node.name - 1).unwrap().as_bytes());
     writer.write_all("\n".as_bytes());
     if node.left != 0 {
-        print_node_to_file(mmap, lookup, &NodeToMem::get_node(&mmap, node.left), n + 1, writer);
+        print_node_to_file(mmap, name_table, &NodeToMem::get_node(&mmap, node.left), n + 1, writer);
     }
 }
 
