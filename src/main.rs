@@ -51,7 +51,7 @@ use std::io::{BufRead, BufReader, LineWriter, Error, Lines};
 use std::ops::Add;
 use memmap::{MmapMut, MmapOptions};
 use std::io::Read;
-use std::{fs::{OpenOptions, File}, io::{Seek, SeekFrom, Write}, os::unix::prelude::AsRawFd, ptr, fs, mem, fmt};
+use std::{fs::{OpenOptions, File}, io::{Seek, SeekFrom, Write}, os::unix::prelude::AsRawFd, ptr, fs, mem, fmt, io};
 use regex::bytes::Regex;
 use std::cmp::min;
 use rand::{Rng, random};
@@ -59,6 +59,7 @@ use std::io::prelude::*;
 use rand::distributions::Alphanumeric;
 use rand::prelude::ThreadRng;
 use std::iter::{Map, FilterMap, Filter, FromIterator, Enumerate};
+use crate::DO_BenchmarkTests::create_test_data;
 
 pub struct Entry {
     pub min_ip: u32,
@@ -73,9 +74,7 @@ impl fmt::Display for Entry {
 }
 
 fn main() {
-    load_to_tree(SOURCE_PATH_1);
-    load_to_table(SOURCE_PATH_1);
-    load_to_redblack(SOURCE_PATH_1)
+    create_test_data();
 }
 
 fn load_to_tree(input: &str) { load_to_tree_on_path(input, TREE_PATH) }
@@ -112,12 +111,16 @@ fn load_to_data_structure(input: &str, structure: MmapMut, inserter: fn(&mut Mma
 
     let mut courser= 0;
 
+    let string: String = (0..98).map(|_| '-').collect();
+    println!("|{}|",string);
+
     for (i, line) in get_buffer(input).lines().enumerate() {
         if line.is_err() { continue }
         let l = line.unwrap();
         if l.is_empty() { continue; }
 
-        if i % 5_000 == 0 { println!("Pushed {} lines", i)}
+        //if i % 50_000 == 0 { print!("", i)}
+        if i % (DO_BenchmarkTests::n as usize/100) == 0 { print!("-"); io::stdout().flush(); }
 
         let entry = Utils::get_entry_for_line(&ip_regex, &name_regex, &l);
         if entry.is_none() { continue }
