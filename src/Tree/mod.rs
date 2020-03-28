@@ -2,11 +2,15 @@ use core::fmt;
 use crate::{Entry, Utils, TREE_PATH, NameTable, Table};
 use memmap::MmapMut;
 
-pub mod NodeToMem;
+mod NodeToMem;
 mod Tree;
 pub mod TreePrinter;
 
 const NODE_SIZE : usize = std::mem::size_of::<Node>();
+
+pub fn entry_to_node(entry: crate::Entry, name_index: usize) -> Node {
+    Node { min_ip: entry.min_ip, max_ip: entry.max_ip, left: 0, right: 0, name: name_index }
+}
 
 pub struct Node {
     pub min_ip: u32,
@@ -23,8 +27,7 @@ impl fmt::Display for Node {
 }
 
 pub fn insert_entry(mmap: &mut MmapMut, index: usize, entry: Entry, name_index: usize) {
-    let mut node = Utils::entry_to_node(entry, name_index);
-    node.name = name_index;
+    let node = entry_to_node(entry, name_index + 1);
     Tree::insert_node(mmap, index, &node);
 }
 

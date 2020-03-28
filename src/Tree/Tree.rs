@@ -1,6 +1,6 @@
-use crate::{NodeToMem, TREE_PATH, NameTable, TREE_MAP_500_000, NAME_TABLE, Entry};
+use crate::{TREE_PATH, NameTable, NAME_TABLE, Entry};
 use memmap::MmapMut;
-use crate::Tree::Node;
+use crate::Tree::{Node, NodeToMem};
 use std::fs;
 
 pub fn insert_node(mmap: & mut MmapMut, index: usize, node: &Node) {

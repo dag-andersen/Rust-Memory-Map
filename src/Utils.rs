@@ -4,11 +4,11 @@ use std::io::{SeekFrom, Write, Seek};
 use crate::{Tree, Entry};
 use regex::bytes::Regex;
 
-pub(crate) fn insert_array_in_array(one: & mut [u8; 32], two: &[u8])  {
-    for (place, data) in one.iter_mut().zip(two.iter()) {
-        *place = *data
-    }
-}
+// pub(crate) fn insert_array_in_array(one: & mut [u8; 32], two: &[u8])  {
+//     for (place, data) in one.iter_mut().zip(two.iter()) {
+//         *place = *data
+//     }
+// }
 
 pub(crate) fn get_entry_for_line(ip_regex: &Regex, name_regex: &Regex, l: &String) -> Option<Entry> {
 
@@ -36,10 +36,6 @@ pub(crate) fn get_u32_for_ip(v: &str ) -> Option<u32> {
     }
     //println!("IP?{}.{}.{}.{}",min_array[0],min_array[1],min_array[2],min_array[3]);
     Some(u32::from_be_bytes(min_array))
-}
-
-pub(crate) fn entry_to_node(entry: crate::Entry, name_index: usize) -> Tree::Node {
-    Tree::Node { min_ip: entry.min_ip, max_ip: entry.max_ip, left: 0, right: 0, name: name_index }
 }
 
 pub(crate) fn get_memmap(source: &str, size: u64) -> MmapMut {

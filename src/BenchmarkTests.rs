@@ -1,5 +1,5 @@
 use stopwatch::Stopwatch;
-use crate::{FileGenerator, TREE_PRINT_PATH, TREE_PATH, load_to_tree_on_path, load_to_table, Utils, NAME_TABLE, IP_TABLE, u32Size, SP_100_000, SP_10_000, thisFileWillBeDeleted, Table, SP_1_000_000, SP_500_000, SP_50_000, IP_TABLE_1_000_000, NAME_TABLE_1_000_000, TREE_MAP_1_000_000, NameTable, load_to_tree};
+use crate::{FileGenerator, TREE_PRINT_PATH, TREE_PATH, load_to_tree_on_path, load_to_table, Utils, NAME_TABLE, IP_TABLE, u32Size, SP_100_000, SP_10_000, thisFileWillBeDeleted, Table, SP_1_000_000, SP_500_000, SP_50_000, NameTable, load_to_tree, load_to_redblack, RedBlack};
 use std::fs;
 use std::fs::File;
 use std::io::{LineWriter, Write};
@@ -120,22 +120,20 @@ fn speed_matrix_tree() {
 }
 
 #[test]
-fn search_time_tree_vs_table() {
+fn search_time_tree_vs_RedBlack_vs_table() {
     println!("## search_time_tree_vs_table");
     let src = thisFileWillBeDeleted;
     fs::remove_file(src);
     generate_source_file_with_in_mem(src, 15_000,10..18,10..18, 2);
-    fs::remove_file(IP_TABLE);
-    fs::remove_file(NAME_TABLE);
-    fs::remove_file(TREE_PATH);
 
     let requests1 = FileGenerator::generate_lookup_testdata(src,100);
     let requests2 = requests1.clone();
+    let requests3 = requests1.clone();
     let length = requests1.len();
     println!("#{} requests created", length);
 
     load_to_table(src);
-    let lookup_table = NameTable::gen_name_table();
+    let name_table = NameTable::gen_name_table();
     let ip_table = Table::gen_ip_table();
 
     let mut counter = 0;
@@ -143,40 +141,62 @@ fn search_time_tree_vs_table() {
     println!("start searching");
     let mut sw = Stopwatch::start_new();
     for (ip, name) in requests1 {
-        let value = Table::find_value_on_map(ip, &lookup_table, &ip_table);
+        let value = Table::find_value_on_map(ip, &ip_table, &name_table);
         assert!(value.is_some());
         let value = value.unwrap();
-        if counter % (length/10) == 0 { println!("Found: {:.2}%", counter as f32/length as f32); }
-        if name != value {
-            println!("Wrong match - real: {} - found: {} - ip: {}", name, value, ip);
-        }
-        counter += 1;
+        //if counter % (length/10) == 0 { println!("Found: {:.2}%", counter as f32/length as f32); }
+        //if name != value {
+        //    println!("Wrong match - real: {} - found: {} - ip: {}", name, value, ip);
+        //}
+        assert_eq!(name, value);
+        //counter += 1;
     }
     sw.stop();
     let tableTime = sw.elapsed().as_micros();
-    println!("--- table score: {}, #{} of requests ran", tableTime, length);
+    println!("--- Table time: {}, #{} of requests ran", tableTime, length);
 
     counter = 0;
     load_to_tree(src);
     let mmap = Tree::gen_tree_map();
-    let lookup_table = NameTable::gen_name_table();
+    let name_table = NameTable::gen_name_table();
 
     let mut sw = Stopwatch::start_new();
     for (ip, name) in requests2 {
-        let value = Tree::find_value_on_map(ip, &mmap, &lookup_table);
+        let value = Tree::find_value_on_map(ip, &mmap, &name_table);
         assert!(value.is_some());
         let value = value.unwrap();
-        if counter % (length/10) == 0 { println!("Found: {:.2}%", counter as f32/length as f32); }
-        if name != value {
-            println!("Wrong match - real: {} - found: {} - ip: {}", name, value, ip);
-        }
+        //if counter % (length/10) == 0 { println!("Found: {:.2}%", counter as f32/length as f32); }
+        //if name != value {
+        //    println!("Wrong match - real: {} - found: {} - ip: {}", name, value, ip);
+        //}
         assert_eq!(name, value);
-        counter += 1;
+        //counter += 1;
     }
     sw.stop();
     let treeTime = sw.elapsed().as_micros();
-    println!("--- tree score : {}, #{} of requests ran", treeTime, length);
-    assert!(tableTime < treeTime)
+    println!("--- Tree time : {}, #{} of requests ran", treeTime, length);
+
+    counter = 0;
+    load_to_redblack(src);
+    let mmap = RedBlack::gen_tree_map();
+    let name_table = NameTable::gen_name_table();
+
+    let mut sw = Stopwatch::start_new();
+    for (ip, name) in requests3 {
+        let value = RedBlack::find_value_on_map(ip, &mmap, &name_table);
+        assert!(value.is_some());
+        let value = value.unwrap();
+        //if counter % (length/10) == 0 { println!("Found: {:.2}%", counter as f32/length as f32); }
+        //if name != value {
+        //    println!("Wrong match - real: {} - found: {} - ip: {}", name, value, ip);
+        //}
+        assert_eq!(name, value);
+        //counter += 1;
+    }
+    sw.stop();
+    let treeTime = sw.elapsed().as_micros();
+    println!("--- ReadBlack time : {}, #{} of requests ran", treeTime, length);
+    //assert!(tableTime < treeTime)
 }
 
 #[test]
