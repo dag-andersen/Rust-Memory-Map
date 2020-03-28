@@ -27,8 +27,7 @@ impl fmt::Display for Node {
 }
 
 pub fn insert_entry(mmap: &mut MmapMut, index: usize, entry: Entry, name_index: usize) {
-    let mut node = entry_to_node(entry, name_index + 1);
-    node.name = name_index + 1;
+    let node = entry_to_node(entry, name_index + 1);
     Tree::insert_node(mmap, index, &node);
 }
 

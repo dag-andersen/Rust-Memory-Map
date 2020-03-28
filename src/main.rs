@@ -78,28 +78,23 @@ fn main() {
     load_to_redblack(SOURCE_PATH_1)
 }
 
-fn load_to_tree(input: &str) {
-    load_to_tree_on_path(input, TREE_PATH)
-}
+fn load_to_tree(input: &str) { load_to_tree_on_path(input, TREE_PATH) }
 
 fn load_to_tree_on_path(input: &str, map_path: &str) {
     fs::remove_file(map_path);
     load_to_data_structure(input, Tree::gen_tree_map_on_path(map_path), Tree::insert_entry)
 }
 
-fn load_to_redblack(input: &str) {
-    load_to_redblacktree_on_path(input, REDBLACK_PATH)
-}
+fn load_to_redblack(input: &str) { load_to_redblacktree_on_path(input, REDBLACK_PATH) }
 
 fn load_to_redblacktree_on_path(input: &str, map_path: &str) {
     RedBlack::reset_root_index();
     fs::remove_file(map_path);
-    load_to_data_structure(input, RedBlack::gen_tree_map_on_path(map_path), RedBlack::insert_entry)
+    load_to_data_structure(input, RedBlack::gen_tree_map_on_path(map_path), RedBlack::insert_entry);
+    RedBlack::save_root_node(map_path);
 }
 
-fn load_to_table(input: &str) {
-    load_to_table_on_path(input, IP_TABLE)
-}
+fn load_to_table(input: &str) { load_to_table_on_path(input, IP_TABLE) }
 
 fn load_to_table_on_path(input: &str, ip_table: &str) {
     fs::remove_file(ip_table);
@@ -184,7 +179,7 @@ fn find_random_gen_requests_in_table() {
 }
 
 fn find_random_gen_request(loader: fn(&str), finder: fn(u32) -> Option<String>) {
-    let scr = SP_10_000 ;
+    let scr = SP_10_000;
     loader(scr);
     let requests = FileGenerator::generate_lookup_testdata(scr,50);
 

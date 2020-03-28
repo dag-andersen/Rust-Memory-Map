@@ -1,17 +1,29 @@
-use crate::{NameTable, NAME_TABLE, Entry, RedBlack, REDBLACK_PATH};
+use crate::{NameTable, NAME_TABLE, Entry, RedBlack, REDBLACK_PATH, Utils, usizeSize, thisFileWillBeDeleted};
 use memmap::MmapMut;
-use crate::RedBlack::{Node, NODE_SIZE, gen_tree_map, NodeToMem};
+use crate::RedBlack::{Node, NODE_SIZE, NodeToMem};
 use std::ops::Deref;
 use crate::RedBlack::TreePrinter::{print_tree, print_tree_from_map};
 use std::fs;
 
 pub static mut root_index: usize = 1;
 
+pub fn reset_root_index() { unsafe { root_index = 1 }; }
+
+pub fn save_root_node(map_path: &str) {
+    let mut mmap = super::gen_tree_map_on_path(map_path);
+    Utils::place_item_raw(&mut mmap, 0, &unsafe { root_index })
+}
+
+pub fn load_root_node(map_path: &str) {
+    let mut mmap = super::gen_tree_map_on_path(map_path);
+    unsafe { root_index = *Utils::bytes_to_type(&mmap[..usizeSize]) }
+}
+
 pub fn insert_node(mmap: &mut MmapMut, index: usize, node: &mut Node) {
     NodeToMem::place_node(mmap, index, node);
     mmap.flush();
     if index == 0 {
-        panic!()
+        panic!("Tried to insert on index 0")
     } else if index != 1 {
         let root = NodeToMem::get_node(mmap, unsafe { root_index });
         insert_node_on_node(mmap, root, 1, node, index);
@@ -185,6 +197,15 @@ pub fn find_node_on_map(ip: u32, mmap: &MmapMut) -> Option<usize> {
     None
 }
 
+#[test]
+fn save_and_load_root_node() {
+    unsafe { root_index = 5 }
+    save_root_node(thisFileWillBeDeleted);
+    unsafe { root_index = 10 }
+    assert_eq!(unsafe { root_index }, 10);
+    load_root_node(thisFileWillBeDeleted);
+    assert_eq!(unsafe { root_index }, 5)
+}
 
 #[test]
 fn insert_node_and_find_it() {

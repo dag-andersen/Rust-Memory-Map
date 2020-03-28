@@ -9,11 +9,12 @@ pub mod TreePrinter;
 
 const NODE_SIZE : usize = std::mem::size_of::<Node>();
 
-pub fn reset_root_index() { unsafe { root_index = 1 }; }
+pub fn reset_root_index() { Tree::reset_root_index() }
+pub fn save_root_node(map_path: &str) { Tree::save_root_node(map_path) }
+pub fn load_root_node(map_path: &str) { Tree::load_root_node(map_path) }
 
-pub fn entry_to_node(entry: crate::Entry, index: usize) -> Node {
-    Node { red: true, min_ip: entry.min_ip, max_ip: entry.max_ip, left: 0, right: 0, parent: 0, name: index }
-}
+pub fn gen_tree_map() -> MmapMut { gen_tree_map_on_path(REDBLACK_PATH) }
+pub fn gen_tree_map_on_path(path: &str) -> MmapMut { Utils::get_memmap(path, 7_000_000_000) }
 
 pub struct Node {
     pub red: bool,
@@ -31,14 +32,14 @@ impl fmt::Display for Node {
     }
 }
 
-pub fn insert_entry(mmap: &mut MmapMut, index: usize, entry: Entry, name_index: usize) {
-    let mut node: Node = entry_to_node(entry, name_index + 1);
-    node.name = name_index + 1;
-    Tree::insert_node(mmap, index + 1, &mut node);
+pub fn entry_to_node(entry: crate::Entry, index: usize) -> Node {
+    Node { red: true, min_ip: entry.min_ip, max_ip: entry.max_ip, left: 0, right: 0, parent: 0, name: index }
 }
 
-pub fn gen_tree_map() -> MmapMut { gen_tree_map_on_path(REDBLACK_PATH) }
-pub fn gen_tree_map_on_path(path: &str) -> MmapMut { Utils::get_memmap(path, 7_000_000_000) }
+pub fn insert_entry(mmap: &mut MmapMut, index: usize, entry: Entry, name_index: usize) {
+    let mut node: Node = entry_to_node(entry, name_index + 1);
+    Tree::insert_node(mmap, index + 1, &mut node);
+}
 
 pub fn find_value(ip: u32) -> Option<String> {
     let mmap = gen_tree_map();
