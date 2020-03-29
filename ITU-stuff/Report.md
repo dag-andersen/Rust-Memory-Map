@@ -128,7 +128,7 @@ This function takes a string of 4 numbers separated by a dot `.` - e.g. `192.2.1
 instead of getting of semencation faults and similar, i can specifc
 `BufReader::new(File::open(file).expect("Could not find file"))`
 
-### ownershitp
+### ownership
 https://medium.com/@thomascountz/ownership-in-rust-part-1-112036b1126b
 
 
@@ -170,13 +170,13 @@ e = number of entries
 
 #### Fixed vs. dynamic payload length 
 Depending on the problem you want to solve you can either choose to use the same amount of space for each entry or have a dynamic size meaning you only use the necessary amount of space for each entry. 
-Dynamic payload is great, since you dont wast space on empty payload, but the downside is that you have to store "absolute addresses" to where the payload begins instead of only storing which number of  fixed-payload-size-block when referring to the payload.
+Dynamic payload is great, since you don't wast space on empty payload, but the downside is that you have to store "absolute addresses" to where the payload begins instead of only storing which number of  fixed-payload-size-block when referring to the payload.
 <insert image>
 This means that it sometimes are not beneficial to use dynamic, if amount of pointers to the payload accumulates to a given amount. 
 
 For this project i have chosen dynamic payload length, because the payload consist of names, which can vary a lot in length. If fixed length was chosen i would either have to accept a large amount of wasted space, or not allow names to be over a given length meaning i would cut of names.
 
-## Trees
+## Binary Trees
 
 ### introduction
 
@@ -208,29 +208,121 @@ ipv6 - solution E
 ```
 
 
-### redblack
+### Redblack Tree
 https://www.geeksforgeeks.org/red-black-tree-set-2-insert/
 
 to prevent the tree from being unbalanced one could implement a redblack tree.
 Cons: Slower build time, more space usage
 
+Invented	1972
+Invented by	Rudolf Bayer
+
+<Insert runtime >
+```
+Algorithm	Average	    Worst case
+Space		O(n)	    O(n)
+Search		O(log n)    O(log n)
+Insert		O(log n)    O(log n)
+Delete		O(log n)    O(log n)
+```
+<wiki>
+
+"In 1999, Chris Okasaki showed how to make the insert operation purely functional. Its balance function needed to take care of only 4 unbalanced cases and one default balanced case"
+
+<De 4 cases (5) bliver gennemgået her www.geeksforgeeks.org/red-black-tree-set-2-insert/ >
+
 ## Tables
 
 The general understanding is that searching in tables are quicker than most data structures, because you can get the data by going directly to a specific index by using the key. 
 
-1)
+
 The naive implementation of this is to just create a full table for all ip-addresses holding a value for each ip. This obviously result in a massive data duplication because a value is stored repeatedly for each key in the associated range. This can easily be improved by actually storing the payload in another table and only storing the index in the ip_table
 
 holding another key that is used as an address to find the actual value.
 <insert image>
 
-Implementation overview:
+
+# Design
+
+
+## Payload Map
+
+Both implementations use a separate memory mapped file for storing the payload/data, and the search map will then just use and index to determine where the data is stored on in the file.
+
+![](../docs/images/bachelor-04.png)
+
+**Space**
+
+This means we can calculate the size of this file
+`(avg(payload_size_in_bytes)+1) · number_of_entries`. `+1` because we need to add the size of the word. 
+
+**Limitations**
+calculate the max size for a payload
+`2^8 = 256` - this means a entry can store up to 256 bytes. 
+
+If we have 150.000.000 entries with 255 bytes each, we can calculate the largest possible file to be 38.4 gb
+```
+150.000.000 * 256 = 38.400.000.000 bits
+38.400.000.000/1000/1000/1000 = 38.4 gb
+
+This means we have a 
+
+dynamic payload
+(34.5-17.3)/(150.000.000/1000/1000/1000) = 114 bytes is the breakpointet.
+```
+Lookup time is constant. 
+
+----------------------
+
+here we have a simple example of what it would look like if the first entries were
+```
+0.0.0.50 0.0.0.55 SKAT
+0.0.1.20 0.0.1.20 PWC
+0.0.0.0 0.0.0.2 Siteimprove
+...
+```
+
+## Redblack Tree
+![](../docs/images/bachelor-02.png)
+
+This tree consist of nodes. these nodes are structs and consist of ...
+
+where the name field is a pointer to the address of the start of the payload stored in the payload_map. 
+
+Each time a entry is added to the tree the a new node will be appended at the end. Because all nodes have the same size, we can point to their index instead of their absolute address.
+
+```rust
+pub struct Node {
+    pub red: bool,
+    pub min_ip: u32,
+    pub max_ip: u32,
+    pub left: usize,
+    pub right: usize,
+    pub parent: usize,
+    pub name: usize,
+}
+```
+The only difference from a regular tree is the added parent pointer and color boolean.
+
+**Space**
+`8(bool)+32+32+64+64+64+64 = 328 bit` pr entry meaning we get a file of `49.200.000.000 bits` which is `49.200.000.000b/8/1000/1000 = 6,15 gb`. 
+
+**Implementation overview:**
 ``` 
 Speed: 2 lookups
-Storage:
-    ip_table: 2^32 * 32
-    payload_table: (1 + p) · e
+Space: <fix bit vs bytes>
+    tree_table:     (4 · 64 + 2 · 32 + 8) · e = 328 · e
+    payload_table:  (1 + p) · e
 ```
+
+**Handling IpV6**
+Tree structures handles IpV6 well. The only change nessesary would be to change the `min_ip` and `max_ip` to be a `u32`/`usize`. This would increase all nodes sizes with 2 · 32 bits.
+
+---
+
+## Table
+![](../docs/images/bachelor-03.png)
+
 This would result in
 ```
 (1+256) · 150000000 = 38.550.000.000 bytes = 308.400.000.000 bits
@@ -239,55 +331,40 @@ This means that 32 bit is not big enough to store all the
 2)
 
 
-
-### space:
+**Space**
 best and worst case:
 ```
-#table1
-2^32 /8    /1000/1000/1000 = 0.53 GB pr. bit 
-bites/bytes/kilo/mega/giga
-
-32 bit pointer -> 17.3 gb
-64 bit pointer -> 34.5 gb
+(2^32)*32/8/1000/1000/1000 = 17.2 gb
+(2^64)*32/8/1000/1000/1000 = 34.4 gb
 ```
-```
-#table2
-150.000.000 * 256/1000/1000/1000 = ~38gb
+Since we build a full table it doesn't matter how many entries we get - the size will stay the same. 
 
-dynamic payload
-(34.5-17.3)/(150.000.000/1000/1000/1000) = 114 bytes is the breakpointet.
-```
-
-
-### sql
-
-# Design
-
-
-here we have a simple example of what it would look like if the first entries were
-```
-0.0.0.50 0.0.0.55 SKAT
-0.0.0.0 0.0.0.2 Siteimprove
-0.0.1.20 0.0.1.20 PWC
-...
+**Implementation overview:**
+``` 
+Speed:
+    constant time. 2 lookups. O(1).
+Storage:
+    ip_table: 2^32 * 32
+    payload_table: (1 + p) · e
 ```
 
-## Tree
-![Tree disk usage](../docs/images/bachelor-02.png)
-
-## Table
-![Tree disk usage](../docs/images/bachelor-03.png)
+**Handling IpV6**
+This implementation wont work for IpV6.
+IpV6 is 128 bit instead of IpV4's 32 bit.
+`2^128 = 3,40e38b`
+`3,40e38/8/1000/1000 = 4,25e28 gb`
+This solution would never work in practice. 
 
 # Testing
 
 The automated test script can be found in appendix X, but the overall structure is explained in this section. 
 
-## simple unit tests
+## Simple unit tests
 Most functions are tested by simple unit tests. 
 
 
 ## speed testing
-All tests are executed on a droplet (virtual machine) on Digital Ocean, 
+All tests are executed on a droplet (virtual machine) on Digital Ocean (cloud provider), 
 Closed envorimentent and fixed resources. 
 
 Test process:
@@ -430,40 +507,99 @@ but on a more realistic scale (like in this project) this can become a factor wh
 
 The immediate thought would be that the tree would benefit from this, since the nodes closer to the root would be read much more often than the rest of the tree, meaning that the data stored in the upper nodes can be retrieved from the cache. 
 
-```
-root@ubuntu-s-4vcpu-8gb-fra1-01:~# perf stat -e task-clock,cycles,instructions,cache-references,cache-misses ./target/debug/rust_map
+For testing the cache i used linux command `perf stat -e task-clock,cycles,instructions,cache-references,cache-misses [input]` on the droplet. 
 
- Performance counter stats for './target/debug/rust_map':
+It is difficult to isolate the cache-miss counting to the searchign only. This means the 3 results include generating the searh input, searchin in table/tree, and looking it up in the payload_table. This means that generating and looking in payloads_table should be stable for all 3 tests, 
 
-         31.011974      task-clock (msec)         #    0.982 CPUs utilized
-          85453068      cycles                    #    2.755 GHz
-          90982375      instructions              #    1.06  insn per cycle
-            333436      cache-references          #   10.752 M/sec
-            171468      cache-misses              #   51.425 % of all cache refs
+The tress always hit around 30% cache-miss. 
+the table vary from 30-60% cache miss, depending on if the compiler made optimizations and on higher 
 
-       0.031567396 seconds time elapsed
+<Anden teori... når --release er sat så kører tabellen mere uoptimeret.>
+
+
+// bench28marts.txt - 20.000 entries
+```
+running 1 test
+## search_time_table
+Performance counter stats for 'cargo test --color=always --package rust_map --bin rust_map DO_BenchmarkTests::search_time_table -- --exact --nocapture --ignored':
+
+       2705.389102      task-clock (msec)         #    0.592 CPUs utilized          
+        6937201448      cycles                    #    2.564 GHz                    
+        5837429610      instructions              #    0.84  insn per cycle         
+          66271809      cache-references          #   24.496 M/sec                  
+          40300257      cache-misses              #   60.811 % of all cache refs    
+
+       4.568188826 seconds time elapsed
+```
+```
+## search_time_tree
+Performance counter stats for 'cargo test --color=always --package rust_map --bin rust_map DO_BenchmarkTests::search_time_tree -- --exact --nocapture --ignored':
+
+        169.481477      task-clock (msec)         #    0.366 CPUs utilized          
+         384121127      cycles                    #    2.266 GHz                    
+         320027610      instructions              #    0.83  insn per cycle         
+           3757577      cache-references          #   22.171 M/sec                  
+           1279301      cache-misses              #   34.046 % of all cache refs    
+
+       0.463492404 seconds time elapsed
+```
+```
+## search_time_redblack
+Performance counter stats for 'cargo test --color=always --package rust_map --bin rust_map DO_BenchmarkTests::search_time_redblack -- --exact --nocapture --ignored':
+
+        163.910877      task-clock (msec)         #    0.351 CPUs utilized          
+         374216699      cycles                    #    2.283 GHz                    
+         319708844      instructions              #    0.85  insn per cycle         
+           3682037      cache-references          #   22.464 M/sec                  
+           1293555      cache-misses              #   35.132 % of all cache refs    
+
+       0.467207458 seconds time elapsed
+```
+//bench29marts.txt
+1.000.000 entries 9900 requets
 
 ```
+## search_time_tree
+Performance counter stats for 'cargo test --release --color=always --package rust_map --bin rust_map DO_BenchmarkTests::search_time_tree -- --exact --nocapture --ignored':
 
-`perf stat -e task-clock,cycles,instructions,cache-references,cache-misses cargo test --package rust_map --bin rust_map BenchmarkTests::speed_matrix_tree -- --exact`
+        318.012192      task-clock (msec)         #    0.341 CPUs utilized          
+         721278827      cycles                    #    2.268 GHz                    
+         803216339      instructions              #    1.11  insn per cycle         
+           6106911      cache-references          #   19.203 M/sec                  
+           1968104      cache-misses              #   32.227 % of all cache refs    
 
-Tree
+       0.932002268 seconds time elapsed
 ```
-system out something
-System out something
 ```
-Table
+## search_time_redblack
+Performance counter stats for 'cargo test --release --color=always --package rust_map --bin rust_map DO_BenchmarkTests::search_time_redblack -- --exact --nocapture --ignored':
+
+        322.565836      task-clock (msec)         #    0.344 CPUs utilized          
+         768301003      cycles                    #    2.382 GHz                    
+         817663549      instructions              #    1.06  insn per cycle         
+           6150624      cache-references          #   19.068 M/sec                  
+           1770820      cache-misses              #   28.791 % of all cache refs    
+
+       0.938178936 seconds time elapsed
 ```
-system out something
-System out something
 ```
+## search_time_table
+Performance counter stats for 'cargo test --release --color=always --package rust_map --bin rust_map DO_BenchmarkTests::search_time_table -- --exact --nocapture --ignored':
+
+        250.437058      task-clock (msec)         #    0.408 CPUs utilized          
+         579083232      cycles                    #    2.312 GHz                    
+         775021090      instructions              #    1.34  insn per cycle         
+           4971538      cache-references          #   19.851 M/sec                  
+           1492896      cache-misses              #   30.029 % of all cache refs    
+
+       0.614272760 seconds time elapsed
+```
+
 ### Enchantments / Next Steps 
 
 * Upgrade to redblack tree
 * Actually adding a nice api, instead of only running the code through testfuctions/benchmarks.
 * No reason to individually place each enty to the ip_table... i could just add them to an array in memory and then place that on disk
-* detach the names from the tree itself
-
 
 # Conclusion  
 

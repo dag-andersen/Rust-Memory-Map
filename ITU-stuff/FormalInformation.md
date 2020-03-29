@@ -9,7 +9,7 @@ Collective
 ## Assessment:	D. submission of written work with following oral (7-scale; external exam) 
 ekstern censur, 7-trinsskala 
 ## Language (report):	
-Danish
+Engelsk
 
 ## Problem formulation:	
 - Analyze the requirements from siteimprove in terms of persistent log and key-value store
