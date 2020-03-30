@@ -1,5 +1,5 @@
 use stopwatch::Stopwatch;
-use crate::{FileGenerator, load_to_tree_on_path, load_to_table, Utils, Table, NameTable, load_to_tree, RedBlack, load_to_redblack, REDBLACK_PATH, Tree, TREE_PATH, NAME_TABLE, IP_TABLE};
+use crate::{FileGenerator, load_to_tree_on_path, load_to_table, Utils, Table, NameTable, load_to_tree, RedBlack, load_to_redblack, REDBLACK_PATH, Tree, TREE_PATH, TABLE_PATH, TABLE_PAYLOAD, TREE_PAYLOAD, REDBLACK_PAYLOAD};
 use std::{fs, io};
 use std::fs::{File, OpenOptions};
 use std::io::{LineWriter, Write};
@@ -15,11 +15,11 @@ const DO_Benchmark_test_pre:   &str = "DO_Benchmark_test_pre.txt";
 const DO_Benchmark_test_src:   &str = "DO_Benchmark_test.txt";
 const benchmark_output:        &str = "testdata/out/speed/benchmark.txt";
 
-pub const n:                    u32 = 500_000;
-const range:             Range<u32> = 1..18;
-const padding:           Range<u32> = 40..40;
+pub const n:                    u32 = 1000;
+const range:             Range<u32> = 10..18;
+const padding:           Range<u32> = 10..18;
 const nameLength:             usize = 2;
-const gap:                    usize = 2;
+const gap:                    usize = 10;
 
 pub fn create_test_data() {
     clear_files();
@@ -30,13 +30,12 @@ pub fn create_test_data() {
         println!("\nHOSTNAME: {}",String::from_utf8(Command::new("hostname").output().unwrap().stdout).unwrap());
     }
 
-    println!("## create_test_data");
-    let src = DO_Benchmark_test_pre;
-
     println!("Benchmark input: n: {}, range: {:#?}, padding: {:#?}, namesize: {} \n\n", &n, &range, &padding, &nameLength);
 
-    fs::remove_file(src);
-    FileGenerator::generate_source_file_with(src, n, range, padding, nameLength);
+    println!("## create_test_data");
+    FileGenerator::generate_source_file_with(DO_Benchmark_test_pre, n, range, padding, nameLength);
+
+    sleep(time::Duration::from_secs(1));
 
     if cfg!(target_os = "windows") {
         panic!("This is a windows machine - Shame on you!")
@@ -45,60 +44,50 @@ pub fn create_test_data() {
             .arg(DO_Benchmark_test_pre)
             .arg("-o")
             .arg(DO_Benchmark_test_src)
-            .spawn()
+            .output()
             .expect("failed to execute process")
     } else {
         Command::new("shuf")
             .arg(DO_Benchmark_test_pre)
             .arg("-o")
             .arg(DO_Benchmark_test_src)
-            .spawn()
+            .output()
             .expect("failed to execute process")
     };
 
+    sleep(time::Duration::from_secs(1));
+
+    println!("\n## load_to_redblack");
+    let mut sw = Stopwatch::start_new();
+    load_to_redblack(DO_Benchmark_test_src);
+    sw.stop();
+    println!("\nredblack load time: {}", sw.elapsed().as_millis());
     sleep(time::Duration::from_secs(1));
 
     println!("\n## build_tree");
     let mut sw = Stopwatch::start_new();
     load_to_tree(DO_Benchmark_test_src);
     sw.stop();
-    println!("\nload time: {}", sw.elapsed().as_micros());
-
-    let hej = SystemTime::now();
-
-    sleep(time::Duration::from_secs(1));
-
-    println!("\n## load_to_redblack");
-    let mut sw = Stopwatch::start_new();
-    load_to_table(DO_Benchmark_test_src);
-    sw.stop();
-    println!("\nload time: {}", sw.elapsed().as_micros());
-
+    println!("\ntree load time: {}", sw.elapsed().as_millis());
     sleep(time::Duration::from_secs(1));
 
     println!("\n## load_to_table");
     let mut sw = Stopwatch::start_new();
-    load_to_redblack(DO_Benchmark_test_src);
+    load_to_table(DO_Benchmark_test_src);
     sw.stop();
-    println!("\nload time: {}", sw.elapsed().as_micros());
-
-
+    println!("\ntable load time: {}", sw.elapsed().as_millis());
     sleep(time::Duration::from_secs(1));
 
     println!("\n## search_time_tree");
-    let tree_time = search_time(Tree::gen_tree_map, Tree::find_value_on_map);
-
+    let tree_time = search_time(TREE_PAYLOAD,Tree::gen_tree_map, Tree::find_value_on_map);
     sleep(time::Duration::from_secs(1));
 
     println!("\n## search_time_redblack");
-    RedBlack::load_root_node(REDBLACK_PATH);
-    let redblack_time = search_time(RedBlack::gen_tree_map, RedBlack::find_value_on_map);
-
+    let redblack_time = search_time(REDBLACK_PAYLOAD, RedBlack::gen_tree_map, RedBlack::find_value_on_map);
     sleep(time::Duration::from_secs(1));
 
     println!("\n## search_time_table");
-    let table_time = search_time(Table::gen_ip_table, Table::find_value_on_map);
-
+    let table_time = search_time(TABLE_PAYLOAD, Table::gen_ip_table, Table::find_value_on_map);
     sleep(time::Duration::from_secs(1));
 
     println!();
@@ -113,12 +102,14 @@ fn clear_files() {
     fs::remove_file(DO_Benchmark_test_pre);
     fs::remove_file(DO_Benchmark_test_src);
     fs::remove_file(TREE_PATH);
+    fs::remove_file(TABLE_PATH);
     fs::remove_file(REDBLACK_PATH);
-    fs::remove_file(NAME_TABLE);
-    fs::remove_file(IP_TABLE);
+    fs::remove_file(TABLE_PAYLOAD);
+    fs::remove_file(TREE_PAYLOAD);
+    fs::remove_file(REDBLACK_PAYLOAD);
 }
 
-fn search_time(structure: fn() -> MmapMut, finder: fn(u32, &MmapMut, &MmapMut) -> Option<String>) -> String {
+fn search_time(payload_path: &str, structure: fn() -> MmapMut, finder: fn(u32, &MmapMut, &MmapMut) -> Option<String>) -> String {
     let src = DO_Benchmark_test_src;
 
     let requests = FileGenerator::generate_lookup_testdata(src,gap);
@@ -126,7 +117,7 @@ fn search_time(structure: fn() -> MmapMut, finder: fn(u32, &MmapMut, &MmapMut) -
     assert!(length > 0);
 
     let structure = structure();
-    let name_table = NameTable::gen_name_table();
+    let name_table = NameTable::gen_name_table_from_path(payload_path);
     let mut numberSkipped = 0;
 
     let mut i = 0;
@@ -140,7 +131,7 @@ fn search_time(structure: fn() -> MmapMut, finder: fn(u32, &MmapMut, &MmapMut) -
                 //println!("Wrong match - real: {} - found: {} - ip: {}", name, value, ip);
             }
         } else { numberSkipped += 1; println!("Found none - real name: {} - ip: {}", name, ip) }
-        if i % (length/100) == 0 { print!("-"); io::stdout().flush(); }
+        if i % (length/100 + 1) == 0 { print!("-"); io::stdout().flush(); }
         i += 1;
     }
     sw.stop();

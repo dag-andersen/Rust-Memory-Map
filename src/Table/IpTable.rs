@@ -1,31 +1,13 @@
-use crate::{IP_TABLE, NAME_TABLE, u32Size, Entry, FileGenerator, Table, NameTable};
+use crate::{TABLE_PATH, u32Size, Entry, FileGenerator, Table, NameTable};
 use crate::Table::{IpTable};
 use crate::Utils;
 use memmap::MmapMut;
 use std::fs;
 
 pub fn place_entry(mmap: &mut MmapMut, entry: &Entry, value: u32) {
-    const buffer: usize = 50;
-    let mut offset= entry.min_ip as usize * u32Size;
-    let mut array = [0; buffer];
-    let mut counter: usize = 0;
-
-    for _ in 0..entry.max_ip-entry.min_ip+1 {
-        array[counter] = value + 1;
-        counter += 1;
-        if counter == buffer {
-            let bytes = unsafe { Utils::any_as_u8_slice(&array) };
-            let bytes = &bytes[..buffer * u32Size];
-            mmap[offset..offset+bytes.len()].copy_from_slice(bytes);
-            offset += buffer * u32Size;
-            array = [0; buffer];
-            counter = 0;
-        }
+    for ip in entry.min_ip..entry.max_ip+1 {
+        Utils::place_item_raw(mmap, ip as usize * u32Size, &(value+1)); // +1 because we use 0 for tracking if there is no value reference
     }
-    if counter == 0 { return }
-    let bytes = unsafe { Utils::any_as_u8_slice(&array) };
-    let bytes = &bytes[..counter*u32Size];
-    mmap[offset..offset+bytes.len()].copy_from_slice(bytes);
 }
 
 pub fn get_name_on_map(ip: u32, ip_table: &MmapMut) -> Option<usize> {

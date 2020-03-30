@@ -1,4 +1,4 @@
-use crate::{NameTable, NAME_TABLE, Entry, RedBlack, REDBLACK_PATH, Utils, usizeSize, thisFileWillBeDeleted};
+use crate::{NameTable, Entry, RedBlack, REDBLACK_PATH, Utils, usizeSize, thisFileWillBeDeleted, REDBLACK_PAYLOAD};
 use memmap::MmapMut;
 use crate::RedBlack::{Node, NODE_SIZE, NodeToMem};
 use std::ops::Deref;
@@ -211,7 +211,7 @@ fn save_and_load_root_node() {
 fn insert_node_and_find_it() {
     RedBlack::reset_root_index();
     fs::remove_file(REDBLACK_PATH);
-    fs::remove_file(NAME_TABLE);
+    fs::remove_file(REDBLACK_PAYLOAD);
 
     let mut tree_map = super::gen_tree_map();
 
@@ -261,14 +261,14 @@ fn insert_node_and_find_it() {
     assert!(out_name3.is_none());
 
     fs::remove_file(REDBLACK_PATH);
-    fs::remove_file(NAME_TABLE);
+    fs::remove_file(REDBLACK_PAYLOAD);
 }
 
 #[test]
 fn insert_node_random_order_and_find_it() {
     unsafe { root_index = 1 };
     fs::remove_file(REDBLACK_PATH);
-    fs::remove_file(NAME_TABLE);
+    fs::remove_file(REDBLACK_PAYLOAD);
 
     let mut tree_map = super::gen_tree_map();
 
@@ -325,5 +325,5 @@ fn insert_node_random_order_and_find_it() {
     assert_eq!(out_name8.unwrap(),name6);
 
     fs::remove_file(REDBLACK_PATH);
-    fs::remove_file(NAME_TABLE);
+    fs::remove_file(REDBLACK_PAYLOAD);
 }

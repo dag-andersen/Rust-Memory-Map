@@ -1,5 +1,5 @@
 use stopwatch::Stopwatch;
-use crate::{FileGenerator, TREE_PRINT_PATH, TREE_PATH, load_to_tree_on_path, load_to_table, Utils, NAME_TABLE, IP_TABLE, u32Size, SP_100_000, SP_10_000, thisFileWillBeDeleted, Table, SP_1_000_000, SP_500_000, SP_50_000, NameTable, load_to_tree, load_to_redblack, RedBlack};
+use crate::{FileGenerator, TREE_PRINT_PATH, TREE_PATH, load_to_tree_on_path, load_to_table, Utils, TABLE_PATH, u32Size, SP_100_000, SP_10_000, thisFileWillBeDeleted, Table, SP_1_000_000, SP_500_000, SP_50_000, NameTable, load_to_tree, load_to_redblack, RedBlack, REDBLACK_PAYLOAD, TABLE_PAYLOAD, TREE_PAYLOAD};
 use std::fs;
 use std::fs::File;
 use std::io::{LineWriter, Write};
@@ -133,7 +133,7 @@ fn search_time_tree_vs_RedBlack_vs_table() {
     println!("#{} requests created", length);
 
     load_to_table(src);
-    let name_table = NameTable::gen_name_table();
+    let name_table = NameTable::gen_name_table_from_path(TABLE_PAYLOAD);
     let ip_table = Table::gen_ip_table();
 
     let mut counter = 0;
@@ -158,7 +158,7 @@ fn search_time_tree_vs_RedBlack_vs_table() {
     counter = 0;
     load_to_tree(src);
     let mmap = Tree::gen_tree_map();
-    let name_table = NameTable::gen_name_table();
+    let name_table = NameTable::gen_name_table_from_path(TREE_PAYLOAD);
 
     let mut sw = Stopwatch::start_new();
     for (ip, name) in requests2 {
@@ -179,7 +179,7 @@ fn search_time_tree_vs_RedBlack_vs_table() {
     counter = 0;
     load_to_redblack(src);
     let mmap = RedBlack::gen_tree_map();
-    let name_table = NameTable::gen_name_table();
+    let name_table = NameTable::gen_name_table_from_path(REDBLACK_PAYLOAD);
 
     let mut sw = Stopwatch::start_new();
     for (ip, name) in requests3 {

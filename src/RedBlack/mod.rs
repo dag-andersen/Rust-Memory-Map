@@ -1,5 +1,5 @@
 use core::fmt;
-use crate::{Entry, Utils, REDBLACK_PATH, NameTable, Table};
+use crate::{Entry, Utils, REDBLACK_PATH, NameTable, Table, REDBLACK_PAYLOAD};
 use memmap::MmapMut;
 use crate::RedBlack::Tree::root_index;
 
@@ -43,7 +43,7 @@ pub fn insert_entry(mmap: &mut MmapMut, index: usize, entry: Entry, name_index: 
 
 pub fn find_value(ip: u32) -> Option<String> {
     let mmap = gen_tree_map();
-    let name_table = NameTable::gen_name_table();
+    let name_table = NameTable::gen_name_table_from_path(REDBLACK_PAYLOAD);
     find_value_on_map(ip,&mmap, &name_table)
 }
 

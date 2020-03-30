@@ -1,4 +1,4 @@
-use crate::{Utils, TREE_PATH, Tree, Table, NameTable, thisFileWillBeDeleted, FileGenerator, TREE_PRINT_PATH, SOURCE_PATH_3, SOURCE_PATH_1};
+use crate::{Utils, TREE_PATH, Tree, Table, NameTable, thisFileWillBeDeleted, FileGenerator, TREE_PRINT_PATH, SOURCE_PATH_3, SOURCE_PATH_1, TREE_PAYLOAD};
 use std::fs::File;
 use std::io::{LineWriter, Write, BufRead};
 use memmap::MmapMut;
@@ -28,7 +28,7 @@ pub(crate) fn print_tree_to_file(s: &str) {
     let file = File::create(s).unwrap();
     let mut line_writer = LineWriter::new(file);
     let tree_map = Tree::gen_tree_map();
-    let name_table = NameTable::gen_name_table();
+    let name_table = NameTable::gen_name_table_from_path(TREE_PAYLOAD);
     let root = NodeToMem::get_node(&tree_map, 0);
     print_node_to_file(&tree_map, &name_table, &root, 0, &mut line_writer);
 }

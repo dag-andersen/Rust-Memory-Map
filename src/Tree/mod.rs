@@ -1,5 +1,5 @@
 use core::fmt;
-use crate::{Entry, Utils, TREE_PATH, NameTable, Table};
+use crate::{Entry, Utils, TREE_PATH, NameTable, Table, TREE_PAYLOAD};
 use memmap::MmapMut;
 
 mod NodeToMem;
@@ -36,7 +36,7 @@ pub fn gen_tree_map_on_path(path: &str) -> MmapMut { Utils::get_memmap(path, 5_0
 
 pub fn find_value(ip: u32) -> Option<String> {
     let mmap = gen_tree_map();
-    let name_table = NameTable::gen_name_table();
+    let name_table = NameTable::gen_name_table_from_path(TREE_PAYLOAD);
     find_value_on_map(ip,&mmap, &name_table)
 }
 
