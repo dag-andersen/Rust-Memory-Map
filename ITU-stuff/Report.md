@@ -12,27 +12,32 @@ On a small scale the easy answer is to just buy a more powerful machine, but thi
 
 ## Problem explained in detail
 
-Siteimprove needs service where they can look up information of a given ip-address. The primary focus is fast lookup so their customers can get a result as fast as possible.
-Preprocessing time is not important as long as it doesn't take over day. 
+Siteimprove needs a service that can look up information of a given ip-address. The primary focus is fast lookup so their customers can get a result as fast as possible.
+Pre-processing time is not important as long as it doesn't take over day. 
+It has to use under 
 Space wise it doesn't matter much either, but again it has to be a realistic/practical amount.
 
 ### Data
 
+The data is expected to be read from a file or read as a stream.
 Each entry consist of two ip addresses and some related data/payload. The first ip determents the lower bound of the range and the second is the upper bound.
+The payload can vary in size, but bla bla bla.
 
-It is not possible to access to the real data due to confidentiality, but the number of entries and the amount of payload pr. entry. is available. 
-The system needs to handle 150mil ipv4 ranges and 35mil ipv6 ranges with a payload of 256 bytes.
+`
+It is not possible to access to the real data due to confidentiality, but the avarage payload size pr. entry. is available. 
+The system needs to handle 150 mil ipv4 ranges and 35 mil ipv6 ranges with a payload of 256 bytes.`
 
 ### Assumptions
 * The input data contains no overlapping ranges
-* No range/entry contain the same payload?
 * No ip range is excluded (No ip range should be ignore because of reserved ip-range-blocks) / in other words... all ip addresses are possible.
-* No need to remove or change entries.
+* No need to remove or change entries after insertion. 
 * The entries should should be able to be stream into the program so no way of knowing how many entries will actually go into the system
 
 ### the goal
-Handle 150 mil entries
+Handle 150 mil entries of Ipv4
 Siteimprove's wishes for a lookup time of p99 in 60ms.
+
+The focus of this paper is the 150 mil entry ipv4 - but we will make referels towards ipv6.
 
 ### Si Rules/Priorities
 ```
@@ -55,21 +60,8 @@ I couldn't test on Siteimprove's real data, since it confidential, but could get
 - Lookup-time:          p99 in 60ms.`
 ```
 
-### Input Cases
-- Payload pr. range
-- Distance between ranges
-- number of ranges
-- Range size
-- IPv4 or IPv6
-- mutable structure vs. dynamic insertion 
-
-### Test Variables:
-- ram 
-- Space
-- lookup time
-- build time
-
 ## Why rust?
+
 "Rust is a multi-paradigm system programming language focused on safety, especially safe concurrency. Rust is syntactically similar to C, but is designed to provide better memory safety while maintaining high performance." - wiki
 
 In a survey done by XXX 51% of the security vulnerabilities in the linux kernel is coursed by concurrency and memory safety issues that are fundamentally impossible to get in rust (unless you use the `unsafe` keyword, which is not recommended)
@@ -80,7 +72,7 @@ In a survey done by XXX 51% of the security vulnerabilities in the linux kernel 
 
 Guaranteed by Rust's ownership system - At compile time
 
-This means if I have an array `[T]` of items and I init a reference to one of those items `&T` then the that reference needs to go out of scope before the array - otherwise the rust compiler wont compile because it can't guarantee that the array isn't de-allocated or changed before accessing `T`.
+This means if we have an array `[T]` of items and we create a reference to one of those items `&T` then the that reference needs to go out of scope before the array itself - otherwise the rust compiler wont compile because it can't guarantee that the array isn't de-allocated or changed before accessing `T`.
 This is both a huge challenge when first starting to work with Rust, but also a really great safety.
 
 Since rust have real references that it check and don't really use & "raw pointers" that you move around in C, then i was hoping i could use references on my nodes...
@@ -144,7 +136,9 @@ pub(crate) unsafe fn bytes_to_type<T>(slice: &[u8]) -> &mut T {
 ```
 Here we have no guarantee of we are going to get, since it just a pointer and a length that we force to become a reference to type T. I this case we don't have any other way, since MememoryMap only know the concept of bytes.
 
-Overall i believe rust is a great language for low level programming and it's safety and guarantees are great, but in some cases it run short when you are working directly on disk. 
+Rust have the ability to call directly into C files, and you also have the abiilty use most of by using the `libc`- libarary. This means we can access functions like `mlock` and `mlockall`. But again rust can garantee these functions so we need to use the "unsafe" keyword.
+
+Overall i believe rust is a great language for low level programming and it's safety and guarantees are great - and you can always tap into c.  but in some cases it run short when you are working directly on disk. 
 
 
 
@@ -158,9 +152,9 @@ https://stackoverflow.com/questions/47618823/cannot-borrow-as-mutable-because-it
 The usually way of searching through persistent data is usually done by saving it in a database usually consisting of key-value entries stored in tables.
 
 The data for this problem consist of ranges, which means that the choice of database type is not obvious, and depends on different factors. 
-It depends on range-size, gap-size (between each range), data-size pr entry, how many keys there can exist in total, and number of entries - and ofc how complicated of a implementation you want. 
+It depends on range-size, gap-size (between each range), payload-size pr. entry, how many keys there can exist in total, and number of entries - and of course how complicated of a implementation you want. 
 
-For this problem i have chosen to look into tree structures and full-table structures. 
+For this problem i have chosen to look into tree and table structures. 
 
 Lets declare some variables:
 ```
@@ -168,55 +162,63 @@ p = payload size in bytes
 e = number of entries
 ```
 
+```
+address -> the offset in bytes from start of a memory mapped file
+index -> the offset in nodes from start of a memory mapped file
+```
+
+<måske en reminder at ipv4 er en u32>
+
 #### Fixed vs. dynamic payload length 
-Depending on the problem you want to solve you can either choose to use the same amount of space for each entry or have a dynamic size meaning you only use the necessary amount of space for each entry. 
-Dynamic payload is great, since you don't wast space on empty payload, but the downside is that you have to store "absolute addresses" to where the payload begins instead of only storing which number of  fixed-payload-size-block when referring to the payload.
+Depending on the problem you want to solve you can either choose to use the same fixed amount of space for each entry or have a dynamic size meaning you only use the necessary amount of space for each entry.
+Dynamic payload is great, since you don't waste space on padding/empty payload, but the downside is that you have to store the addresses payload begins instead of only storing the index to the node/struct of payload you are referering to.
+
+
+This natually means that the address pointer always will be a bigger number than the index pointer. Therefore it is not alway bennificial to use dynamic sized payload if the amount of pointers are huge, since the amount of space needed accumulates
+This means that an address-pointer of 32b can only point to a max size of ~4.3 byte data 
+
 <insert image>
-This means that it sometimes are not beneficial to use dynamic, if amount of pointers to the payload accumulates to a given amount. 
+
+This means that it is not alway benefitino to use a dynamic size, if the amount of pointers in the data structure is large, because each pointer has to be bigger, because a , because you need to store bigger sized-pointers because adresses 
+This means that it sometimes are not beneficial to use dynamic, if amount of pointers in the data strucutre is large, because to the payload accumulates to a given amount. 
 
 For this project i have chosen dynamic payload length, because the payload consist of names, which can vary a lot in length. If fixed length was chosen i would either have to accept a large amount of wasted space, or not allow names to be over a given length meaning i would cut of names.
 
 ## Binary Trees
 
-### introduction
 
-There is many differently ways of structuring each node depending on what the goal is.
+### Introduction
 
-* Fixed size nodes, vs. dynamic sized nodes. If you go for fixed size nodes, you only need to store the index of the node and not the full address. (as explained above)
-* Wanting a separate lookup table or not. This goes hand in hand with the one above, since you cant have 
+A binary tree is a simple datastructure where you cut away half the nodes for each step you go down the tree. 
+This means you have to look through log2(n) nodes before finding the right node. 
 
-![Tree disk usage](../docs/images/bachelor-01.png)
+One of the choices you have to make is to decide on if you want to store the payload on the node it self or it should store a pointer to somewhere else with the payload. 
 
-Lets split this up into two problems: _range storage_ and _pointer/payload storage_
+Storing payload works fine.
+- No need to spend time on looking up the payload in a different file.
+- If the payload is a dynamic size, then we will have to refer to addresses instead of indexes, which takes more space as explained above.
+- One could argue that it is better for caching to store the payload in a differently file, because the nodes would be smaller and next to each other on disk and therefore make better use of locallity while searching down the tree.
 
-Depending on if you want to handle ipv6 or not you have to choose 
-
-##### range storage
-
-##### payloadstorage
-
-
-```
-
-ipv6 - solution E
-30.000.000*232 / 8 /1000/1000/1000 = 0.87gb 
-
-2^32/256
-
-#table2
-30.000.000 * 256/1000/1000/1000 = ~7.7gb
-```
-
+Another interesting point is to decide on how you want to store the ip-addresses. the simplest solution is to store the lower bound ip and the upper bound ip - each take up 32 bit - Resulting in 64 bit pr. node. Anouther approach could be to only store the lowerbound and then store the delta to the upper bound - this is usuful if you know that the ranges will me small meaning you could get away with ouly storing the delta on single byte. This can be takeing even further to store a delta from the last nodes upper ip, to this nodes lower ip and store the internal delta. 
+Or you could choose to only store the delta to 
+This is only usefull optimizations if you know how the ranges and gaps are distibuted, but since we cant do that in this project we have just went with the simple solution and storing the full ip address for both upper and lower bound. 
 
 ### Redblack Tree
-https://www.geeksforgeeks.org/red-black-tree-set-2-insert/
+
+An extension of the binary tree is the redblack tree. A redblack tree is a self-balancing tree structure. This prevents the tree from being inbalanced in exchange of longer build time and bigger nodes. 
+It was invented in 1972 by Rudolf Bayer.
 
 to prevent the tree from being unbalanced one could implement a redblack tree.
 Cons: Slower build time, more space usage
 
-Invented	1972
-Invented by	Rudolf Bayer
+As donald knuth proves in XXX the bigger the 
 
+The bigger the tree the more useless it becomes...
+
+A balanced tree is maybe not need consindering the nature of randomness.
+< måske sæt hans bevis ind? >
+
+The time complexicty is overall/theroticly the samme. 
 <Insert runtime >
 ```
 Algorithm	Average	    Worst case
@@ -230,19 +232,34 @@ Delete		O(log n)    O(log n)
 "In 1999, Chris Okasaki showed how to make the insert operation purely functional. Its balance function needed to take care of only 4 unbalanced cases and one default balanced case"
 
 <De 4 cases (5) bliver gennemgået her www.geeksforgeeks.org/red-black-tree-set-2-insert/ >
+<måske skriv redblack om til functionel>
+
 
 ## Tables
 
 The general understanding is that searching in tables are quicker than most data structures, because you can get the data by going directly to a specific index by using the key. 
 
+The simple/naive implementation of this is to just create a full table for all ip-addresses holding a value for each ip. This obviously result in a massive data duplication because a value is stored repeatedly for each key in the associated range. This can easily be improved by actually storing the payload in another table and only storing a pointer to the payload.
 
-The naive implementation of this is to just create a full table for all ip-addresses holding a value for each ip. This obviously result in a massive data duplication because a value is stored repeatedly for each key in the associated range. This can easily be improved by actually storing the payload in another table and only storing the index in the ip_table
+<vis en fin tegning af at det er kode dublication>
 
-holding another key that is used as an address to find the actual value.
-<insert image>
+![](../docs/images/bachelor-05.png)
+
+The other downside is that you have to store a full sized table even though you may only have very few entries.
+
+A solution is generally to create some kind of hashtable, where keys are hashed and points to some other datastructure (like a linked list).
+But in this case you would still have to add each ip-value pair into the table. 
 
 
 # Design
+
+I this paper i have went for implementing a binary tree, a redblack tree, and a table. 
+All tree datastructures use an external table for the payload. 
+
+datastructures are implemented using memory mapped files.
+
+for this implememation i have choosen to store strings as payload, but this could be swapped out with anything. 
+
 
 
 ## Payload Map
@@ -320,6 +337,32 @@ Tree structures handles IpV6 well. The only change nessesary would be to change 
 
 ---
 
+
+![Tree disk usage](../docs/images/bachelor-01.png)
+
+Lets split this up into two problems: _range storage_ and _pointer/payload storage_
+
+Depending on if you want to handle ipv6 or not you have to choose 
+
+##### range storage
+
+##### payloadstorage
+
+
+```
+
+ipv6 - solution E
+30.000.000*232 / 8 /1000/1000/1000 = 0.87gb 
+
+2^32/256
+
+#table2
+30.000.000 * 256/1000/1000/1000 = ~7.7gb
+```
+
+
+---
+
 ## Table
 ![](../docs/images/bachelor-03.png)
 
@@ -356,6 +399,22 @@ IpV6 is 128 bit instead of IpV4's 32 bit.
 This solution would never work in practice. 
 
 # Testing
+
+
+### Input Cases
+- Payload pr. range
+- Distance between ranges
+- number of ranges
+- Range size
+- IPv4 or IPv6
+- mutable structure vs. dynamic insertion 
+
+### Test Variables:
+- ram 
+- Space
+- lookup time
+- build time
+
 
 The automated test script can be found in appendix X, but the overall structure is explained in this section. 
 
@@ -452,8 +511,17 @@ The profiler used for this project was the build-in profiler-tool in _Jetbrains 
 <nævn noget om hvilken type profiling det er >
 This was mainly used for seeing how much time the process spend in each scope/stackframe/function to find bottlenecks.
 
+this han been great for learning Rust. 
+
 ### Debugging
 * Stepping through the debugger
+
+
+**printlines**
+
+It has also been used to check if tree was strcutured correclky. Both binary tree and the redblack tree module has a function for printing the tree, and also a test to verify that the tree is printet correcty. 
+
+
 * Printing tree
 ```
 --red
