@@ -136,16 +136,15 @@ fn leftRotate(mmap: &MmapMut, node: &mut Node, parent: &mut Node) {
     node.left = node.parent;
     node.parent = oldGrandparentIndex;
 
-    if oldGrandparentIndex == 0 {
-        unsafe { root_index = parent.parent };
-    } else {
-        let grandparent = NodeToMem::get_node(mmap, oldGrandparentIndex);
-        if grandparent.left == node.left {
-            grandparent.left = parent.parent;
-        } else if grandparent.right == node.left {
-            grandparent.right = parent.parent;
-        } else {
-            panic!("left rotate: wrong family relation")
+    match oldGrandparentIndex {
+        0 => unsafe { root_index = parent.parent },
+        _ => {
+            let grandparent = NodeToMem::get_node(mmap, oldGrandparentIndex);
+            match (grandparent, node) {
+                (gp, n) if gp.left == n.left    => gp.left = parent.parent,
+                (gp, n) if gp.right == n.left   => gp.right = parent.parent,
+                _ => panic!("left rotate: wrong family relation")
+            }
         }
     }
 }
@@ -162,16 +161,15 @@ fn rightRotate(mmap: &MmapMut, node: &mut Node, parent: &mut Node) {
     node.right = node.parent;
     node.parent = oldGrandparentIndex;
 
-    if oldGrandparentIndex == 0 {
-        unsafe { root_index = parent.parent };
-    } else {
-        let grandparent = NodeToMem::get_node(mmap, oldGrandparentIndex);
-        if grandparent.left == node.right {
-            grandparent.left = parent.parent;
-        } else if grandparent.right == node.right {
-            grandparent.right = parent.parent;
-        } else {
-            panic!("right rotate: wrong family relation")
+    match oldGrandparentIndex {
+        0 => unsafe { root_index = parent.parent },
+        _ => {
+            let grandparent = NodeToMem::get_node(mmap, oldGrandparentIndex);
+            match (grandparent, node) {
+                (gp, n) if gp.left == n.right   => gp.left = parent.parent,
+                (gp, n) if gp.right == n.right  => gp.right = parent.parent,
+                _ => panic!("left rotate: wrong family relation")
+            }
         }
     }
 }

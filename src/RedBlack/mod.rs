@@ -48,12 +48,8 @@ pub fn find_value(ip: u32) -> Option<String> {
 }
 
 pub fn find_value_on_map(ip: u32, mmap: &MmapMut, name_table: &MmapMut) -> Option<String> {
-    let node = Tree::find_node_on_map(ip, mmap);
-    if node.is_none() { return None }
-    let index = node.unwrap();
-
-    if index == 0 { return None }
-    let index = index as usize -1; // -1 because we use 0 for tracking if there is no value reference
-
-    NameTable::get_name(&name_table, index)
+    match Tree::find_node_on_map(ip, mmap)? {
+        0 => None,
+        i => NameTable::get_name(&name_table, i - 1)
+    }
 }

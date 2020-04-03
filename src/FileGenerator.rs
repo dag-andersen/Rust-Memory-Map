@@ -17,14 +17,14 @@ fn generate_random_ip_firm(rng: &mut ThreadRng) -> String {
     let ip3 : u8 = rng.gen();
     let ip4 : u8 = rng.gen();
     let mut r = String::new();
-    r.push_str(&format!("{}",ip1)); r.push('.');
-    r.push_str(&format!("{}",ip2)); r.push('.');
-    r.push_str(&format!("{}",ip3)); r.push('.');
+    r.push_str(&format!("{}",ip1));      r.push('.');
+    r.push_str(&format!("{}",ip2));      r.push('.');
+    r.push_str(&format!("{}",ip3));      r.push('.');
     r.push_str(&format!("{}",ip4 >> 1)); r.push(' ');
-    r.push_str(&format!("{}",ip1)); r.push('.');
-    r.push_str(&format!("{}",ip2)); r.push('.');
-    r.push_str(&format!("{}",ip3)); r.push('.');
-    r.push_str(&format!("{}",ip4)); r.push(' ');
+    r.push_str(&format!("{}",ip1));      r.push('.');
+    r.push_str(&format!("{}",ip2));      r.push('.');
+    r.push_str(&format!("{}",ip3));      r.push('.');
+    r.push_str(&format!("{}",ip4));      r.push(' ');
     let name = gen_firm(& rng, 4);
     r.push_str(&name); r.push_str("\n");
     r
@@ -202,13 +202,13 @@ pub fn generate_lookup_testdata(src: &str, gap: usize) -> Vec<(u32,String)>{
     let mut rng = thread_rng();
 
     let mut lines = get_buffer(src).lines();
-    while let ost = lines.nth(gap) {
-        if ost.is_none() { break; }
-        let ost= ost.unwrap();
-        if ost.is_err() { continue }
-        let ost = ost.unwrap();
-        if ost.is_empty() { continue; }
-        let entry = Utils::get_entry_for_line(&ip_regex, &name_regex, &ost);
+    while let line = lines.nth(gap) {
+        if line.is_none() { break; }
+        let line = line.unwrap();
+        if line.is_err() { continue }
+        let line = line.unwrap();
+        if line.is_empty() { continue; }
+        let entry = Utils::get_entry_for_line(&ip_regex, &name_regex, &line);
         if entry.is_none() { continue }
         let entry = entry.unwrap();
         vec.push((rng.gen_range(entry.min_ip,entry.max_ip), entry.name));
