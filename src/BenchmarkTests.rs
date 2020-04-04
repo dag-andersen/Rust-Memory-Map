@@ -135,7 +135,7 @@ fn search_time_tree_vs_RedBlack_vs_table() {
     generate_source_file_with_in_mem(src, n,range, padding, nameLength);
     println!("Benchmark input: n: {}, range: {:#?}, padding: {:#?}, namesize: {}, gap: {}\n\n", &n, &range, &padding, &nameLength, &gap);
 
-    let requests1 = FileGenerator::generate_lookup_testdata(src,20);
+    let requests1 = FileGenerator::generate_lookup_testdata(src,gap);
     let requests2 = requests1.clone();
     let requests3 = requests1.clone();
     let length = requests1.len();
