@@ -1,0 +1,39 @@
+Benchmark input: n: 1500000, range: 1..1, padding: 28..28, namesize: 2 
+
+
+running 1 test
+test DO_BenchmarkTests::build_tree ... ## build_tree
+Tree: pushed 0 lines
+Tree: pushed 500000 lines
+Tree: pushed 1000000 lines
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 21 filtered out
+
+
+running 1 test
+test DO_BenchmarkTests::build_table ... ## load_to_table
+table: pushed 0 lines
+table: pushed 500000 lines
+table: pushed 1000000 lines
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 21 filtered out
+
+
+running 1 test
+test DO_BenchmarkTests::search_time_table ... ## search_time_table
+--- table : #86719 micro seconds, #29411 of requests ran, #0 skipped
+
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 21 filtered out
+
+
+running 1 test
+test DO_BenchmarkTests::search_time_tree ... ## search_time_tree
+--- Tree : #328939 micro seconds, #29411 of requests ran, #0 skipped
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 21 filtered out
+

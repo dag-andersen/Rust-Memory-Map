@@ -1,0 +1,149 @@
+ubuntu-s-4vcpu-8gb-fra1-01
+Benchmark input: n: 1000000, range: 1..1, padding: 40..40, namesize: 2 
+
+# started on Sat Mar 28 17:19:32 2020
+
+
+ Performance counter stats for 'cargo test --release --color=always --package rust_map --bin rust_map DO_BenchmarkTests::create_test_data -- --exact --nocapture --ignored':
+
+       7797.085185      task-clock (msec)         #    1.447 CPUs utilized          
+       21037925727      cycles                    #    2.698 GHz                    
+       22785189693      instructions              #    1.08  insn per cycle         
+         212975410      cache-references          #   27.315 M/sec                  
+          45431990      cache-misses              #   21.332 % of all cache refs    
+
+       5.388115680 seconds time elapsed
+
+
+running 1 test
+## load_to_table
+Pushed 0 lines
+Pushed 500000 lines
+test DO_BenchmarkTests::build_table ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 30 filtered out
+
+# started on Sat Mar 28 17:19:40 2020
+
+
+ Performance counter stats for 'cargo test --release --color=always --package rust_map --bin rust_map DO_BenchmarkTests::build_table -- --exact --nocapture --ignored':
+
+       1439.452569      task-clock (msec)         #    0.848 CPUs utilized          
+        3633915635      cycles                    #    2.525 GHz                    
+        7386454761      instructions              #    2.03  insn per cycle         
+           7272021      cache-references          #    5.052 M/sec                  
+           3184297      cache-misses              #   43.788 % of all cache refs    
+
+       1.696940554 seconds time elapsed
+
+
+running 1 test
+## build_tree
+Pushed 0 lines
+Pushed 500000 lines
+test DO_BenchmarkTests::build_tree ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 30 filtered out
+
+# started on Sat Mar 28 17:19:44 2020
+
+
+ Performance counter stats for 'cargo test --release --color=always --package rust_map --bin rust_map DO_BenchmarkTests::build_tree -- --exact --nocapture --ignored':
+
+       2631.178667      task-clock (msec)         #    0.908 CPUs utilized          
+        6834579439      cycles                    #    2.598 GHz                    
+        8053120012      instructions              #    1.18  insn per cycle         
+          26084260      cache-references          #    9.914 M/sec                  
+          14558863      cache-misses              #   55.815 % of all cache refs    
+
+       2.899353679 seconds time elapsed
+
+
+running 1 test
+## load_to_table
+Pushed 0 lines
+test DO_BenchmarkTests::build_redblack ... test DO_BenchmarkTests::build_redblack has been running for over 60 seconds
+Pushed 500000 lines
+test DO_BenchmarkTests::build_redblack ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 30 filtered out
+
+# started on Sat Mar 28 17:19:49 2020
+
+
+ Performance counter stats for 'cargo test --release --color=always --package rust_map --bin rust_map DO_BenchmarkTests::build_redblack -- --exact --nocapture --ignored':
+
+     262235.229396      task-clock (msec)         #    0.112 CPUs utilized          
+      538082875515      cycles                    #    2.052 GHz                    
+      256882719435      instructions              #    0.48  insn per cycle         
+        9800692107      cache-references          #   37.374 M/sec                  
+        2360214794      cache-misses              #   24.082 % of all cache refs    
+
+    2335.593650839 seconds time elapsed
+
+
+running 1 test
+## search_time_tree
+Search time --- #368273 micro seconds, #9900 of requests ran, #0 skipped
+
+test DO_BenchmarkTests::search_time_tree ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 30 filtered out
+
+# started on Sat Mar 28 17:58:50 2020
+
+
+ Performance counter stats for 'cargo test --release --color=always --package rust_map --bin rust_map DO_BenchmarkTests::search_time_tree -- --exact --nocapture --ignored':
+
+        318.012192      task-clock (msec)         #    0.341 CPUs utilized          
+         721278827      cycles                    #    2.268 GHz                    
+         803216339      instructions              #    1.11  insn per cycle         
+           6106911      cache-references          #   19.203 M/sec                  
+           1968104      cache-misses              #   32.227 % of all cache refs    
+
+       0.932002268 seconds time elapsed
+
+
+running 1 test
+## search_time_redblack
+Search time --- #405548 micro seconds, #9900 of requests ran, #0 skipped
+
+test DO_BenchmarkTests::search_time_redblack ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 30 filtered out
+
+# started on Sat Mar 28 17:58:53 2020
+
+
+ Performance counter stats for 'cargo test --release --color=always --package rust_map --bin rust_map DO_BenchmarkTests::search_time_redblack -- --exact --nocapture --ignored':
+
+        322.565836      task-clock (msec)         #    0.344 CPUs utilized          
+         768301003      cycles                    #    2.382 GHz                    
+         817663549      instructions              #    1.06  insn per cycle         
+           6150624      cache-references          #   19.068 M/sec                  
+           1770820      cache-misses              #   28.791 % of all cache refs    
+
+       0.938178936 seconds time elapsed
+
+
+running 1 test
+## search_time_table
+Search time --- #132934 micro seconds, #9900 of requests ran, #0 skipped
+
+test DO_BenchmarkTests::search_time_table ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 30 filtered out
+
+# started on Sat Mar 28 17:58:56 2020
+
+
+ Performance counter stats for 'cargo test --release --color=always --package rust_map --bin rust_map DO_BenchmarkTests::search_time_table -- --exact --nocapture --ignored':
+
+        250.437058      task-clock (msec)         #    0.408 CPUs utilized          
+         579083232      cycles                    #    2.312 GHz                    
+         775021090      instructions              #    1.34  insn per cycle         
+           4971538      cache-references          #   19.851 M/sec                  
+           1492896      cache-misses              #   30.029 % of all cache refs    
+
+       0.614272760 seconds time elapsed
+
