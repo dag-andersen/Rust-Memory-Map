@@ -29,7 +29,6 @@ pub fn create_test_data() {
     } else {
         println!("\nHOSTNAME: {}",String::from_utf8(Command::new("hostname").output().unwrap().stdout).unwrap());
     }
-
     println!("Benchmark input: n: {}, range: {:#?}, padding: {:#?}, namesize: {} \n\n", &n, &range, &padding, &nameLength);
 
     println!("## create_test_data");
@@ -55,40 +54,13 @@ pub fn create_test_data() {
             .expect("failed to execute process")
     };
 
-    sleep(time::Duration::from_secs(1));
+    create_redblack();
+    create_tree();
+    create_table();
 
-    println!("\n## load_to_redblack");
-    let mut sw = Stopwatch::start_new();
-    load_to_redblack(DO_Benchmark_test_src);
-    sw.stop();
-    println!("\nredblack load time: {}", sw.elapsed().as_millis());
-    sleep(time::Duration::from_secs(1));
-
-    println!("\n## build_tree");
-    let mut sw = Stopwatch::start_new();
-    load_to_tree(DO_Benchmark_test_src);
-    sw.stop();
-    println!("\ntree load time: {}", sw.elapsed().as_millis());
-    sleep(time::Duration::from_secs(1));
-
-    println!("\n## load_to_table");
-    let mut sw = Stopwatch::start_new();
-    load_to_table(DO_Benchmark_test_src);
-    sw.stop();
-    println!("\ntable load time: {}", sw.elapsed().as_millis());
-    sleep(time::Duration::from_secs(1));
-
-    println!("\n## search_time_tree");
-    let tree_time = search_time(TREE_PAYLOAD,Tree::gen_tree_map, Tree::find_value_on_map);
-    sleep(time::Duration::from_secs(1));
-
-    println!("\n## search_time_redblack");
-    let redblack_time = search_time(REDBLACK_PAYLOAD, RedBlack::gen_tree_map, RedBlack::find_value_on_map);
-    sleep(time::Duration::from_secs(1));
-
-    println!("\n## search_time_table");
-    let table_time = search_time(TABLE_PAYLOAD, Table::gen_ip_table, Table::find_value_on_map);
-    sleep(time::Duration::from_secs(1));
+    let tree_time = search_time_tree();
+    let redblack_time = search_time_redblack();
+    let table_time = search_time_table();
 
     println!();
     println!("{}",tree_time);
@@ -96,6 +68,49 @@ pub fn create_test_data() {
     println!("{}",table_time);
 
     clear_files();
+}
+
+fn create_table() {
+    println!("\n## load_to_table");
+    let mut sw = Stopwatch::start_new();
+    load_to_table(DO_Benchmark_test_src);
+    sw.stop();
+    println!("\ntable load time: {}", sw.elapsed().as_millis());
+}
+
+fn create_tree() {
+    println!("\n## build_tree");
+    let mut sw = Stopwatch::start_new();
+    load_to_tree(DO_Benchmark_test_src);
+    sw.stop();
+    println!("\ntree load time: {}", sw.elapsed().as_millis());
+    sleep(time::Duration::from_secs(1));
+}
+
+fn create_redblack() {
+    println!("\n## load_to_redblack");
+    let mut sw = Stopwatch::start_new();
+    load_to_redblack(DO_Benchmark_test_src);
+    sw.stop();
+    println!("\nredblack load time: {}", sw.elapsed().as_millis());
+    sleep(time::Duration::from_secs(1));
+}
+
+fn search_time_table() -> String{
+    sleep(time::Duration::from_secs(1));
+    println!("\n## search_time_table");
+    search_time(TABLE_PAYLOAD, Table::gen_ip_table, Table::find_value_on_map)
+}
+
+fn search_time_tree() -> String {
+    println!("\n## search_time_tree");
+    search_time(TREE_PAYLOAD, Tree::gen_tree_map, Tree::find_value_on_map)
+}
+
+fn search_time_redblack() -> String{
+    sleep(time::Duration::from_secs(1));
+    println!("\n## search_time_redblack");
+    search_time(REDBLACK_PAYLOAD, RedBlack::gen_tree_map, RedBlack::find_value_on_map)
 }
 
 fn clear_files() {
@@ -119,6 +134,9 @@ fn search_time(payload_path: &str, structure: fn() -> MmapMut, finder: fn(u32, &
     let structure = structure();
     let name_table = NameTable::gen_name_table_from_path(payload_path);
     let mut numberSkipped = 0;
+
+    let string: String = (0..98).map(|_| '-').collect();
+    println!("|{}|",string);
 
     let mut i = 0;
     let mut sw = Stopwatch::start_new();

@@ -124,7 +124,7 @@ fn speed_matrix_tree() {
 fn search_time_tree_vs_RedBlack_vs_table() {
     println!("## search_time_tree_vs_table");
 
-    pub const n:                    u32 = 150_000;
+    pub const n:                    u32 = 1500;
     const range:             Range<u32> = 10..18;
     const padding:           Range<u32> = 10..18;
     const nameLength:             usize = 2;
