@@ -1,0 +1,15 @@
+scp -r root@138.68.125.104:~/DO_Benchmark_test.txt .
+scp -r ./DO_Benchmark_test.txt root@206.189.243.67:~/
+
+
+scp -r root@138.68.125.104:~/testdata/out/table/IP_TABLE.txt .
+scp -r ./IP_TABLE.txt root@206.189.243.67:~/testdata/out/table/
+
+scp -r root@138.68.125.104:~/testdata/out/table/NAME_TABLE.txt .
+scp -r ./NAME_TABLE.txt root@206.189.243.67:~/testdata/out/table/
+
+scp -r root@138.68.125.104:~/testdata/out/tree/map.txt .
+scp -r ./IP_TABLE.txt root@206.189.243.67:~/tree/out/tree/
+
+scp -r root@138.68.125.104:~/testdata/out/tree/NAME_TABLE.txt .
+scp -r ./map.txt root@206.189.243.67:~/testdata/out/tree/

@@ -1,0 +1,18 @@
+
+
+
+- Gennemsøgning så speeder træet op.
+- 30 procent cache miss for store datamængder - 60procent for mindre datamængder.
+- tree 20% hurtigere
+- tabellen er fuld random lookup, så ingen pattern. Tree vil altid have the upper nodes in cache, meaning 20 increase
+- 8 gb maskine caper ud ved 270kb - idle på 140kb -> 130 kb diff
+ - 2 gb maskiner capper ud ved 200kb - idle på 80kb -> 120 kb diff
+
+----------------------------------------------------------------------------------------------------
+- efter kun 2 ticks er den oppe på 270 kb
+
+
+ - Det
+
+
+ https://stackoverflow.com/questions/1972765/mmap-problem-allocates-huge-amounts-of-memory

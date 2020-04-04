@@ -1,0 +1,39 @@
+1000 gap
+
+## search_time_tree
+----------------------------------------------------------------------------------------------------
+Search time --- #52023308 micro seconds, #149850 of requests ran, #0 skipped
+
+
+
+## search_time_table
+----------------------------------------------------------------------------------------------------
+Search time --- #97411015 micro seconds, #149850 of requests ran, #0 skipped
+
+
+Det er tydeligt at tree speeder op
+
+
+---
+
+100 gap 
+## search_time_tree
+----------------------------------------------------------------------------------------------------
+Search time --- #84496256 micro seconds, #1485148 of requests ran, #0 skipped
+
+## search_time_table
+----------------------------------------------------------------------------------------------------
+Search time --- #876421060 micro seconds, #1485148 of requests ran, #0 skipped
+
+
+
+100 gap 2 gb
+## search_time_table
+----------------------------------------------------------------------------------------------------
+Search time --- #640696794 micro seconds, #1485148 of requests ran, #0 skipped
+
+
+100 gap 8 gb ./target/release/rust_map
+## search_time_table
+----------------------------------------------------------------------------------------------------
+Search time --- #915364092 micro seconds, #1485148 of requests ran, #0 skipped
