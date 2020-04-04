@@ -1,4 +1,4 @@
-use crate::{TREE_PATH, NameTable, NAME_TABLE, Entry};
+use crate::{TREE_PATH, NameTable, Entry, TREE_PAYLOAD};
 use memmap::MmapMut;
 use crate::Tree::{Node, NodeToMem};
 use std::fs;
@@ -60,7 +60,7 @@ pub fn find_node_on_map(ip: u32, mmap: &MmapMut) -> Option<usize> {
 #[test]
 fn insert_node_and_find_it() {
     fs::remove_file(TREE_PATH);
-    fs::remove_file(NAME_TABLE);
+    fs::remove_file(TREE_PAYLOAD);
 
     let mut tree_map = super::gen_tree_map();
 
@@ -110,13 +110,13 @@ fn insert_node_and_find_it() {
     assert!(out_name3.is_none());
 
     fs::remove_file(TREE_PATH);
-    fs::remove_file(NAME_TABLE);
+    fs::remove_file(TREE_PAYLOAD);
 }
 
 #[test]
 fn insert_node_random_order_and_find_it() {
     fs::remove_file(TREE_PATH);
-    fs::remove_file(NAME_TABLE);
+    fs::remove_file(TREE_PAYLOAD);
 
     let mut tree_map = super::gen_tree_map();
 
@@ -173,5 +173,5 @@ fn insert_node_random_order_and_find_it() {
     assert_eq!(out_name8.unwrap(),name6);
 
     fs::remove_file(TREE_PATH);
-    fs::remove_file(NAME_TABLE);
+    fs::remove_file(TREE_PAYLOAD);
 }

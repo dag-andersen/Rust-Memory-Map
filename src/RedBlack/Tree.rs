@@ -1,4 +1,4 @@
-use crate::{NameTable, NAME_TABLE, Entry, RedBlack, REDBLACK_PATH, Utils, usizeSize, thisFileWillBeDeleted};
+use crate::{NameTable, Entry, RedBlack, REDBLACK_PATH, Utils, usizeSize, thisFileWillBeDeleted, REDBLACK_PAYLOAD};
 use memmap::MmapMut;
 use crate::RedBlack::{Node, NODE_SIZE, NodeToMem};
 use std::ops::Deref;
@@ -136,16 +136,15 @@ fn leftRotate(mmap: &MmapMut, node: &mut Node, parent: &mut Node) {
     node.left = node.parent;
     node.parent = oldGrandparentIndex;
 
-    if oldGrandparentIndex == 0 {
-        unsafe { root_index = parent.parent };
-    } else {
-        let grandparent = NodeToMem::get_node(mmap, oldGrandparentIndex);
-        if grandparent.left == node.left {
-            grandparent.left = parent.parent;
-        } else if grandparent.right == node.left {
-            grandparent.right = parent.parent;
-        } else {
-            panic!("left rotate: wrong family relation")
+    match oldGrandparentIndex {
+        0 => unsafe { root_index = parent.parent },
+        _ => {
+            let grandparent = NodeToMem::get_node(mmap, oldGrandparentIndex);
+            match (grandparent, node) {
+                (gp, n) if gp.left == n.left    => gp.left = parent.parent,
+                (gp, n) if gp.right == n.left   => gp.right = parent.parent,
+                _ => panic!("left rotate: wrong family relation")
+            }
         }
     }
 }
@@ -162,16 +161,15 @@ fn rightRotate(mmap: &MmapMut, node: &mut Node, parent: &mut Node) {
     node.right = node.parent;
     node.parent = oldGrandparentIndex;
 
-    if oldGrandparentIndex == 0 {
-        unsafe { root_index = parent.parent };
-    } else {
-        let grandparent = NodeToMem::get_node(mmap, oldGrandparentIndex);
-        if grandparent.left == node.right {
-            grandparent.left = parent.parent;
-        } else if grandparent.right == node.right {
-            grandparent.right = parent.parent;
-        } else {
-            panic!("right rotate: wrong family relation")
+    match oldGrandparentIndex {
+        0 => unsafe { root_index = parent.parent },
+        _ => {
+            let grandparent = NodeToMem::get_node(mmap, oldGrandparentIndex);
+            match (grandparent, node) {
+                (gp, n) if gp.left == n.right   => gp.left = parent.parent,
+                (gp, n) if gp.right == n.right  => gp.right = parent.parent,
+                _ => panic!("left rotate: wrong family relation")
+            }
         }
     }
 }
@@ -211,7 +209,7 @@ fn save_and_load_root_node() {
 fn insert_node_and_find_it() {
     RedBlack::reset_root_index();
     fs::remove_file(REDBLACK_PATH);
-    fs::remove_file(NAME_TABLE);
+    fs::remove_file(REDBLACK_PAYLOAD);
 
     let mut tree_map = super::gen_tree_map();
 
@@ -261,14 +259,14 @@ fn insert_node_and_find_it() {
     assert!(out_name3.is_none());
 
     fs::remove_file(REDBLACK_PATH);
-    fs::remove_file(NAME_TABLE);
+    fs::remove_file(REDBLACK_PAYLOAD);
 }
 
 #[test]
 fn insert_node_random_order_and_find_it() {
     unsafe { root_index = 1 };
     fs::remove_file(REDBLACK_PATH);
-    fs::remove_file(NAME_TABLE);
+    fs::remove_file(REDBLACK_PAYLOAD);
 
     let mut tree_map = super::gen_tree_map();
 
@@ -325,5 +323,5 @@ fn insert_node_random_order_and_find_it() {
     assert_eq!(out_name8.unwrap(),name6);
 
     fs::remove_file(REDBLACK_PATH);
-    fs::remove_file(NAME_TABLE);
+    fs::remove_file(REDBLACK_PAYLOAD);
 }
