@@ -4,12 +4,6 @@ use std::io::{SeekFrom, Write, Seek};
 use crate::{Tree, Entry};
 use regex::bytes::Regex;
 
-// pub(crate) fn insert_array_in_array(one: & mut [u8; 32], two: &[u8])  {
-//     for (place, data) in one.iter_mut().zip(two.iter()) {
-//         *place = *data
-//     }
-// }
-
 pub(crate) fn get_entry_for_line(ip_regex: &Regex, name_regex: &Regex, l: &String) -> Option<Entry> {
 
     let min_ip_match = ip_regex.find(l.as_bytes()).expect("didnt find min ip");
@@ -26,16 +20,19 @@ pub(crate) fn get_entry_for_line(ip_regex: &Regex, name_regex: &Regex, l: &Strin
 
 pub(crate) fn get_u32_for_ip(v: &str ) -> Option<u32> {
     let v: Vec<&str> = v.split('.').collect();
-    if v.len() != 4 { return None }
-    let mut min_array: [u8; 4] = Default::default();
-    for i in 0..v.len() {
-        min_array[i] = match v[i].parse() {
-            Ok(n) => n,
-            Err(e) => return None
+    match v.len() {
+        4 => {
+            let mut min_array: [u8; 4] = Default::default();
+            for i in 0..4 {
+                min_array[i] = match v[i].parse() {
+                    Ok(n) => n,
+                    Err(e) => return None
+                }
+            }
+            Some(u32::from_be_bytes(min_array))
         }
+        _ => None
     }
-    //println!("IP?{}.{}.{}.{}",min_array[0],min_array[1],min_array[2],min_array[3]);
-    Some(u32::from_be_bytes(min_array))
 }
 
 pub(crate) fn get_memmap(source: &str, size: u64) -> MmapMut {

@@ -1,5 +1,5 @@
 use core::fmt;
-use crate::{Entry, Utils, TREE_PATH, NameTable, Table};
+use crate::{Entry, Utils, TREE_PATH, NameTable, Table, TREE_PAYLOAD};
 use memmap::MmapMut;
 
 mod NodeToMem;
@@ -36,17 +36,13 @@ pub fn gen_tree_map_on_path(path: &str) -> MmapMut { Utils::get_memmap(path, 5_0
 
 pub fn find_value(ip: u32) -> Option<String> {
     let mmap = gen_tree_map();
-    let name_table = NameTable::gen_name_table();
+    let name_table = NameTable::gen_name_table_from_path(TREE_PAYLOAD);
     find_value_on_map(ip,&mmap, &name_table)
 }
 
 pub fn find_value_on_map(ip: u32, mmap: &MmapMut, name_table: &MmapMut) -> Option<String> {
-    let node = Tree::find_node_on_map(ip, mmap);
-    if node.is_none() { return None }
-    let index = node.unwrap();
-
-    if index == 0 { return None }
-    let index = index as usize -1; // -1 because we use 0 for tracking if there is no value reference
-
-    NameTable::get_name(&name_table, index)
+    match Tree::find_node_on_map(ip, mmap)? {
+        0 => None,
+        i => NameTable::get_name(&name_table, i - 1)
+    }
 }

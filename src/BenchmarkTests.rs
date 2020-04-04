@@ -1,5 +1,5 @@
 use stopwatch::Stopwatch;
-use crate::{FileGenerator, TREE_PRINT_PATH, TREE_PATH, load_to_tree_on_path, load_to_table, Utils, NAME_TABLE, IP_TABLE, u32Size, SP_100_000, SP_10_000, thisFileWillBeDeleted, Table, SP_1_000_000, SP_500_000, SP_50_000, NameTable, load_to_tree, load_to_redblack, RedBlack};
+use crate::{FileGenerator, TREE_PRINT_PATH, TREE_PATH, load_to_tree_on_path, load_to_table, Utils, TABLE_PATH, u32Size, SP_100_000, SP_10_000, thisFileWillBeDeleted, Table, SP_1_000_000, SP_500_000, SP_50_000, NameTable, load_to_tree, load_to_redblack, RedBlack, REDBLACK_PAYLOAD, TABLE_PAYLOAD, TREE_PAYLOAD};
 use std::fs;
 use std::fs::File;
 use std::io::{LineWriter, Write};
@@ -7,6 +7,7 @@ use crate::Tree;
 use crate::Tree::TreePrinter;
 use crate::Utils::get_memmap;
 use crate::FileGenerator::{generate_source_file_with, generate_source_file_with_in_mem};
+use std::ops::Range;
 
 #[test]
 fn build_time_tree() {
@@ -122,18 +123,26 @@ fn speed_matrix_tree() {
 #[test]
 fn search_time_tree_vs_RedBlack_vs_table() {
     println!("## search_time_tree_vs_table");
+
+    pub const n:                    u32 = 150_000;
+    const range:             Range<u32> = 10..18;
+    const padding:           Range<u32> = 10..18;
+    const nameLength:             usize = 2;
+    const gap:                    usize = 10;
+
     let src = thisFileWillBeDeleted;
     fs::remove_file(src);
-    generate_source_file_with_in_mem(src, 15_000,10..18,10..18, 2);
+    generate_source_file_with_in_mem(src, n,range, padding, nameLength);
+    println!("Benchmark input: n: {}, range: {:#?}, padding: {:#?}, namesize: {}, gap: {}\n\n", &n, &range, &padding, &nameLength, &gap);
 
-    let requests1 = FileGenerator::generate_lookup_testdata(src,100);
+    let requests1 = FileGenerator::generate_lookup_testdata(src,20);
     let requests2 = requests1.clone();
     let requests3 = requests1.clone();
     let length = requests1.len();
     println!("#{} requests created", length);
 
     load_to_table(src);
-    let name_table = NameTable::gen_name_table();
+    let name_table = NameTable::gen_name_table_from_path(TABLE_PAYLOAD);
     let ip_table = Table::gen_ip_table();
 
     let mut counter = 0;
@@ -158,7 +167,7 @@ fn search_time_tree_vs_RedBlack_vs_table() {
     counter = 0;
     load_to_tree(src);
     let mmap = Tree::gen_tree_map();
-    let name_table = NameTable::gen_name_table();
+    let name_table = NameTable::gen_name_table_from_path(TREE_PAYLOAD);
 
     let mut sw = Stopwatch::start_new();
     for (ip, name) in requests2 {
@@ -179,7 +188,7 @@ fn search_time_tree_vs_RedBlack_vs_table() {
     counter = 0;
     load_to_redblack(src);
     let mmap = RedBlack::gen_tree_map();
-    let name_table = NameTable::gen_name_table();
+    let name_table = NameTable::gen_name_table_from_path(REDBLACK_PAYLOAD);
 
     let mut sw = Stopwatch::start_new();
     for (ip, name) in requests3 {

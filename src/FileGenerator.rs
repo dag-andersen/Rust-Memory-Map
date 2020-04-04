@@ -7,8 +7,8 @@ use rand::rngs::ThreadRng;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use std::cmp::min;
-use std::fs;
-use crate::{SP_100_000, thisFileWillBeDeleted, get_buffer, Utils, Entry, SP_500_000, SP_5_000_000, SP_50_000, TREE_PATH, load_to_tree_on_path, Tree, SP_10_000, SP_1_000_000, load_to_table, load_to_table_on_path, NAME_TABLE, IP_TABLE, load_to_tree};
+use std::{fs, io};
+use crate::{SP_100_000, thisFileWillBeDeleted, get_buffer, Utils, Entry, SP_500_000, SP_5_000_000, SP_50_000, TREE_PATH, load_to_tree_on_path, Tree, SP_10_000, SP_1_000_000, load_to_table, load_to_table_on_path, TABLE_PATH, load_to_tree};
 use regex::bytes::Regex;
 
 fn generate_random_ip_firm(rng: &mut ThreadRng) -> String {
@@ -17,14 +17,14 @@ fn generate_random_ip_firm(rng: &mut ThreadRng) -> String {
     let ip3 : u8 = rng.gen();
     let ip4 : u8 = rng.gen();
     let mut r = String::new();
-    r.push_str(&format!("{}",ip1)); r.push('.');
-    r.push_str(&format!("{}",ip2)); r.push('.');
-    r.push_str(&format!("{}",ip3)); r.push('.');
+    r.push_str(&format!("{}",ip1));      r.push('.');
+    r.push_str(&format!("{}",ip2));      r.push('.');
+    r.push_str(&format!("{}",ip3));      r.push('.');
     r.push_str(&format!("{}",ip4 >> 1)); r.push(' ');
-    r.push_str(&format!("{}",ip1)); r.push('.');
-    r.push_str(&format!("{}",ip2)); r.push('.');
-    r.push_str(&format!("{}",ip3)); r.push('.');
-    r.push_str(&format!("{}",ip4)); r.push(' ');
+    r.push_str(&format!("{}",ip1));      r.push('.');
+    r.push_str(&format!("{}",ip2));      r.push('.');
+    r.push_str(&format!("{}",ip3));      r.push('.');
+    r.push_str(&format!("{}",ip4));      r.push(' ');
     let name = gen_firm(& rng, 4);
     r.push_str(&name); r.push_str("\n");
     r
@@ -63,6 +63,9 @@ pub fn generate_source_file_with(s:&str, n: u32, range: Range<u32>, padding: Ran
     let file = File::create(s).unwrap();
     let mut file = LineWriter::new(file);
 
+    let string: String = (0..98).map(|_| '-').collect();
+    println!("|{}|",string);
+
     let mut s = String::new();
 
     for i in 0..n {
@@ -76,6 +79,7 @@ pub fn generate_source_file_with(s:&str, n: u32, range: Range<u32>, padding: Ran
 
         if std::u32::MAX < max_ip { println!("broke after {} iterations", i); break; }
 
+        if i % (n/100 + 1) == 0 { print!("-"); io::stdout().flush(); }
         //if i % 500_000 == 0 { println!("lines generated: {}", i)}
         //if i % (n/10) == 0 { println!("10% done")}
 
@@ -106,7 +110,7 @@ pub fn generate_source_file_with(s:&str, n: u32, range: Range<u32>, padding: Ran
     }
     file.write_all(s.as_bytes());
 
-    println!("highest ip: {}", ip_curser);
+    println!("\nhighest ip: {}", ip_curser);
     println!("writing to file - done");
 }
 
@@ -198,13 +202,13 @@ pub fn generate_lookup_testdata(src: &str, gap: usize) -> Vec<(u32,String)>{
     let mut rng = thread_rng();
 
     let mut lines = get_buffer(src).lines();
-    while let ost = lines.nth(gap) {
-        if ost.is_none() { break; }
-        let ost= ost.unwrap();
-        if ost.is_err() { continue }
-        let ost = ost.unwrap();
-        if ost.is_empty() { continue; }
-        let entry = Utils::get_entry_for_line(&ip_regex, &name_regex, &ost);
+    while let line = lines.nth(gap) {
+        if line.is_none() { break; }
+        let line = line.unwrap();
+        if line.is_err() { continue }
+        let line = line.unwrap();
+        if line.is_empty() { continue; }
+        let entry = Utils::get_entry_for_line(&ip_regex, &name_regex, &line);
         if entry.is_none() { continue }
         let entry = entry.unwrap();
         vec.push((rng.gen_range(entry.min_ip,entry.max_ip), entry.name));
