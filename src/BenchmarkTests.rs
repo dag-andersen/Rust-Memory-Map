@@ -7,6 +7,7 @@ use crate::Tree;
 use crate::Tree::TreePrinter;
 use crate::Utils::get_memmap;
 use crate::FileGenerator::{generate_source_file_with, generate_source_file_with_in_mem};
+use std::ops::Range;
 
 #[test]
 fn build_time_tree() {
@@ -122,11 +123,19 @@ fn speed_matrix_tree() {
 #[test]
 fn search_time_tree_vs_RedBlack_vs_table() {
     println!("## search_time_tree_vs_table");
+
+    pub const n:                    u32 = 150_000;
+    const range:             Range<u32> = 10..18;
+    const padding:           Range<u32> = 10..18;
+    const nameLength:             usize = 2;
+    const gap:                    usize = 10;
+
     let src = thisFileWillBeDeleted;
     fs::remove_file(src);
-    generate_source_file_with_in_mem(src, 15_000,10..18,10..18, 2);
+    generate_source_file_with_in_mem(src, n,range, padding, nameLength);
+    println!("Benchmark input: n: {}, range: {:#?}, padding: {:#?}, namesize: {}, gap: {}\n\n", &n, &range, &padding, &nameLength, &gap);
 
-    let requests1 = FileGenerator::generate_lookup_testdata(src,100);
+    let requests1 = FileGenerator::generate_lookup_testdata(src,20);
     let requests2 = requests1.clone();
     let requests3 = requests1.clone();
     let length = requests1.len();
