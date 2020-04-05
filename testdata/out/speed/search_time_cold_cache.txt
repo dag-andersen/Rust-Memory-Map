@@ -1,10 +1,14 @@
+ALLE SAMMEN FULL 150.000.000 10-18 10-18
+
+
+
 1000 gap
 
 ## search_time_tree
 ----------------------------------------------------------------------------------------------------
 Search time --- #52023308 micro seconds, #149850 of requests ran, #0 skipped
 
-
+1000 gap
 
 ## search_time_table
 ----------------------------------------------------------------------------------------------------
@@ -27,10 +31,16 @@ Search time --- #876421060 micro seconds, #1485148 of requests ran, #0 skipped
 
 
 
+
 100 gap 2 gb
 ## search_time_table
 ----------------------------------------------------------------------------------------------------
 Search time --- #640696794 micro seconds, #1485148 of requests ran, #0 skipped
+Search time --- #624812422 micro seconds, #1485148 of requests ran, #0 skipped
+
+100 gap 8bg
+## search_time_table
+Search time --- #711256037 micro seconds, #1485148 of requests ran, #0 skipped
 
 
 100 gap 8 gb ./target/release/rust_map

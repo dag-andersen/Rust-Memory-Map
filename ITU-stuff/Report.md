@@ -321,6 +321,11 @@ pub struct Node {
 ```
 The only difference from a regular tree is the added parent pointer and color boolean.
 
+
+48bytes -> 48*8
+https://doc.rust-lang.org/std/mem/fn.size_of.html
+https://www.geeksforgeeks.org/is-sizeof-for-a-struct-equal-to-the-sum-of-sizeof-of-each-member/
+
 **Space**
 `8(bool)+32+32+64+64+64+64 = 328 bit` pr entry meaning we get a file of `49.200.000.000 bits` which is `49.200.000.000b/8/1000/1000 = 6,15 gb`. 
 
@@ -534,6 +539,12 @@ black
 
 ## Test Results
 
+
+
+One of the biggest problems i encouterd was i coulndt build the redblack tree from the whole dataset, but only on smaller datasets. 
+
+The program 
+
 ```
 ## search_time_tree
 DO_BenchmarkTests::search_time_tree
@@ -566,6 +577,85 @@ The table has duplicated data
 
 ## Test Data
 
+## page swapping
+
+Here we can observe that the tree is quicker than the table. This again sounds weird considering 
+
+When doing ~150000 (149850) search throughs (every 1000 entry) seaching in the table and tree, we see that the tree is actually slower than the table. 
+
+The reason for this could be happen would be that 
+
+"your mmap'ed file in memory is loaded (and offloaded) by pages between all the levels of memory (the caches, RAM and swap)."
+
+The requets are random, and all the ranges are close to evenly distributed over the whole ipv4-range. This means that all entries are equally likely, and there is no pattern in what ips are accessed. that kernal has no way of guessing what to load next.
+
+Since the ddroplet has a limited amount of memory, memmap abstaction has to load and offload pages between disk and memory continuously. 
+
+
+If the table needs random access, then the kernel can't guess what to load and offload, so it just has to pick something. 
+In each node and its children are generally stored on the file close to it (They get futher appart the deeper you go in the tree). This means that the kernal can access mulitblie nodes at the same time, since they are loaded in the same page. This means that the kernel can actually search from "left to right" when searching for a nodes (and never from right to left, when it does go up the tree), which should be relativly quick. 
+
+They could also answer why the balanced tree sometimes are a little slower than tree. Because the balancing effect makes sure that it can back and forth when accessing pages.
+
+The page size on the vm is 4096 bytes, and each node is 48 bytes, meaning that each page store ~85 nodes
+
+
+In general we can say that truly random access to a few bytes of data on a file should expect awful performance and if you access contiguous chunks sequentially from both files alternatively, you should expect decent performance.
+
+
+https://stackoverflow.com/questions/43541420/when-and-how-is-mmaped-memory-swapped-in-and-out
+
+
+On thing that i noticed when running the search test was that the tree search sped up. 
+This was also the case for the table but way less noticeable. This follow the reasoning 
+
+
+
+This is also noticable when doing 1485148 searches (every 100) in the table on the 2 gb mem droplet and the 8 db droplet. Here we could expect the 8 bg droplet to perform much better, since it didnt have the offload as much as the 2 gb droplet. As seen below this was not the case. They perform almost the same
+
+```
+100 gap 2 gb
+## search_time_table
+----------------------------------------------------------------------------------------------------
+Search time --- #640696794 micro seconds, #1485148 of requests ran, #0 skipped
+Search time --- #624812422 micro seconds, #1485148 of requests ran, #0 skipped
+
+100 gap 8bg
+## search_time_table
+Search time --- #711256037 micro seconds, #1485148 of requests ran, #0 skipped
+```
+
+When doing the searches i tracked the memoery usage on the droplet.
+Both droplets on with both tree and table searches had a peak memory usage of 120 mb.
+This limit was reaced after only searching though 2 procent of the request. and they it stayed pretty stable.
+While testing it 
+
+
+### redblack tree
+
+In C memmap, mlock and all in the same familiy of functions and you can use them toghter. In rust there is no such thing. 
+There is a type called `Pin<>`, where can pin memory in ram and 
+
+I haven't managed to find a single place online where pinning and MmupMap is used/mentioned together, making me believe they were either not mean to be used togther or no one have every tried. 
+
+i made a test where i ran the redblack tree build, and locked all nodes with mlock (the unsafe c function), and the program died after 1000-1100 nodes. I was quicly to see if this was the whole program in itself that had a limit or it was just the MmupMap . So to test this i also added the mlock to the binary tree, and builded them sequentially without unlocking anything and that ran didt crash. This means that the limit is not on the process, but on the memmap. 
+
+This was maybe 
+
+What you would expect from a memmap would be to load in page after page in only 
+
+
+When 
+
+
+```rust 
+fn get_node_raw<'a>(mmap: &'a MmapMut, offset: usize) -> &'a mut Node {
+    let byte_map = &mmap[offset..(offset+NODE_SIZE)];
+    let number = unsafe { libc::mlock(byte_map.as_ptr() as *const c_void, byte_map.len()) };
+    assert_eq!(number, 0);
+    node_from_bytes(&byte_map)
+}
+```
 
 ## Cache 
 
@@ -577,6 +667,8 @@ The immediate thought would be that the tree would benefit from this, since the 
 
 For testing the cache i used linux command `perf stat -e task-clock,cycles,instructions,cache-references,cache-misses [input]` on the droplet. 
 
+
+
 It is difficult to isolate the cache-miss counting to the searchign only. This means the 3 results include generating the searh input, searchin in table/tree, and looking it up in the payload_table. This means that generating and looking in payloads_table should be stable for all 3 tests, 
 
 The tress always hit around 30% cache-miss. 
@@ -587,41 +679,22 @@ the table vary from 30-60% cache miss, depending on if the compiler made optimiz
 
 // bench28marts.txt - 20.000 entries
 ```
-running 1 test
 ## search_time_table
 Performance counter stats for 'cargo test --color=always --package rust_map --bin rust_map DO_BenchmarkTests::search_time_table -- --exact --nocapture --ignored':
-
-       2705.389102      task-clock (msec)         #    0.592 CPUs utilized          
-        6937201448      cycles                    #    2.564 GHz                    
-        5837429610      instructions              #    0.84  insn per cycle         
           66271809      cache-references          #   24.496 M/sec                  
           40300257      cache-misses              #   60.811 % of all cache refs    
-
-       4.568188826 seconds time elapsed
 ```
 ```
 ## search_time_tree
 Performance counter stats for 'cargo test --color=always --package rust_map --bin rust_map DO_BenchmarkTests::search_time_tree -- --exact --nocapture --ignored':
-
-        169.481477      task-clock (msec)         #    0.366 CPUs utilized          
-         384121127      cycles                    #    2.266 GHz                    
-         320027610      instructions              #    0.83  insn per cycle         
            3757577      cache-references          #   22.171 M/sec                  
            1279301      cache-misses              #   34.046 % of all cache refs    
-
-       0.463492404 seconds time elapsed
 ```
 ```
 ## search_time_redblack
-Performance counter stats for 'cargo test --color=always --package rust_map --bin rust_map DO_BenchmarkTests::search_time_redblack -- --exact --nocapture --ignored':
-
-        163.910877      task-clock (msec)         #    0.351 CPUs utilized          
-         374216699      cycles                    #    2.283 GHz                    
-         319708844      instructions              #    0.85  insn per cycle         
+Performance counter stats for 'cargo test --color=always --package rust_map --bin rust_map DO_BenchmarkTests::search_time_redblack -- --exact --nocapture --ignored':     
            3682037      cache-references          #   22.464 M/sec                  
            1293555      cache-misses              #   35.132 % of all cache refs    
-
-       0.467207458 seconds time elapsed
 ```
 //bench29marts.txt
 1.000.000 entries 9900 requets
@@ -629,38 +702,20 @@ Performance counter stats for 'cargo test --color=always --package rust_map --bi
 ```
 ## search_time_tree
 Performance counter stats for 'cargo test --release --color=always --package rust_map --bin rust_map DO_BenchmarkTests::search_time_tree -- --exact --nocapture --ignored':
-
-        318.012192      task-clock (msec)         #    0.341 CPUs utilized          
-         721278827      cycles                    #    2.268 GHz                    
-         803216339      instructions              #    1.11  insn per cycle         
            6106911      cache-references          #   19.203 M/sec                  
            1968104      cache-misses              #   32.227 % of all cache refs    
-
-       0.932002268 seconds time elapsed
 ```
 ```
 ## search_time_redblack
-Performance counter stats for 'cargo test --release --color=always --package rust_map --bin rust_map DO_BenchmarkTests::search_time_redblack -- --exact --nocapture --ignored':
-
-        322.565836      task-clock (msec)         #    0.344 CPUs utilized          
-         768301003      cycles                    #    2.382 GHz                    
-         817663549      instructions              #    1.06  insn per cycle         
+Performance counter stats for 'cargo test --release --color=always --package rust_map --bin rust_map DO_BenchmarkTests::search_time_redblack -- --exact --nocapture --ignored':      
            6150624      cache-references          #   19.068 M/sec                  
            1770820      cache-misses              #   28.791 % of all cache refs    
-
-       0.938178936 seconds time elapsed
 ```
 ```
 ## search_time_table
-Performance counter stats for 'cargo test --release --color=always --package rust_map --bin rust_map DO_BenchmarkTests::search_time_table -- --exact --nocapture --ignored':
-
-        250.437058      task-clock (msec)         #    0.408 CPUs utilized          
-         579083232      cycles                    #    2.312 GHz                    
-         775021090      instructions              #    1.34  insn per cycle         
+Performance counter stats for 'cargo test --release --color=always --package rust_map --bin rust_map DO_BenchmarkTests::search_time_table -- --exact --nocapture --ignored':    
            4971538      cache-references          #   19.851 M/sec                  
            1492896      cache-misses              #   30.029 % of all cache refs    
-
-       0.614272760 seconds time elapsed
 ```
 
 ### Enchantments / Next Steps 
@@ -668,6 +723,7 @@ Performance counter stats for 'cargo test --release --color=always --package rus
 * Upgrade to redblack tree
 * Actually adding a nice api, instead of only running the code through testfuctions/benchmarks.
 * No reason to individually place each enty to the ip_table... i could just add them to an array in memory and then place that on disk
+* The red-tag could be part of the names first bit - because otherwise it takes 64 bit
 
 # Conclusion  
 
