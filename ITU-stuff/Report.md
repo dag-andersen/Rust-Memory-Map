@@ -3,8 +3,6 @@
 # Intro - abstract
 Speed is first priority
 
-
-
 ## Motivation
 
 What do you do when you want to quickly search through a big data-set that cant be store in ram?
@@ -404,128 +402,62 @@ IpV6 is 128 bit instead of IpV4's 32 bit.
 This solution would never work in practice. 
 
 # Testing
+The tests are separated in unit test and benchmarking tests
+Most files and functions are tested using unit tests.
+All unit test can be found in source-code in the same file as the function they are testing.
+The benchmarking tests has been run on a 2 gb ram droplet, a 8 gb ram droplet(VMs on Digital ocean), and on a 16gb ram macbook pro 2016. 
+Detailed specs can found in appendix X. The automated benchmark test script can be found in appendix X, but the overall structure is explained in this section. 
+All tests go through a setup, build, and lookup phase. 
 
-
-### Input Cases
-- Payload pr. range
-- Distance between ranges
-- number of ranges
-- Range size
-- IPv4 or IPv6
-- mutable structure vs. dynamic insertion 
-
-### Test Variables:
-- ram 
-- Space
-- lookup time
-- build time
-
-
-The automated test script can be found in appendix X, but the overall structure is explained in this section. 
-
-## Simple unit tests
-Most functions are tested by simple unit tests. 
-
-
-## speed testing
-All tests are executed on a droplet (virtual machine) on Digital Ocean (cloud provider), 
-Closed envorimentent and fixed resources. 
-
-Test process:
-* Copy src files to droplet with `SCP-command`
-* 
-
-clear cache between search through
-
-
-to mimic a real scenario, we you choose to go for such an implementation because of resource limitations.
-
-```
-pub fn generate_source_file_with(s:&str, n: u32, range: Range<u32>, padding: Range<u32>, name_size: usize) { ... }
-```
-
-## Setup
-**Generating test files**
-Created a function that generate a text file where each line is 2 IP addresses and 1 name
+**Setup - Generating test files**
+Created a function that generate a text file where each line is 2 IP addresses and 1 text string
 e.g.: `125.74.3.0 125.74.3.10 Siteimprove` 
-each line is written direcly to a file and
-and afterwards shuffled by using the unix command `shuf`. It was necessary to print them to the file immediately instead of shuffling them in ram, because all 150 million entries could be in ram at the same time.
+each line is written to a file and
+and afterwards shuffled by using the unix command `shuf`. <It was necessary to print them to the file immediately instead of shuffling them in ram, because all 150 million entries could be in ram at the same time.>
 
-## Build
-**When running:**
+**Build data structure**
 The program iterate over each line reading them one by one with regex. <insert ref here>
-This step is derterimistic, so i only need to run this each time i generate a new source file. 
+This step is deterministic and will alway provide the same out put for the same input file. This means that if we want to do multiple searches with different algorithms, we can do that. This is useful since this step can be very expensive timewise.  
 
-## lookup
-**Choosing random lookups**
-The lookup ip are collected by running over the shuffled list of entries and collecting every 1000 entry. a random ip is picked between the upper and lower boinds. These ip are then shuffled again and then used for search lookups 
+**lookup**
+The lookup ip are collected by running over the shuffled list of entries and collecting every nth entry. A random ip is picked between the upper and lower bounds of the entry. The collected ips are then shuffled again and then used for search lookups.
+The actual searching is done by looping over the chosen random ips, and sequentially searching through the data structure and checks that it returns the correct payload. When finished it will print the time it took to do all the lookups. This number is then used to calculated the average lookup time. 
 
-## search
+### Cache tests
+Special cache miss-tests are performed to track how the cache may impact the performance of data structure.
+For testing the cache i used linux command `perf stat -e task-clock,cycles,instructions,cache-references,cache-misses [input]` on the droplet. Between each step they cache is cleared by using the command `sync; echo 3 > /proc/sys/vm/drop_caches`. To make sure we start from an cold cache and each test is not affected by the previous. 
 
+### Test data
+The full ip-range is 2^32 = ~4.3mil and the given number of ranges are 150.000.000. This means that there is on average a new range every 28th ip. Because there is no information on how these are distributed, these test will assume they are relatively evenly distributed over the full range of range of IPv4. 
 
-This search through can be parallelized. Should this be used as a real service it can easily be parallix as long as it only reads. 
-
-for testing/benchmarking perposeses the lookups are run sequentile to find the avarage lookup time pr request. 
-
-Both the tree and table search test goes through the same steps:
-* generated random requets
-* init memory map references
-* iterate over the requests check that all of them is found in in the table/tree
-* print the result
-
-```rust
-#[test]
-fn search_time_table() {
-    println!("## search_time_table");
-    let src = DO_Benchmark_test_src;
-
-    let requests = FileGenerator::generate_lookup_testdata(src,1000);
-    let length = requests.len();
-    assert!(length > 0);
-
-    let lookup_table = Table::gen_lookup_table();
-    let ip_table = Table::gen_ip_table();
-    let mut numberSkipped = 0;
-
-    let mut sw = Stopwatch::start_new();
-    for (ip, name) in requests {
-        let value = Table::find_value_on_map(ip, &lookup_table, &ip_table);
-        if value.is_some() {
-            let value = value.unwrap();
-            if name != value {
-                numberSkipped += 1;
-                //println!("Wrong match - real: {} - found: {} - ip: {}", name, value, ip);
-            }
-        } else { println!("Found none - real name: {} - ip: {}", name, ip) }
-    }
-    sw.stop();
-    println!("--- table score : {}, #{} of requests ran, #{} skipped", sw.elapsed().as_micros(), length, numberSkipped);
-}
-```
+The ranges is random number between 10-18, and the padding/gap between each range is also a random number between 10-18.
+For testing purposes the payload is always 2 chars. This is mainly duo to generating random strings being the most expensive procedure of generating the test data. 
 
 ### Optimizations 
 
-A huge part of the performance came from using a profiler
+A huge part of the performance optimization came from using a profiler
 The profiler used for this project was the build-in profiler-tool in _Jetbrains Clion_, which is Jetbrains low-level-programming IDE. 
 
+In the early version of this system a new Regex object were initialize every time it read a line for standard input. This was obvious in the profiler, and resulted in object only getting initialized once and just send a pointer to it round in the system. 
+
+
 <Get better images>
+
 
 ![treeprofiler](../docs/images/treeProfiler.png)
 ![tableprofiler](../docs/images/tableProfiler.png)
 
-<nævn noget om hvilken type profiling det er >
+<nævn noget om hvilken type profiling det er>
 This was mainly used for seeing how much time the process spend in each scope/stackframe/function to find bottlenecks.
 
-this han been great for learning Rust. 
+This han been great for learning Rust. 
 
 ### Debugging
 * Stepping through the debugger
 
-
 **printlines**
 
 It has also been used to check if tree was strcutured correclky. Both binary tree and the redblack tree module has a function for printing the tree, and also a test to verify that the tree is printet correcty. 
-
 
 * Printing tree
 ```
@@ -534,7 +466,6 @@ It has also been used to check if tree was strcutured correclky. Both binary tre
 black
 -black 
 ```
-
 
 
 ## Test Results
@@ -631,7 +562,7 @@ This limit was reaced after only searching though 2 procent of the request. and 
 While testing it 
 
 
-### redblack tree
+### Redblack tree
 
 In C memmap, mlock and all in the same familiy of functions and you can use them toghter. In rust there is no such thing. 
 There is a type called `Pin<>`, where can pin memory in ram and 
@@ -664,9 +595,6 @@ In theory the cache shouldn't matter if the data-set consists of an infinitely l
 but on a more realistic scale (like in this project) this can become a factor when i comes to speed.
 
 The immediate thought would be that the tree would benefit from this, since the nodes closer to the root would be read much more often than the rest of the tree, meaning that the data stored in the upper nodes can be retrieved from the cache. 
-
-For testing the cache i used linux command `perf stat -e task-clock,cycles,instructions,cache-references,cache-misses [input]` on the droplet. 
-
 
 
 It is difficult to isolate the cache-miss counting to the searchign only. This means the 3 results include generating the searh input, searchin in table/tree, and looking it up in the payload_table. This means that generating and looking in payloads_table should be stable for all 3 tests, 
