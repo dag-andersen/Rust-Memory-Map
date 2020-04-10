@@ -6,7 +6,7 @@ Speed is first priority
 ## Motivation
 
 What do you do when you want to quickly search through a big data-set that cant be store in ram?
-On a small scale the easy answer is to just buy a more powerful machine, but this is maybe not always what you want. Should you choose to run a given service on a virtual machine on a cloud-provider like _digital ocean_ then running a rending a machine with many resources quickly becomes expensive. This is where this problem becomes relevant.
+On a small scale the easy answer is to just buy a more powerful machine, but this is maybe not always what you want. Should you choose to run a given service on a virtual machine on a cloud-provider like _digital ocean_ then - then rending a machine with many resources quickly becomes expensive. This is where this problem becomes relevant.
 
 ## Problem explained in detail
 
@@ -64,67 +64,29 @@ I couldn't test on Siteimprove's real data, since it confidential, but could get
 
 In a survey done by XXX 51% of the security vulnerabilities in the linux kernel is coursed by concurrency and memory safety issues that are fundamentally impossible to get in rust (unless you use the `unsafe` keyword, which is not recommended)
 
-### Memory safety
+### Safety
 
-"Rust is designed to be memory safe, and thus it does not permit null pointers, dangling pointers, or data races in safe code. Data values can only be initialized through a fixed set of forms, all of which require their inputs to be already initialized." - wiki
+**Memory safety**
 
-Guaranteed by Rust's ownership system - At compile time
+On of the  main reasons of using rust is its safety. In general Rust doesn't allow null pointers, dangling pointers, or data races.
+This is done by a combination of the concept of ownership (which is basically a restriction of only having one mutable reference) and lifetime (which is a way to eliminate dangling pointers). All this are fixed are enforced at compile time.
 
-This means if we have an array `[T]` of items and we create a reference to one of those items `&T` then the that reference needs to go out of scope before the array itself - otherwise the rust compiler wont compile because it can't guarantee that the array isn't de-allocated or changed before accessing `T`.
-This is both a huge challenge when first starting to work with Rust, but also a really great safety.
-
-Since rust have real references that it check and don't really use & "raw pointers" that you move around in C, then i was hoping i could use references on my nodes...
-
-<table><tr><th>
-Compiles
-</th><th>
-Doesn't Compile
-</th></tr><tr><td><pre>
-pub struct Node {
-    pub min_ip: u32,
-    pub max_ip: u32,
-    pub left: usize,
-    pub right: usize,
-    pub name: [u8; 32],
-}</pre></td><td><pre>
-pub struct Node {
-    pub min_ip: u32,
-    pub max_ip: u32,
-    pub left: &Node,    // Error
-    pub right: &Node,   // Error
-    pub name: [u8; 32],
-}</pre></td></tr></table>
-Sadly storing pointers/references doesn't work, so i opted to just store the byte-index of the node in Tree Memory map. 
-
-
-### Error handling
-
-```rust
-pub(crate) fn get_u32_for_ip(v: &str) -> Option<u32> {
-    let v: Vec<&str> = v.split('.').collect();
-    if v.len() != 4 { return None }
-    let mut min_array: [u8; 4] = Default::default();
-    for i in 0..v.len() {
-        min_array[i] = match v[i].parse() {
-            Ok(n) => n,
-            Err(e) => return None
-        }
-    }
-    Some(u32::from_be_bytes(min_array))
-}
 ```
-This function takes a string of 4 numbers separated by a dot `.` - e.g. `192.2.103.11` and returns unsigned integer wrapped in a option.
+Each value in Rust has a variable that’s called its owner.
+There can only be one owner at a time.
+When the owner goes out of scope, the value will be dropped.
+```
 
-instead of getting of segmentation faults and similar, i can specific
-`BufReader::new(File::open(file).expect("Could not find file"))`
+This also eliminates C's issue of double free error. 
 
-### ownership
-https://medium.com/@thomascountz/ownership-in-rust-part-1-112036b1126b
+Rust has a concept of lifetimes. This means that if we have an array of items `[T]` and we create a reference to one of those items `&T` then the that reference needs to leave scope before the array itself. In other words, the array needs to have a longer lifetime than outside pointers to its elements - otherwise the rust compiler wont compile because it can't guarantee that the array isn't de-allocated or changed before accessing `T`. This is both a huge challenge when first starting to work with Rust, but also a really great safety.
 
+//hypotese
+This concept usually works great, but it has its challenges when using a memory map, because it can guarantee that the nodes/structs that the pointer points to are still in memory, because the page it is stored on is maybe offloaded, by the kernel/memory map. 
+Starting this project is was the plan to let nodes refer to each other by using a `&T` when building a tree. But because of these compiler challenges mentioned above, I chose to instead go for an implementation where each node stored an byte-offset to where its children were stored the memory map. 
 
-`Rust has an ownership system where all values have a unique owner, and the scope of the value is the same as the scope of the owner. Values can be passed by immutable reference, using &T, by mutable reference, using &mut T, or by value, using T. At all times, there can either be multiple immutable references or one mutable reference (an implicit readers-writer lock). The Rust compiler enforces these rules at compile time and also checks that all references are valid.` - wiki
-### Where rust falls short
-Sadly sometimes we can cant use rust's safety, and this is where rust looks more like C
+**Reading from Memory Map Where rust falls short**
+Sadly sometimes we can cant use rust's safety, and this is where rust looks more like C.
 ```rust
 pub(crate) unsafe fn bytes_to_type<T>(slice: &[u8]) -> &mut T {
     std::slice::from_raw_parts_mut(slice.as_ptr() as *mut T, std::mem::size_of::<T>())
@@ -132,13 +94,43 @@ pub(crate) unsafe fn bytes_to_type<T>(slice: &[u8]) -> &mut T {
         .unwrap()
 }
 ```
-Here we have no guarantee of we are going to get, since it just a pointer and a length that we force to become a reference to type T. I this case we don't have any other way, since MemoryMap only know the concept of bytes.
+This function returns a reference to a mutable object given a reference to a `u8` array. This function is used to get a reference to a node directly on on the memory map. Here we have no guarantee of we are going to get, since it just a pointer and a length that we force to become a reference to type T. I this case we don't have any other way, since Memory Map only know the concept of bytes. 
 
-Rust have the ability to call directly into C files, and you also have the ability use most of by using the `libc`- library. This means we can access functions like `mlock` and `mlockall`. But again rust can guarantee these functions so we need to use the "unsafe" keyword.
+**Error handling**
+C doesn't provide good error handling, because the programmer is expected to prevent errors from occurring in the first place. This means C is much harder and unsafe to code combined with it is very difficult to debug. 
 
-Overall i believe rust is a great language for low level programming and it's safety and guarantees are great - and you can always tap into c.  but in some cases it run short when you are working directly on disk. 
+High level languages like java and C# have use mechanisms such as exceptions. Rust doesn’t have exceptions. Instead, rust has two types of error handling `Result<T, E>` and `Option<T>`. Option can be seen as the same as a result but without an error object. 
+```rust
+pub(crate) fn get_u32_for_ip(v: &str) -> Option<u32> {
+    let v: Vec<&str> = v.split('.').collect();
+    let len = v.len();
+    if len != 4 { return None }
+    let mut acc: u32 = 0;
+    for i in 0..len {
+        match v[i].parse::<u8>() {
+            Ok(n) => acc |= (n as u32) << ((len-1-i) * 8) as u32,
+            Err(e) => return None
+        };
+    }
+    Some(acc)
+}
+```
+Both concepts are used in this function. Option is used in form of `Some` and `None` and Result is used in `Ok(n)` and `Err(E)`. This function takes a string of 4 numbers separated by a dot `.` - e.g. `192.2.103.11` - and returns unsigned integer wrapped in a option. In this case i use Option as a safe way to use a null-pointer. Being able to handle error with ease is crucial when needing to deliver save code quickly. 
 
 
+https://en.wikibooks.org/wiki/C_Programming/Error_handling
+
+### Rust combined with C
+Rust does not have an official interface/abstraction for using memory maps, but there exists a few open source libraries created by the community. 
+Rust's package management system is called cargo and use the crates as as the packages. 
+This implementation uses `memmap` version `0.7.0`. This library was chosen based on the fact that it had the most stars on Github. The abstraction provided by the external libraries are not extensive compared to the using the native C, meaning that the setting for the map is not as customizable. 
+
+Rust have the ability to call directly into C files, and you also have the ability to use most of the c standard library inline by using the `libc`- library/crate. This means we can access functions like `mlock` and `mlockall`. `show example`. 
+But rusts memory safety can not guarantee the result of these function so it forces us we need to use the "unsafe" keyword. Overall this means that we can use both rust functions and c functions as we please, but we cant guarantee what is going to happen. 
+
+https://doc.rust-lang.org/nomicon/ffi.html
+
+https://medium.com/@thomascountz/ownership-in-rust-part-1-112036b1126b
 
 https://medium.com/paritytech/why-rust-846fd3320d3f
 
@@ -147,12 +139,9 @@ https://stackoverflow.com/questions/47618823/cannot-borrow-as-mutable-because-it
 
 
 # Data structures
-The usually way of searching through persistent data is usually done by saving it in a database usually consisting of key-value entries stored in tables.
-
-The data for this problem consist of ranges, which means that the choice of database type is not obvious, and depends on different factors. 
-It depends on range-size, gap-size (between each range), payload-size pr. entry, how many keys there can exist in total, and number of entries - and of course how complicated of a implementation you want. 
-
-For this problem i have chosen to look into tree and table structures. 
+The way of searching through persistent data is usually done by saving it in a database consisting of key-value entries stored in tables.
+The data for this problem consist of ranges, which means that the choice of database type is not obvious, and depends on different factors. It depends on range-size, gap-size (between each range), payload-size pr. entry, how many keys there can exist in total, and number of entries - and of course how complicated of a implementation you want. 
+For this project to look into tree and table structures. 
 
 Lets declare some variables:
 ```
@@ -257,7 +246,6 @@ All tree data-structures use an external table for the payload.
 data-structures are implemented using memory mapped files.
 
 for this implementation i have chosen to store strings as payload, but this could be swapped out with anything. 
-
 
 
 ## Payload Map
@@ -433,6 +421,9 @@ The full ip-range is 2^32 = ~4.3mil and the given number of ranges are 150.000.0
 The ranges is random number between 10-18, and the padding/gap between each range is also a random number between 10-18.
 For testing purposes the payload is always 2 chars. This is mainly duo to generating random strings being the most expensive procedure of generating the test data. 
 
+
+// they are equally serpearted becase that is worse case, since the data would be distributed over all pages in the file
+
 ### Optimizations 
 
 A huge part of the performance optimization came from using a profiler
@@ -469,6 +460,10 @@ It has also been used to check if tree was structured correctly. Both binary tre
 black
 -black 
 ```
+
+## findings
+
+120mb max
 
 
 ## Test Results
@@ -511,9 +506,10 @@ The table has duplicated data
 
 ## Test Data
 
-## page swapping
+## Page swapping
 
-Here we can observe that the tree is quicker than the table. This again sounds weird considering 
+Here we can observe that the tree is quicker than the table. This again sounds weird considering the table should run in constant time and the trees should run in log(n).
+
 
 When doing ~150000 (149850) search through (every 1000 entry) searching in the table and tree, we see that the tree is actually slower than the table. 
 

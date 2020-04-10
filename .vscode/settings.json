@@ -8,5 +8,8 @@
         "latex",
         "plaintext",
         "yaml"
+    ],
+    "cSpell.words": [
+        "redblack"
     ]
 }

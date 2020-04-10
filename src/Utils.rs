@@ -18,21 +18,18 @@ pub(crate) fn get_entry_for_line(ip_regex: &Regex, name_regex: &Regex, l: &Strin
     Some(Entry { min_ip, max_ip, name: String::from(&l.as_str()[name_match.range()]) })
 }
 
-pub(crate) fn get_u32_for_ip(v: &str ) -> Option<u32> {
+pub(crate) fn get_u32_for_ip(v: &str) -> Option<u32> {
     let v: Vec<&str> = v.split('.').collect();
-    match v.len() {
-        4 => {
-            let mut min_array: [u8; 4] = Default::default();
-            for i in 0..4 {
-                min_array[i] = match v[i].parse() {
-                    Ok(n) => n,
-                    Err(e) => return None
-                }
-            }
-            Some(u32::from_be_bytes(min_array))
-        }
-        _ => None
+    let len = v.len();
+    if len != 4 { return None }
+    let mut acc: u32 = 0;
+    for i in 0..len {
+        match v[i].parse::<u8>() {
+            Ok(n) => acc |= (n as u32) << ((len-1-i) * 8) as u32,
+            Err(e) => return None
+        };
     }
+    Some(acc)
 }
 
 pub(crate) fn get_memmap(source: &str, size: u64) -> MmapMut {
