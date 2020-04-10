@@ -22,7 +22,7 @@ Each entry consist of two ip addresses and some related data/payload. The first 
 The payload can vary in size, but bla bla bla.
 
 `
-It is not possible to access to the real data due to confidentiality, but the avarage payload size pr. entry. is available. 
+It is not possible to access to the real data due to confidentiality, but the average payload size pr. entry. is available. 
 The system needs to handle 150 mil ipv4 ranges and 35 mil ipv6 ranges with a payload of 256 bytes.`
 
 ### Assumptions
@@ -35,7 +35,7 @@ The system needs to handle 150 mil ipv4 ranges and 35 mil ipv6 ranges with a pay
 Handle 150 mil entries of Ipv4
 Siteimprove's wishes for a lookup time of p99 in 60ms.
 
-The focus of this paper is the 150 mil entry ipv4 - but we will make referels towards ipv6.
+The focus of this paper is the 150 mil entry ipv4 - but we will make references towards ipv6.
 
 ### Si Rules/Priorities
 ```
@@ -94,7 +94,7 @@ pub struct Node {
     pub right: &Node,   // Error
     pub name: [u8; 32],
 }</pre></td></tr></table>
-Sadly storing pointers/referenes doesn't work, so i opted to just store the byte-index of the node in Tree Memory map. 
+Sadly storing pointers/references doesn't work, so i opted to just store the byte-index of the node in Tree Memory map. 
 
 
 ### Error handling
@@ -115,7 +115,7 @@ pub(crate) fn get_u32_for_ip(v: &str) -> Option<u32> {
 ```
 This function takes a string of 4 numbers separated by a dot `.` - e.g. `192.2.103.11` and returns unsigned integer wrapped in a option.
 
-instead of getting of semencation faults and similar, i can specifc
+instead of getting of segmentation faults and similar, i can specific
 `BufReader::new(File::open(file).expect("Could not find file"))`
 
 ### ownership
@@ -132,9 +132,9 @@ pub(crate) unsafe fn bytes_to_type<T>(slice: &[u8]) -> &mut T {
         .unwrap()
 }
 ```
-Here we have no guarantee of we are going to get, since it just a pointer and a length that we force to become a reference to type T. I this case we don't have any other way, since MememoryMap only know the concept of bytes.
+Here we have no guarantee of we are going to get, since it just a pointer and a length that we force to become a reference to type T. I this case we don't have any other way, since MemoryMap only know the concept of bytes.
 
-Rust have the ability to call directly into C files, and you also have the abiilty use most of by using the `libc`- libarary. This means we can access functions like `mlock` and `mlockall`. But again rust can garantee these functions so we need to use the "unsafe" keyword.
+Rust have the ability to call directly into C files, and you also have the ability use most of by using the `libc`- library. This means we can access functions like `mlock` and `mlockall`. But again rust can guarantee these functions so we need to use the "unsafe" keyword.
 
 Overall i believe rust is a great language for low level programming and it's safety and guarantees are great - and you can always tap into c.  but in some cases it run short when you are working directly on disk. 
 
@@ -169,16 +169,16 @@ index -> the offset in nodes from start of a memory mapped file
 
 #### Fixed vs. dynamic payload length 
 Depending on the problem you want to solve you can either choose to use the same fixed amount of space for each entry or have a dynamic size meaning you only use the necessary amount of space for each entry.
-Dynamic payload is great, since you don't waste space on padding/empty payload, but the downside is that you have to store the addresses payload begins instead of only storing the index to the node/struct of payload you are referering to.
+Dynamic payload is great, since you don't waste space on padding/empty payload, but the downside is that you have to store the addresses payload begins instead of only storing the index to the node/struct of payload you are referring to.
 
 
-This natually means that the address pointer always will be a bigger number than the index pointer. Therefore it is not alway bennificial to use dynamic sized payload if the amount of pointers are huge, since the amount of space needed accumulates
+This naturally means that the address pointer always will be a bigger number than the index pointer. Therefore it is not alway beneficial to use dynamic sized payload if the amount of pointers are huge, since the amount of space needed accumulates
 This means that an address-pointer of 32b can only point to a max size of ~4.3 byte data 
 
 <insert image>
 
-This means that it is not alway benefitino to use a dynamic size, if the amount of pointers in the data structure is large, because each pointer has to be bigger, because a , because you need to store bigger sized-pointers because adresses 
-This means that it sometimes are not beneficial to use dynamic, if amount of pointers in the data strucutre is large, because to the payload accumulates to a given amount. 
+This means that it is not alway beneficial  to use a dynamic size, if the amount of pointers in the data structure is large, because each pointer has to be bigger, because a , because you need to store bigger sized-pointers because addresses 
+This means that it sometimes are not beneficial to use dynamic, if amount of pointers in the data structure is large, because to the payload accumulates to a given amount. 
 
 For this project i have chosen dynamic payload length, because the payload consist of names, which can vary a lot in length. If fixed length was chosen i would either have to accept a large amount of wasted space, or not allow names to be over a given length meaning i would cut of names.
 
@@ -187,7 +187,7 @@ For this project i have chosen dynamic payload length, because the payload consi
 
 ### Introduction
 
-A binary tree is a simple datastructure where you cut away half the nodes for each step you go down the tree. 
+A binary tree is a simple data-structure where you cut away half the nodes for each step you go down the tree. 
 This means you have to look through log2(n) nodes before finding the right node. 
 
 One of the choices you have to make is to decide on if you want to store the payload on the node it self or it should store a pointer to somewhere else with the payload. 
@@ -195,28 +195,28 @@ One of the choices you have to make is to decide on if you want to store the pay
 Storing payload works fine.
 - No need to spend time on looking up the payload in a different file.
 - If the payload is a dynamic size, then we will have to refer to addresses instead of indexes, which takes more space as explained above.
-- One could argue that it is better for caching to store the payload in a differently file, because the nodes would be smaller and next to each other on disk and therefore make better use of locallity while searching down the tree.
+- One could argue that it is better for caching to store the payload in a differently file, because the nodes would be smaller and next to each other on disk and therefore make better use of locality while searching down the tree.
 
-Another interesting point is to decide on how you want to store the ip-addresses. the simplest solution is to store the lower bound ip and the upper bound ip - each take up 32 bit - Resulting in 64 bit pr. node. Anouther approach could be to only store the lowerbound and then store the delta to the upper bound - this is usuful if you know that the ranges will me small meaning you could get away with ouly storing the delta on single byte. This can be takeing even further to store a delta from the last nodes upper ip, to this nodes lower ip and store the internal delta. 
+Another interesting point is to decide on how you want to store the ip-addresses. the simplest solution is to store the lower bound ip and the upper bound ip - each take up 32 bit - Resulting in 64 bit pr. node. Another approach could be to only store the lower-bound and then store the delta to the upper-bound - this is useful if you know that the ranges will me small meaning you could get away with only storing the delta on single byte. This can be taking even further to store a delta from the last nodes upper ip, to this nodes lower ip and store the internal delta. 
 Or you could choose to only store the delta to 
-This is only usefull optimizations if you know how the ranges and gaps are distibuted, but since we cant do that in this project we have just went with the simple solution and storing the full ip address for both upper and lower bound. 
+This is only useful optimizations if you know how the ranges and gaps are distributed, but since we cant do that in this project we have just went with the simple solution and storing the full ip address for both upper and lower bound. 
 
 ### Redblack Tree
 
-An extension of the binary tree is the redblack tree. A redblack tree is a self-balancing tree structure. This prevents the tree from being inbalanced in exchange of longer build time and bigger nodes. 
+An extension of the binary tree is the redblack tree. A redblack tree is a self-balancing tree structure. This prevents the tree from being imbalanced in exchange of longer build time and bigger nodes. 
 It was invented in 1972 by Rudolf Bayer.
 
 to prevent the tree from being unbalanced one could implement a redblack tree.
 Cons: Slower build time, more space usage
 
-As donald knuth proves in XXX the bigger the 
+As Donald Knuth proves in XXX the bigger the 
 
 The bigger the tree the more useless it becomes...
 
-A balanced tree is maybe not need consindering the nature of randomness.
+A balanced tree is maybe not need considering the nature of randomness.
 < måske sæt hans bevis ind? >
 
-The time complexicty is overall/theroticly the samme. 
+The time complexity is overall/Theoretically the samme. 
 <Insert runtime >
 ```
 Algorithm	Average	    Worst case
@@ -245,18 +245,18 @@ The simple/naive implementation of this is to just create a full table for all i
 
 The other downside is that you have to store a full sized table even though you may only have very few entries.
 
-A solution is generally to create some kind of hashtable, where keys are hashed and points to some other datastructure (like a linked list).
+A solution is generally to create some kind of hashtable, where keys are hashed and points to some other data-structure (like a linked list).
 But in this case you would still have to add each ip-value pair into the table. 
 
 
 # Design
 
 I this paper i have went for implementing a binary tree, a redblack tree, and a table. 
-All tree datastructures use an external table for the payload. 
+All tree data-structures use an external table for the payload. 
 
-datastructures are implemented using memory mapped files.
+data-structures are implemented using memory mapped files.
 
-for this implememation i have choosen to store strings as payload, but this could be swapped out with anything. 
+for this implementation i have chosen to store strings as payload, but this could be swapped out with anything. 
 
 
 
@@ -438,11 +438,15 @@ For testing purposes the payload is always 2 chars. This is mainly duo to genera
 A huge part of the performance optimization came from using a profiler
 The profiler used for this project was the build-in profiler-tool in _Jetbrains Clion_, which is Jetbrains low-level-programming IDE. 
 
-In the early version of this system a new Regex object were initialize every time it read a line for standard input. This was obvious in the profiler, and resulted in object only getting initialized once and just send a pointer to it round in the system. 
+in particular its Flame Chart and Call Tree were very helpful
 
+This was mainly used for seeing how much time the process spend in each scope/stackframe/function to find bottlenecks.
+
+This was most useful in the beginning both for learning rust and for detecting bottleneck early on. 
+In a early version of this system a new Regex object were initialize every time it read a line for standard input. This was obvious in the profiler, and resulted in object only getting initialized once and just send a pointer to it round in the system. 
+This han been great for learning Rust. 
 
 <Get better images>
-
 
 ![treeprofiler](../docs/images/treeProfiler.png)
 ![tableprofiler](../docs/images/tableProfiler.png)
@@ -450,14 +454,13 @@ In the early version of this system a new Regex object were initialize every tim
 <nævn noget om hvilken type profiling det er>
 This was mainly used for seeing how much time the process spend in each scope/stackframe/function to find bottlenecks.
 
-This han been great for learning Rust. 
 
 ### Debugging
 * Stepping through the debugger
 
 **printlines**
 
-It has also been used to check if tree was strcutured correclky. Both binary tree and the redblack tree module has a function for printing the tree, and also a test to verify that the tree is printet correcty. 
+It has also been used to check if tree was structured correctly. Both binary tree and the redblack tree module has a function for printing the tree, and also a test to verify that the tree is printed correctly. 
 
 * Printing tree
 ```
@@ -472,7 +475,7 @@ black
 
 
 
-One of the biggest problems i encouterd was i coulndt build the redblack tree from the whole dataset, but only on smaller datasets. 
+One of the biggest problems i encountered was i couldn't build the redblack tree from the whole dataset, but only on smaller datasets. 
 
 The program 
 
@@ -486,7 +489,7 @@ DO_BenchmarkTests::search_time_tree
 DO_BenchmarkTests::search_time_table
 --- table : #105057148 micro seconds, #149850 of requests ran, #0 failed
 ```
-This means i am able to process 149850 ip adress request in 105057148 micro seconds milliseconds, which is XXX request/milliseconds
+This means i am able to process 149850 ip address request in 105057148 micro seconds milliseconds, which is XXX request/milliseconds
 
 
 # Evaluation
@@ -512,19 +515,19 @@ The table has duplicated data
 
 Here we can observe that the tree is quicker than the table. This again sounds weird considering 
 
-When doing ~150000 (149850) search throughs (every 1000 entry) seaching in the table and tree, we see that the tree is actually slower than the table. 
+When doing ~150000 (149850) search through (every 1000 entry) searching in the table and tree, we see that the tree is actually slower than the table. 
 
 The reason for this could be happen would be that 
 
 "your mmap'ed file in memory is loaded (and offloaded) by pages between all the levels of memory (the caches, RAM and swap)."
 
-The requets are random, and all the ranges are close to evenly distributed over the whole ipv4-range. This means that all entries are equally likely, and there is no pattern in what ips are accessed. that kernal has no way of guessing what to load next.
+The requests are random, and all the ranges are close to evenly distributed over the whole ipv4-range. This means that all entries are equally likely, and there is no pattern in what ips are accessed. that kernel has no way of guessing what to load next.
 
-Since the ddroplet has a limited amount of memory, memmap abstaction has to load and offload pages between disk and memory continuously. 
+Since the droplet has a limited amount of memory, memmap abstraction has to load and offload pages between disk and memory continuously. 
 
 
 If the table needs random access, then the kernel can't guess what to load and offload, so it just has to pick something. 
-In each node and its children are generally stored on the file close to it (They get futher appart the deeper you go in the tree). This means that the kernal can access mulitblie nodes at the same time, since they are loaded in the same page. This means that the kernel can actually search from "left to right" when searching for a nodes (and never from right to left, when it does go up the tree), which should be relativly quick. 
+In each node and its children are generally stored on the file close to it (They get further apart the deeper you go in the tree). This means that the kernel can access multiple nodes at the same time, since they are loaded in the same page. This means that the kernel can actually search from "left to right" when searching for a nodes (and never from right to left, when it does go up the tree), which should be relatively quick. 
 
 They could also answer why the balanced tree sometimes are a little slower than tree. Because the balancing effect makes sure that it can back and forth when accessing pages.
 
@@ -556,20 +559,20 @@ Search time --- #624812422 micro seconds, #1485148 of requests ran, #0 skipped
 Search time --- #711256037 micro seconds, #1485148 of requests ran, #0 skipped
 ```
 
-When doing the searches i tracked the memoery usage on the droplet.
+When doing the searches i tracked the memory usage on the droplet.
 Both droplets on with both tree and table searches had a peak memory usage of 120 mb.
-This limit was reaced after only searching though 2 procent of the request. and they it stayed pretty stable.
+This limit was reacted after only searching though 2 procent of the request. and they it stayed pretty stable.
 While testing it 
 
 
 ### Redblack tree
 
-In C memmap, mlock and all in the same familiy of functions and you can use them toghter. In rust there is no such thing. 
+In C memmap, mlock and all in the same family of functions and you can use them together. In rust there is no such thing. 
 There is a type called `Pin<>`, where can pin memory in ram and 
 
-I haven't managed to find a single place online where pinning and MmupMap is used/mentioned together, making me believe they were either not mean to be used togther or no one have every tried. 
+I haven't managed to find a single place online where pinning and MmupMap is used/mentioned together, making me believe they were either not mean to be used together or no one have every tried. 
 
-i made a test where i ran the redblack tree build, and locked all nodes with mlock (the unsafe c function), and the program died after 1000-1100 nodes. I was quicly to see if this was the whole program in itself that had a limit or it was just the MmupMap . So to test this i also added the mlock to the binary tree, and builded them sequentially without unlocking anything and that ran didt crash. This means that the limit is not on the process, but on the memmap. 
+i made a test where i ran the redblack tree build, and locked all nodes with mlock (the unsafe c function), and the program died after 1000-1100 nodes. I was quickly to see if this was the whole program in itself that had a limit or it was just the MmupMap . So to test this i also added the mlock to the binary tree, and builded them sequentially without unlocking anything and that ran didn't crash. This means that the limit is not on the process, but on the memmap. 
 
 This was maybe 
 
@@ -597,7 +600,7 @@ but on a more realistic scale (like in this project) this can become a factor wh
 The immediate thought would be that the tree would benefit from this, since the nodes closer to the root would be read much more often than the rest of the tree, meaning that the data stored in the upper nodes can be retrieved from the cache. 
 
 
-It is difficult to isolate the cache-miss counting to the searchign only. This means the 3 results include generating the searh input, searchin in table/tree, and looking it up in the payload_table. This means that generating and looking in payloads_table should be stable for all 3 tests, 
+It is difficult to isolate the cache-miss counting to the searching only. This means the 3 results include generating the search input, searching in table/tree, and looking it up in the payload_table. This means that generating and looking in payloads_table should be stable for all 3 tests, 
 
 The tress always hit around 30% cache-miss. 
 the table vary from 30-60% cache miss, depending on if the compiler made optimizations and on higher 
