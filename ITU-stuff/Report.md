@@ -58,7 +58,7 @@ I couldn't test on Siteimprove's real data, since it confidential, but could get
 - Lookup-time:          p99 in 60ms.`
 ```
 
-## Why rust?
+## Why use rust?
 
 "Rust is a multi-paradigm system programming language focused on safety, especially safe concurrency. Rust is syntactically similar to C, but is designed to provide better memory safety while maintaining high performance." - wiki
 
@@ -122,8 +122,7 @@ https://en.wikibooks.org/wiki/C_Programming/Error_handling
 
 ### Rust combined with C
 Rust does not have an official interface/abstraction for using memory maps, but there exists a few open source libraries created by the community. 
-Rust's package management system is called cargo and use the crates as as the packages. 
-This implementation uses `memmap` version `0.7.0`. This library was chosen based on the fact that it had the most stars on Github. The abstraction provided by the external libraries are not extensive compared to the using the native C, meaning that the setting for the map is not as customizable. 
+Rust's package management system is called cargo and use the crates as as the packages. This uses a crate called `memmap` (version `0.7.0`). This library was chosen based on the fact that it had the most stars on Github. The abstraction provided by the external libraries are not extensive compared to the using the native C, meaning that the setting for the map is not as customizable. 
 
 Rust have the ability to call directly into C files, and you also have the ability to use most of the c standard library inline by using the `libc`- library/crate. This means we can access functions like `mlock` and `mlockall`. `show example`. 
 But rusts memory safety can not guarantee the result of these function so it forces us we need to use the "unsafe" keyword. Overall this means that we can use both rust functions and c functions as we please, but we cant guarantee what is going to happen. 
@@ -158,7 +157,7 @@ index -> the offset in nodes from start of a memory mapped file
 
 <måske en reminder at ipv4 er en u32>
 
-#### Fixed vs. dynamic payload length 
+#### Fixed vs. dynamic data length 
 
 Depending on the problem you want to solve you can either choose to use the same fixed amount of space for each entry or have a dynamic size - meaning you only use the necessary amount of space for each entry. 
 
@@ -167,8 +166,6 @@ This choice is important for deciding how to store the payload and how we store 
 Fixed sized data could imply using a struct - meaning that the whole file is cut in equal sized pieces (structs). This means you can refer to the offset of the struct itself, and not to the byte index of the struct. This is important because byte index number will be much larger than the struct index, meaning it takes more space to store pointers to byte indexes.
 E.g. using a u32 to as a pointer to byteindex result in only being able to refer to max size data size of 4,3 gb. `(2^32*8/8/1000/1000/1000)`
 This is grate if you know the data-object always will have the same size, but if the amount of data needed to be stored vary a lot, then we will wast space on internal padding in the structs, because they are not filled out. This means we instead can make all data-objects have a dynamic size. This would result in us having to store the size of the data-object in the header (because we dont know the size of it) and need to use byte-index to refer to the data. 
-
-
 
 ![](../docs/images/bachelor-06.png)
 
@@ -179,14 +176,9 @@ Dynamic payload means that you for each entry great, since you don't waste space
 
 This is important because this means that the byte index always will be a bigger number than the struct offset. Therefore it is not alway beneficial to use dynamic sized payload if the amount of pointers are huge, since the amount of space needed accumulates
 This means that an address-pointer of 32b can only point to a max size of ~4.3 byte data 
-```
-
-<insert image>
-
-This means that it is not alway beneficial to use a dynamic size, if the amount of pointers in the data structure is large, because each pointer has to be bigger, because a , because you need to store bigger sized-pointers because addresses 
-This means that it sometimes are not beneficial to use dynamic, if amount of pointers in the data structure is large, because to the payload accumulates to a given amount. 
 
 For this project i have chosen dynamic payload length, because the payload consist of names, which can vary a lot in length. If fixed length was chosen i would either have to accept a large amount of wasted space, or not allow names to be over a given length meaning i would cut of names.
+```
 
 ## Binary Trees
 
@@ -213,7 +205,7 @@ This is only useful optimizations if you know how the ranges and gaps are distri
 
 An extension of the Binary Search Tree is the redblack tree. A redblack tree is a self-balancing tree structure. This prevents the tree from being imbalanced in exchange of longer build time and bigger nodes. It was invented in 1972 by Rudolf Bayer.
 
-On important point to make is that it is not always beneficial to use a balanced tree. As Donald Knuth proves in *The art of computer programming, Volume 3, Sorting and searching, second edition, page 430* the search time for balanced tree are not insanely better han non-balanced tree on random insertion data. A unbalanced tree has a worse case search time of O(n), but this is very rare and most trees are well balanced. A redblack tree has a ~Log(n) and a BST has a ~ 2·log(n) search time. Which men both datastrucutes has a time complecity of O(log(n)). 
+On important point to make is that it is not always beneficial to use a balanced tree. As Donald Knuth proves in *The art of computer programming, Volume 3, Sorting and searching, second edition, page 430* the search time for balanced tree are not insanely better han non-balanced tree on random insertion data. A unbalanced tree has a worse case search time of O(n), but this is very rare and most trees are well balanced. A redblack tree has a ~Log(n) and a BST has a ~ 2·log(n) search time. Which men both data-structures has a time complexity of O(log(n)). 
 
 In 1999, Chris Okasaki showed that insertion in a redblack tree only needs to handle four cases and a because, which makes it easy to implement for project like this. 
 
@@ -223,43 +215,51 @@ In 1999, Chris Okasaki showed that insertion in a redblack tree only needs to ha
 <De 4 cases (5) bliver gennemgået her www.geeksforgeeks.org/red-black-tree-set-2-insert/ >
 
 ## Tables
+```
+Key-value store is a data storage paradigm
 
+A key-value store/key-value database is a simple database that uses an associative array (also known as a dictionary or Map) as the fundamental data model. Each key is associated with only one value. This relationship is referred to as a key-value pair.
+https://en.wikipedia.org/wiki/Key-value_database
+https://www.aerospike.com/what-is-a-key-value-store/
+
+A table (or dictionary) is 
 The general the understanding is that searching in tables are quicker than most data structures, because you can get the data by value directly to a specific index by using the key. 
 
-The simple/naive implementation of this is to just create a full table for all ip-addresses holding a value for each ip. This obviously result in a massive data duplication because a value is stored repeatedly for each key in the associated range. This can easily be improved by actually storing the payload in another table and only storing a pointer to the payload.
 
-<vis en fin tegning af at det er kode dublication>
+If you want fast lookup speed tables/dictionarys are a great place to start. Tables can be implmented in many differnt ways, but the main point is that you can get value associated with a specifc key by only doing one lookup. Tables 
+```
+A simple implementation of this is to just create a full table for all ip-addresses holding a value for each ip. This obviously result in a massive data duplication because a value is stored repeatedly for each key in the associated range. This can easily be improved by actually storing the value in another table and only storing a pointer to it. Now the value is only stored once, but instead the pointer to it is duplicated for each key. 
 
 ![](../docs/images/bachelor-05.png)
 
-The other downside is that you have to store a full sized table even though you may only have very few entries.
-
-A solution is generally to create some kind of hashtable, where keys are hashed and points to some other data-structure (like a linked list).
-But in this case you would still have to add each ip-value pair into the table. 
-
+One of the downside to this is the full ip range is stored in the database even though you may only have very few entries. A solution is generally to create some kind of hashtable, where keys are hashed and points to some other data-structure (like a linked list), but this is beond the scope of this project. 
 
 # Design
 
-I this paper i have went for implementing a binary tree, a redblack tree, and a table. 
-All tree data-structures use an external table for the payload. 
+I this paper i have went for implementing a Binary Search Tree, a redblack tree, and a table. 
+All data-structures are implemented using memory mapped files.
+In this implementation i have chosen to store strings as payload, but this could be swapped out with anything other datatype.
 
-data-structures are implemented using memory mapped files.
-
-for this implementation i have chosen to store strings as payload, but this could be swapped out with anything. 
-
+Lets declare some variables:
+```
+p = payload size in bytes
+e = number of entries
+```
 
 ## Payload Map
 
-Both implementations use a separate memory mapped file for storing the payload/data, and the search map will then just use and index to determine where the data is stored on in the file.
+All tree implementations use a separate memory mapped file for storing the payload/data. This memory mapped file will be refereed to as `payload_table`. This file contains This file only contain all entries value and the the length of the values in bytes. A value is retrieved from the table by giving it the byteindex of the header of the value. Each lookup runs in constant time, *O(1)*. 
 
+Each value has a header of one byte, which is used to store the length of the data. The length is necessary, because we don't know how far we need to read to get the value.
+Storing the length in 1 byte, mens that the payload can be at most be `2^8 = 256` bytes long. This is just a design choice, but could easily be extended by changing all headers would need to be 2 bytes long instead. 
+
+On this picture we can see how `SKAT` would be stored.
 ![](../docs/images/bachelor-04.png)
 
 **Space**
+<beslut hvad der skal ske med de tal der>
+The space needed for this file can be estimated from the average payload size and the number of entries: `(avg(p) + 1) · e`. The `+1` is the header-size of one byte.
 
-This means we can calculate the size of this file
-`(avg(payload_size_in_bytes)+1) · number_of_entries`. `+1` because we need to add the size of the word. 
-
-**Limitations**
 calculate the max size for a payload
 `2^8 = 256` - this means a entry can store up to 256 bytes. 
 
@@ -267,13 +267,14 @@ If we have 150.000.000 entries with 255 bytes each, we can calculate the largest
 ```
 150.000.000 * 256 = 38.400.000.000 bits
 38.400.000.000/1000/1000/1000 = 38.4 gb
+```
 
-This means we have a 
 
+```
+what is this - delete?
 dynamic payload
 (34.5-17.3)/(150.000.000/1000/1000/1000) = 114 bytes is the breakpointet.
 ```
-Lookup time is constant. 
 
 ----------------------
 
@@ -286,9 +287,10 @@ here we have a simple example of what it would look like if the first entries we
 ```
 
 ## Redblack Tree
+
 ![](../docs/images/bachelor-02.png)
 
-This tree consist of nodes. these nodes are structs and consist of ...
+This tree consist of nodes. These nodes are structs and consist of ...
 
 where the name field is a pointer to the address of the start of the payload stored in the payload_map. 
 
@@ -355,23 +357,36 @@ ipv6 - solution E
 ---
 
 ## Table
+
+This implementation is based on the simple implementation mentioned in section *Tables*. 
+This file consist of ~4,3mil unsigned integers, `u32`, that functions as a key to lookup the value in the payload_map.
+
+An illustration of the data-structure can be seen below:
 ![](../docs/images/bachelor-03.png)
 
-This would result in
-```
-(1+256) · 150000000 = 38.550.000.000 bytes = 308.400.000.000 bits
-```
-This means that 32 bit is not big enough to store all the  
-2)
+To symbolize a null-pointer (meaning the ip, does not have any value) we just store 0. This means we need to add 1 to all pointers do differentiate  between null-pointers and real pointers that refer to the first value in payload_map at index 0. This is why we e.g. see 6 point to byte index 5. 
 
+This data-structure is the simplest implementation wise of all tree. Overall each lookup goes through these steps:
+* In ip_table, get the byte index, `x`, where the value it stored.
+* In payload_map, read value, `y`, by reading the the `u8` at x.
+* In payload_map, starting from the x+1 read y amount of bytes and return the value.
+
+
+```
+what is dis?
+
+This would result in
+(1+256) · 150000000 = 38.550.000.000 bytes = 308.400.000.000 bits
+
+This means that 32 bit is not big enough to store all the  
+```
 
 **Space**
-best and worst case:
-```
-(2^32)*32/8/1000/1000/1000 = 17.2 gb
+The space needed for this table is `
+(2^32)*32/8/1000/1000/1000 = 17.2 gb or 
 (2^64)*32/8/1000/1000/1000 = 34.4 gb
-```
-Since we build a full table it doesn't matter how many entries we get - the size will stay the same. 
+`
+
 
 **Implementation overview:**
 ``` 
@@ -383,11 +398,9 @@ Storage:
 ```
 
 **Handling IpV6**
-This implementation wont work for IpV6.
+In practice this implementation won't work with IpV6.
 IpV6 is 128 bit instead of IpV4's 32 bit.
-`2^128 = 3,40e38b`
-`3,40e38/8/1000/1000 = 4,25e28 gb`
-This solution would never work in practice. 
+The amount of possible ips is `2^128 = 3,40e38`, and if all have to store a `u32` it result in a file a `3,40e38*32/8/1000/1000 = 1.3e30 gb` file.
 
 # Testing
 The tests are separated in unit test and benchmarking tests
