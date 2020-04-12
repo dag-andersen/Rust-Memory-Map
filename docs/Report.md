@@ -85,7 +85,7 @@ Rust has a concept of lifetimes. This means that if we have an array of items `[
 This concept usually works great, but it has its challenges when using a memory map, because it can guarantee that the nodes/structs that the pointer points to are still in memory, because the page it is stored on is maybe offloaded, by the kernel/memory map. 
 Starting this project is was the plan to let nodes refer to each other by using a `&T` when building a tree. But because of these compiler challenges mentioned above, I chose to instead go for an implementation where each node stored an byte-offset to where its children were stored the memory map. 
 
-**Reading from Memory Map Where rust falls short**
+**Reading from Memory Map**
 Sadly sometimes we can cant use rust's safety, and this is where rust looks more like C.
 ```rust
 pub(crate) unsafe fn bytes_to_type<T>(slice: &[u8]) -> &mut T {
@@ -167,9 +167,7 @@ On the other hand dynamic data size means that --- Dynamic payload means that yo
 
 ## Binary Trees
 
-
-### Binary Search Tree
-
+### Binary Search Tree (BST)
 BST is a type of binary tree in which left child of a node has value less than the parent and right child has value greater than the parent.
 
 One of the choices you have to make is to decide on if you want to store the payload next to the node itself or the node should store a pointer to payload somewhere else. 
@@ -198,6 +196,8 @@ In 1999, Chris Okasaki showed that insertion in a redblack tree only needs to ha
 
 ## Tables
 ```
+delete?
+
 Key-value store is a data storage paradigm
 
 A key-value store/key-value database is a simple database that uses an associative array (also known as a dictionary or Map) as the fundamental data model. Each key is associated with only one value. This relationship is referred to as a key-value pair.
@@ -345,7 +345,6 @@ The space needed for this table is `
 (2^64)*32/8/1000/1000/1000 = 34.4 gb
 `
 
-
 **Implementation overview:**
 ``` 
 Lookup speed: constant time. 1 lookups.O(1). 
@@ -359,18 +358,16 @@ IpV6 is 128 bit instead of IpV4's 32 bit.
 The amount of possible ips is `2^128 = 3,40e38`, and if all have to store a `u32` it result in a file a `3,40e38*32/8/1000/1000 = 1.3e30 gb` file.
 
 # Testing
-The tests are separated in unit test and benchmarking tests.
-Most files and functions are tested using unit tests.
-All unit test can be found in source-code in the same file as the function they are testing.
-The benchmarking tests has been run on a 2 gb ram droplet, a 8 gb ram droplet(VMs on Digital ocean), and on a 16gb ram macbook pro 2016. 
-Detailed specs can found in appendix X. The automated benchmark test script can be found in appendix X, but the overall structure is explained in this section. 
+
+The tests can be categorized in unit test and benchmarking tests.
+Most files and functions are tested using unit tests. All unit test can be found in source-code in the same file as the function they are testing.
+The benchmarking tests has been run on a 2 gb ram droplet, a 8 gb ram droplet, and on a 16gb ram macbook pro 2016. Detailed specs can found in appendix X. The automated benchmark test script can be found in appendix X, but the overall structure is explained in this section. 
 All tests go through a setup, build, and lookup phase. 
 
 **Setup - Generating test files**
 Created a function that generate a text file where each line is 2 IP addresses and 1 text string
 e.g.: `125.74.3.0 125.74.3.10 Siteimprove` 
-each line is written to a file and
-and afterwards shuffled by using the unix command `shuf`. <It was necessary to print them to the file immediately instead of shuffling them in ram, because all 150 million entries could be in ram at the same time.>
+each line is written to a file and afterwards shuffled by using the unix command `shuf`. <It was necessary to print them to the file immediately instead of shuffling them in ram, because all 150 million entries could be in ram at the same time.>
 
 **Build data structure**
 The program iterate over each line reading them one by one with regex. <insert ref here>
@@ -408,8 +405,8 @@ This han been great for learning Rust.
 
 <Get better images>
 
-![treeprofiler](../docs/images/treeProfiler.png)
-![tableprofiler](../docs/images/tableProfiler.png)
+![](../docs/images/treeProfiler.png)
+![](../docs/images/tableProfiler.png)
 
 <nævn noget om hvilken type profiling det er>
 This was mainly used for seeing how much time the process spend in each scope/stackframe/function to find bottlenecks.
@@ -426,7 +423,7 @@ It has also been used to check if tree was structured correctly. Both binary tre
 ```
 --red
 -black
-black
+black   <- Root
 -black 
 ```
 
