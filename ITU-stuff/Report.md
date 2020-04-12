@@ -138,24 +138,16 @@ https://stackoverflow.com/questions/47618823/cannot-borrow-as-mutable-because-it
 
 
 # Data structures
-
-The way of searching through persistent data is usually done by saving it in a database consisting of key-value entries stored in tables.
+There is many ways of searching through key-value pairs
 The data for this problem consist of ranges, which means that the choice of database type is not obvious, and depends on different factors. It depends on range-size, gap-size (between each range), payload-size pr. entry, how many keys there can exist in total, and number of entries - and of course how complicated of a implementation you want. 
 
-For this project to look into tree and table structures. 
+This project focuses on table and tree structures.
 
-Lets declare some variables:
+For this section we will refer use these variables:
 ```
 p = payload size in bytes
 e = number of entries
 ```
-
-```
-address -> the offset in bytes from start of a memory mapped file
-index -> the offset in nodes from start of a memory mapped file
-```
-
-<måske en reminder at ipv4 er en u32>
 
 #### Fixed vs. dynamic data length 
 
@@ -164,20 +156,13 @@ Depending on the problem you want to solve you can either choose to use the same
 This choice is important for deciding how to store the payload and how we store the nodes in the tree. 
 
 Fixed sized data could imply using a struct - meaning that the whole file is cut in equal sized pieces (structs). This means you can refer to the offset of the struct itself, and not to the byte index of the struct. This is important because byte index number will be much larger than the struct index, meaning it takes more space to store pointers to byte indexes.
-E.g. using a u32 to as a pointer to byteindex result in only being able to refer to max size data size of 4,3 gb. `(2^32*8/8/1000/1000/1000)`
-This is grate if you know the data-object always will have the same size, but if the amount of data needed to be stored vary a lot, then we will wast space on internal padding in the structs, because they are not filled out. This means we instead can make all data-objects have a dynamic size. This would result in us having to store the size of the data-object in the header (because we dont know the size of it) and need to use byte-index to refer to the data. 
-
 ![](../docs/images/bachelor-06.png)
+<E.g. using a u32 to as a pointer to byte-index result in only being able to refer to max size data size of `2^32 · 8 bytes = 43.4 · 10^9 bytes = 4,3gb`.>
+Struct indexes is great if you know the data-object always will have the same size, but if the amount of data needed to be stored vary a lot, then we will wast space on internal padding in the structs, because they are not filled out. This means we instead can make all data-objects have a dynamic size. This would result in us having to store the size of the data-object in the header (because we don't know the size of it) and need to use byte-index to refer to the data. 
+
 
 ```
-On the other hand dynamic data size means that 
-Dynamic payload means that you for each entry great, since you don't waste space on padding/empty payload, but the downside is that you have to store the size of each block and in the block itself and you have to store the address the addresses payload begins instead of only storing the index to the node/struct of payload you are referring to.
-
-
-This is important because this means that the byte index always will be a bigger number than the struct offset. Therefore it is not alway beneficial to use dynamic sized payload if the amount of pointers are huge, since the amount of space needed accumulates
-This means that an address-pointer of 32b can only point to a max size of ~4.3 byte data 
-
-For this project i have chosen dynamic payload length, because the payload consist of names, which can vary a lot in length. If fixed length was chosen i would either have to accept a large amount of wasted space, or not allow names to be over a given length meaning i would cut of names.
+On the other hand dynamic data size means that --- Dynamic payload means that you for each entry great, since you don't waste space on padding/empty payload, but the downside is that you have to store the size of each block and in the block itself and you have to store the address the addresses payload begins instead of only storing the index to the node/struct of payload you are referring to. --- This is important because this means that the byte index always will be a bigger number than the struct offset. Therefore it is not alway beneficial to use dynamic sized payload if the amount of pointers are huge, since the amount of space needed accumulates. --- This means that an address-pointer of 32b can only point to a max size of ~4.3 byte data ----- For this project i have chosen dynamic payload length, because the payload consist of names, which can vary a lot in length. If fixed length was chosen i would either have to accept a large amount of wasted space, or not allow names to be over a given length meaning i would cut of names.
 ```
 
 ## Binary Trees
@@ -185,7 +170,7 @@ For this project i have chosen dynamic payload length, because the payload consi
 
 ### Binary Search Tree
 
-BST is a special type of binary tree in which left child of a node has value less than the parent and right child has value greater than parent
+BST is a type of binary tree in which left child of a node has value less than the parent and right child has value greater than the parent.
 
 One of the choices you have to make is to decide on if you want to store the payload next to the node itself or the node should store a pointer to payload somewhere else. 
 
@@ -197,21 +182,18 @@ Pros for storing it a separate file:
 - If the payload is a dynamic size, then the node will not have a fixed size, meaning all nodes in the whole tree would have to store bigger pointers, resulting in extra space needed for each node - as explained above.
 - In terms of caching it would be more beneficial to store the payload on a different file, because it would mean that the nodes would be closer to each other - meaning they therefore make better use of locality while searching down the tree.
 
-Another interesting point is to decide on how you want to store the ip-addresses. The simplest solution is to store the lower bound ip and the upper bound ip - each take up 32 bit - Resulting in 64 bit pr. node. Another approach could be to only store the lower-bound and then store the delta to the upper-bound - this is useful if you know that the ranges will me small meaning you could get away with only storing the delta on single byte. This can be taking even further to store a delta from the last nodes upper ip, to this nodes lower ip and store the internal delta. 
-Or you could choose to only store the delta to 
-This is only useful optimizations if you know how the ranges and gaps are distributed, but since we cant do that in this project we have just went with the simple solution and storing the full ip address for both upper and lower bound. 
+Another interesting point is to decide on how you want to store the ip-addresses. The simplest solution is to store the lower bound ip and the upper bound ip - each take up 32 bit - Resulting in 64 bit pr. node.
+Another approach could be to only store the lower-bound and then store the delta to the upper-bound - this is useful if you know that the ranges will me small meaning you could get away with storing it on less bytes than 4 (32 bit). This is only useful optimizations if you know how the ranges and gaps are distributed, but since we cant do that in this project we have just went with the simple solution and storing the full ip address for both upper and lower bound. 
 
 ### Redblack Tree
 
 An extension of the Binary Search Tree is the redblack tree. A redblack tree is a self-balancing tree structure. This prevents the tree from being imbalanced in exchange of longer build time and bigger nodes. It was invented in 1972 by Rudolf Bayer.
 
-On important point to make is that it is not always beneficial to use a balanced tree. As Donald Knuth proves in *The art of computer programming, Volume 3, Sorting and searching, second edition, page 430* the search time for balanced tree are not insanely better han non-balanced tree on random insertion data. A unbalanced tree has a worse case search time of O(n), but this is very rare and most trees are well balanced. A redblack tree has a ~Log(n) and a BST has a ~ 2·log(n) search time. Which men both data-structures has a time complexity of O(log(n)). 
+On important point to make is that it is not always beneficial to use a balanced tree. As Donald Knuth proves in *The art of computer programming, Volume 3, Sorting and searching, second edition, page 430* the search time for balanced tree are not insanely better han non-balanced tree on random insertion data. A unbalanced tree has a worse case search time of O(n), but this is very rare and most trees are well balanced. A redblack tree has a ~Log(n) and a BST has a ~2·log(n) search time. Which men both data-structures has a time complexity of O(log(n)). 
 
 In 1999, Chris Okasaki showed that insertion in a redblack tree only needs to handle four cases and a because, which makes it easy to implement for project like this. 
 
 <ref Okasaki, Chris (1999-01-01). "Red-black trees in a functional setting". Journal of Functional Programming. 9 (4): 471–477. doi:10.1017/S0956796899003494. ISSN 1469-7653. Archived from the original (PS) on 2007-09-26. Retrieved 2007-05-13.>
-
-
 <De 4 cases (5) bliver gennemgået her www.geeksforgeeks.org/red-black-tree-set-2-insert/ >
 
 ## Tables
@@ -226,18 +208,16 @@ A table (or dictionary) is
 The general the understanding is that searching in tables are quicker than most data structures, because you can get the data by value directly to a specific index by using the key. 
 
 
-If you want fast lookup speed tables/dictionarys are a great place to start. Tables can be implmented in many differnt ways, but the main point is that you can get value associated with a specifc key by only doing one lookup. Tables 
+If you want fast lookup speed tables/dictionaries are a great place to start. Tables can be implemented in many different ways, but the main point is that you can get value associated with a specific key by only doing one lookup. Tables 
 ```
-A simple implementation of this is to just create a full table for all ip-addresses holding a value for each ip. This obviously result in a massive data duplication because a value is stored repeatedly for each key in the associated range. This can easily be improved by actually storing the value in another table and only storing a pointer to it. Now the value is only stored once, but instead the pointer to it is duplicated for each key. 
+A simple implementation of table is to just create a full table for all ip-addresses holding a value for each ip. This obviously result in a massive data duplication because a value is stored repeatedly for each key in the associated range. This can easily be improved by actually storing the value in another table and only storing a pointer to it. Now the value is only stored once, but instead the pointer to it is duplicated for each key. 
 
 ![](../docs/images/bachelor-05.png)
 
-One of the downside to this is the full ip range is stored in the database even though you may only have very few entries. A solution is generally to create some kind of hashtable, where keys are hashed and points to some other data-structure (like a linked list), but this is beond the scope of this project. 
+One of the downside to this is the full ip range is stored in the database even though you may only have very few entries. A solution is generally to create some kind of hashtable, where keys are hashed and points to some other data-structure (like a linked list), but this is beyond the scope of this project. 
 
-# Design
-
-I this paper i have went for implementing a Binary Search Tree, a redblack tree, and a table. 
-All data-structures are implemented using memory mapped files.
+# Implementation Design
+I this project I have went for implementing a Binary Search Tree, a redblack tree, and a table. All tree implementations have their own module in the source code and has the same interface, so they can be swapped interchangeable. All data-structures are implemented using memory mapped files. All three implementations use a separate memory mapped file for storing the payload/data. This memory mapped file will be refereed to as `payload_table`.
 In this implementation i have chosen to store strings as payload, but this could be swapped out with anything other datatype.
 
 Lets declare some variables:
@@ -247,28 +227,17 @@ e = number of entries
 ```
 
 ## Payload Map
-
-All tree implementations use a separate memory mapped file for storing the payload/data. This memory mapped file will be refereed to as `payload_table`. This file contains This file only contain all entries value and the the length of the values in bytes. A value is retrieved from the table by giving it the byteindex of the header of the value. Each lookup runs in constant time, *O(1)*. 
+This memory mapped file contains all entries' value and the the length of the values in bytes. A value is retrieved from the table by giving it the byte index of the header of the value. Each lookup runs in constant time and therefore has a time complexity of *O(1)*. 
 
 Each value has a header of one byte, which is used to store the length of the data. The length is necessary, because we don't know how far we need to read to get the value.
-Storing the length in 1 byte, mens that the payload can be at most be `2^8 = 256` bytes long. This is just a design choice, but could easily be extended by changing all headers would need to be 2 bytes long instead. 
+The length of the payload is stored on 1 byte, which means that the payload can be at most be `2^8 = 256` bytes long. This is just a design choice, but could easily be extended by changing all headers would need to be 2 bytes long instead. 
 
 On this picture we can see how `SKAT` would be stored.
 ![](../docs/images/bachelor-04.png)
 
 **Space**
-<beslut hvad der skal ske med de tal der>
 The space needed for this file can be estimated from the average payload size and the number of entries: `(avg(p) + 1) · e`. The `+1` is the header-size of one byte.
-
-calculate the max size for a payload
-`2^8 = 256` - this means a entry can store up to 256 bytes. 
-
 If we have 150.000.000 entries with 255 bytes each, we can calculate the largest possible file to be 38.4 gb
-```
-150.000.000 * 256 = 38.400.000.000 bits
-38.400.000.000/1000/1000/1000 = 38.4 gb
-```
-
 
 ```
 what is this - delete?
@@ -276,27 +245,25 @@ dynamic payload
 (34.5-17.3)/(150.000.000/1000/1000/1000) = 114 bytes is the breakpointet.
 ```
 
-----------------------
+## BST & Redblack Tree
 
-here we have a simple example of what it would look like if the first entries were
-```
-0.0.0.50 0.0.0.55 SKAT
-0.0.1.20 0.0.1.20 PWC
-0.0.0.0 0.0.0.2 Siteimprove
-...
-```
+Both the BST and the redblack tree is implemented very similar. 
 
-## Redblack Tree
+Most functions are exactly the same, but with the exception of the insert function (`fn insert_node()` in the source code) in the redblack tree being pretty extensive and the fact that the redblack has functions for changing the root-node. 
 
-![](../docs/images/bachelor-02.png)
-
-This tree consist of nodes. These nodes are structs and consist of ...
-
-where the name field is a pointer to the address of the start of the payload stored in the payload_map. 
-
-Each time a entry is added to the tree the a new node will be appended at the end. Because all nodes have the same size, we can point to their index instead of their absolute address.
-
-```rust
+The nodes in the two tree are declared as followed:
+<table><tr><th>
+BST
+</th><th>
+Redblack
+</th></tr><tr><td><pre>
+pub struct Node {
+    pub min_ip: u32,
+    pub max_ip: u32,
+    pub left: usize,
+    pub right: usize,
+    pub name: usize,
+}</pre></td><td><pre>
 pub struct Node {
     pub red: bool,
     pub min_ip: u32,
@@ -305,75 +272,66 @@ pub struct Node {
     pub right: usize,
     pub parent: usize,
     pub name: usize,
-}
+}</pre></td></tr></table>
+
+`min_ip` being the lower-bound, `max_ip` being the higher-bound, `left` being the left child, `right` being the right child, `parent` being the parent node and `name` being a pointer to the `payload_table`, and `red` being the indicator of the node being red og black.
+
+**Insertion**
+Each time a entry is added to the tree the a new node will be appended at the end. Because all nodes have the same size, we can point to their index instead of their absolute address. The only difference from the two trees is we store the root-node in the first struct in the redblack tree.
+![](../docs/images/bachelor-07.png)
+
+Here we have a simple example of what it would look like if these entries were inserted. 
 ```
-The only difference from a regular tree is the added parent pointer and color boolean.
-
-
-48bytes -> 48*8
-https://doc.rust-lang.org/std/mem/fn.size_of.html
-https://www.geeksforgeeks.org/is-sizeof-for-a-struct-equal-to-the-sum-of-sizeof-of-each-member/
+0.0.2.22 0.0.2.55 SKAT
+0.0.0.4 0.0.1.20 PWC
+0.0.0.0 0.0.0.2 Siteimprove
+```
+![](../docs/images/bachelor-08.png)
+Here we notice that the BST is not balanced and has Node 0 as root and Redblack is balanced and has Node 2 as root. We can also see that 0 valued reference to another node (left,right,parent) is treated as a null-pointer.
 
 **Space**
-`8(bool)+32+32+64+64+64+64 = 328 bit` pr entry meaning we get a file of `49.200.000.000 bits` which is `49.200.000.000b/8/1000/1000 = 6,15 gb`. 
+For each field in the struct ordered by declaration order:
+* Add the size of the field.
+* Round up the current size to the nearest multiple of the next field's alignment.
+
+Finally, round the size of the struct to the nearest multiple of its alignment.
+Following this algorithm the BST nodes have a size of XX bytes while the redblack nodes have a of 48 bytes. Multiplying this with the 150mil entries, give a total file size of X.X gb for BST and 7.2 gb for redblack tree.
+A small space-optimization in the redblack tree be to let the boolean be stored as the most significant bit of the name-pointer, reducing the size to to only be 44bytes (assuming we would never get a total payload of 2^64 = 1.8 · 10^19 bytes). 
+
+https://doc.rust-lang.org/std/mem/fn.size_of.html
+https://www.geeksforgeeks.org/is-sizeof-for-a-struct-equal-to-the-sum-of-sizeof-of-each-member/ 
 
 **Implementation overview:**
 ``` 
-Speed: 2 lookups
-Space: <fix bit vs bytes>
-    tree_table:     (4 · 64 + 2 · 32 + 8) · e = 328 · e
-    payload_table:  (1 + p) · e
+BST: 
+lookup speed: O(Log(n))
+Insert: O(Log(n))
+Space: X bytes · n 
+
+redblack:
+lookup speed: O(Log(n))
+Insert: O(Log(n))
+Space: 48 bytes · n 
 ```
 
 **Handling IpV6**
-Tree structures handles IpV6 well. The only change nessesary would be to change the `min_ip` and `max_ip` to be a `u32`/`usize`. This would increase all nodes sizes with 2 · 32 bits.
-
----
-
-
-![Tree disk usage](../docs/images/bachelor-01.png)
-
-Lets split this up into two problems: _range storage_ and _pointer/payload storage_
-
-Depending on if you want to handle ipv6 or not you have to choose 
-
-##### range storage
-
-##### payloadstorage
-
-
-```
-
-ipv6 - solution E
-30.000.000*232 / 8 /1000/1000/1000 = 0.87gb 
-
-2^32/256
-
-#table2
-30.000.000 * 256/1000/1000/1000 = ~7.7gb
-```
-
-
----
+Tree structures handles IpV6 well. The only change necessary would be to change the `min_ip` and `max_ip` to from `u32` to `u128`. This would increase all nodes' size by `2 · (128 - 32) = 192 bits = 24 bytes`.
 
 ## Table
 
-This implementation is based on the simple implementation mentioned in section *Tables*. 
-This file consist of ~4,3mil unsigned integers, `u32`, that functions as a key to lookup the value in the payload_map.
+This implementation is based on the simple implementation mentioned in section *Tables*. This file consist of ~4,3mil unsigned integers, `u32`, that functions as a key to lookup the value in the `payload_map`.
 
 An illustration of the data-structure can be seen below:
 ![](../docs/images/bachelor-03.png)
+To symbolize a null-pointer (meaning the ip, does not have any value) we just store 0. This means we need to add 1 to all pointers do differentiate  between null-pointers and real pointers that refer to the first value in payload_map at index 0. This is why we e.g. see ip 200 with value 6 point to byte index 5. 
 
-To symbolize a null-pointer (meaning the ip, does not have any value) we just store 0. This means we need to add 1 to all pointers do differentiate  between null-pointers and real pointers that refer to the first value in payload_map at index 0. This is why we e.g. see 6 point to byte index 5. 
+```
+what is this? delete?
 
 This data-structure is the simplest implementation wise of all tree. Overall each lookup goes through these steps:
 * In ip_table, get the byte index, `x`, where the value it stored.
 * In payload_map, read value, `y`, by reading the the `u8` at x.
 * In payload_map, starting from the x+1 read y amount of bytes and return the value.
-
-
-```
-what is dis?
 
 This would result in
 (1+256) · 150000000 = 38.550.000.000 bytes = 308.400.000.000 bits
@@ -390,11 +348,9 @@ The space needed for this table is `
 
 **Implementation overview:**
 ``` 
-Speed:
-    constant time. 2 lookups. O(1).
-Storage:
-    ip_table: 2^32 * 32
-    payload_table: (1 + p) · e
+Lookup speed: constant time. 1 lookups.O(1). 
+Insertion: constant time. 1 lookups. O(1). 
+space: ip_table: 2^32 * 32 = 17.2 gb
 ```
 
 **Handling IpV6**
@@ -403,7 +359,7 @@ IpV6 is 128 bit instead of IpV4's 32 bit.
 The amount of possible ips is `2^128 = 3,40e38`, and if all have to store a `u32` it result in a file a `3,40e38*32/8/1000/1000 = 1.3e30 gb` file.
 
 # Testing
-The tests are separated in unit test and benchmarking tests
+The tests are separated in unit test and benchmarking tests.
 Most files and functions are tested using unit tests.
 All unit test can be found in source-code in the same file as the function they are testing.
 The benchmarking tests has been run on a 2 gb ram droplet, a 8 gb ram droplet(VMs on Digital ocean), and on a 16gb ram macbook pro 2016. 
