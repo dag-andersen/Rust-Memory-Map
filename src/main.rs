@@ -17,6 +17,7 @@
 const SOURCE_PATH_1:            &str    = "testdata/in/set1.txt";
 const SOURCE_PATH_2:            &str    = "testdata/in/set2.txt";
 const SOURCE_PATH_3:            &str    = "testdata/in/set3.txt";
+const SOURCE_PATH_4:            &str    = "testdata/in/set4.txt";
 const SP_10_000:                &str    = "testdata/in/10_000.txt";
 const SP_50_000:                &str    = "testdata/in/50_000.txt";
 const SP_100_000:               &str    = "testdata/in/100_000.txt";
@@ -26,6 +27,7 @@ const SP_5_000_000:             &str    = "testdata/in/5_000_000.txt";
 const TREE_PRINT_PATH:          &str    = "testdata/out/tree/tree_print.txt";
 const TREE_PATH:                &str    = "testdata/out/tree/map.txt";
 const TREE_PAYLOAD:             &str    = "testdata/out/tree/NAME_TABLE.txt";
+const REDBLACK_PRINT_PATH:      &str    = "testdata/out/redblack/tree_print.txt";
 const REDBLACK_PATH:            &str    = "testdata/out/redblack/map.txt";
 const REDBLACK_PAYLOAD:         &str    = "testdata/out/redblack/NAME_TABLE.txt";
 const TABLE_PATH:               &str    = "testdata/out/table/IP_TABLE.txt";

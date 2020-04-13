@@ -1,4 +1,4 @@
-use crate::{Utils, RedBlack, Table, NameTable, thisFileWillBeDeleted, FileGenerator, TREE_PRINT_PATH, SOURCE_PATH_3, SOURCE_PATH_1, REDBLACK_PATH, REDBLACK_PAYLOAD};
+use crate::{Utils, RedBlack, Table, NameTable, thisFileWillBeDeleted, FileGenerator, SOURCE_PATH_3, SOURCE_PATH_1, REDBLACK_PATH, REDBLACK_PAYLOAD, REDBLACK_PRINT_PATH, SOURCE_PATH_4};
 use std::fs::File;
 use std::io::{LineWriter, Write, BufRead};
 use memmap::MmapMut;
@@ -7,32 +7,8 @@ use crate::RedBlack::Tree::root_index;
 use std::fs;
 use crate::RedBlack::NodeToMem::get_node;
 
-pub(crate) fn print_tree() {
-    let mmap = Utils::get_memmap(REDBLACK_PATH, 3000000);
-    let root = get_node(&mmap, unsafe { root_index });
-    print_node(&mmap, &root, 0)
-}
-
-pub(crate) fn print_tree_from_map(mmap: &MmapMut) {
-    let root = get_node(&mmap, unsafe { root_index });
-    print_node(&mmap, &root, 0)
-}
-
-fn print_node(mmap: &MmapMut, node: &Node, n: usize) {
-    if node.right != 0 {
-        print_node(mmap, &NodeToMem::get_node(&mmap, node.right), n + 1);
-    }
-    let indention : String = (0..n).map(|_| '-').collect();
-    print!("{}",indention);
-    print!("{}", if node.red { "X - red - " } else { "O - black - " });
-    println!("{}", &node.name);
-    if node.left != 0 {
-        print_node(mmap, &NodeToMem::get_node(&mmap, node.left), n + 1);
-    }
-}
-
 pub(crate) fn print_tree_to_file(s: &str) {
-    fs::remove_file(TREE_PRINT_PATH);
+    fs::remove_file(REDBLACK_PRINT_PATH);
     let file = File::create(s).unwrap();
     let mut line_writer = LineWriter::new(file);
     let tree_map = RedBlack::gen_tree_map();
@@ -56,18 +32,17 @@ fn print_node_to_file(mmap: &MmapMut, name_table: &MmapMut, node: &Node, n: usiz
 }
 
 #[test]
-fn print_tree_and_read() {
+fn print_tree_and_read_1() {
     let src = thisFileWillBeDeleted;
     fs::remove_file(REDBLACK_PATH);
     crate::load_to_redblack(SOURCE_PATH_1);
-    print_tree_to_file(TREE_PRINT_PATH);
-    let mut iter = crate::get_buffer(TREE_PRINT_PATH).lines().map(|x| x.unwrap() );
+    print_tree_to_file(src);
+    let mut iter = crate::get_buffer(src).lines().map(|x| x.unwrap() );
     assert_eq!(iter.next(), Some("------X christoffersen".to_string()));
     assert_eq!(iter.next(), Some("---O Pedersen".to_string()));
     assert_eq!(iter.next(), Some("------X Olesen".to_string()));
     assert_eq!(iter.next(), Some("O Hans Hansens Hus".to_string()));
     assert_eq!(iter.next(), Some("---O Siteimprove".to_string()));
-    fs::remove_file(TREE_PRINT_PATH);
     fs::remove_file(src);
     fs::remove_file(REDBLACK_PATH);
 }
@@ -77,14 +52,22 @@ fn print_tree_and_read_2() {
     let src = thisFileWillBeDeleted;
     fs::remove_file(REDBLACK_PATH);
     crate::load_to_redblack(SOURCE_PATH_3);
-    print_tree_to_file(TREE_PRINT_PATH);
-    let mut iter = crate::get_buffer(TREE_PRINT_PATH).lines().map(|x| x.unwrap() );
+    print_tree_to_file(src);
+    let mut iter = crate::get_buffer(src).lines().map(|x| x.unwrap() );
     assert_eq!(iter.next(), Some("------X christoffersen".to_string()));
     assert_eq!(iter.next(), Some("---O Pedersen".to_string()));
     assert_eq!(iter.next(), Some("------X Olesen".to_string()));
     assert_eq!(iter.next(), Some("O Hans Hansens Hus".to_string()));
     assert_eq!(iter.next(), Some("---O Siteimprove".to_string()));
-    fs::remove_file(TREE_PRINT_PATH);
     fs::remove_file(src);
+    fs::remove_file(REDBLACK_PATH);
+}
+
+#[test]
+#[ignore]
+fn print_tree() {
+    fs::remove_file(REDBLACK_PATH);
+    crate::load_to_redblack(SOURCE_PATH_4);
+    print_tree_to_file(REDBLACK_PRINT_PATH);
     fs::remove_file(REDBLACK_PATH);
 }

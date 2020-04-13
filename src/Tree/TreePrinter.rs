@@ -5,24 +5,6 @@ use memmap::MmapMut;
 use crate::Tree::{Node, NodeToMem};
 use std::fs;
 
-fn print_tree() {
-    let mmap = Utils::get_memmap(TREE_PATH, 3000000);
-    let root = NodeToMem::get_node(&mmap, 0);
-    print_node(&mmap, &root, 0)
-}
-
-fn print_node(mmap: &MmapMut, node: &Node, n: usize) {
-    let indention : String = (0..n).map(|_| '-').collect();
-    if node.right != 0 {
-        print_node(mmap, &NodeToMem::get_node(&mmap, node.right), n + 1);
-    }
-    print!("{}",indention);
-    println!("{}", &node.name);
-    if node.left != 0 {
-        print_node(mmap, &NodeToMem::get_node(&mmap, node.left), n + 1);
-    }
-}
-
 pub(crate) fn print_tree_to_file(s: &str) {
     fs::remove_file(TREE_PRINT_PATH);
     let file = File::create(s).unwrap();
@@ -47,18 +29,17 @@ fn print_node_to_file(mmap: &MmapMut, name_table: &MmapMut, node: &Node, n: usiz
 }
 
 #[test]
-fn print_tree_and_read() {
+fn print_tree_and_read_1() {
     let src = thisFileWillBeDeleted;
     fs::remove_file(TREE_PATH);
     crate::load_to_tree(SOURCE_PATH_1);
-    print_tree_to_file(TREE_PRINT_PATH);
-    let mut iter = crate::get_buffer(TREE_PRINT_PATH).lines().map(|x| x.unwrap() );
+    print_tree_to_file(src);
+    let mut iter = crate::get_buffer(src).lines().map(|x| x.unwrap() );
     assert_eq!(iter.next(), Some("----christoffersen".to_string()));
     assert_eq!(iter.next(), Some("---Pedersen".to_string()));
     assert_eq!(iter.next(), Some("--Olesen".to_string()));
     assert_eq!(iter.next(), Some("-Hans Hansens Hus".to_string()));
     assert_eq!(iter.next(), Some("Siteimprove".to_string()));
-    fs::remove_file(TREE_PRINT_PATH);
     fs::remove_file(src);
     fs::remove_file(TREE_PATH);
 }
@@ -68,14 +49,13 @@ fn print_tree_and_read_2() {
     let src = thisFileWillBeDeleted;
     fs::remove_file(TREE_PATH);
     crate::load_to_tree(SOURCE_PATH_3);
-    print_tree_to_file(TREE_PRINT_PATH);
-    let mut iter = crate::get_buffer(TREE_PRINT_PATH).lines().map(|x| x.unwrap() );
+    print_tree_to_file(src);
+    let mut iter = crate::get_buffer(src).lines().map(|x| x.unwrap() );
     assert_eq!(iter.next(), Some("--christoffersen".to_string()));
     assert_eq!(iter.next(), Some("---Pedersen".to_string()));
     assert_eq!(iter.next(), Some("-Olesen".to_string()));
     assert_eq!(iter.next(), Some("--Hans Hansens Hus".to_string()));
     assert_eq!(iter.next(), Some("Siteimprove".to_string()));
-    fs::remove_file(TREE_PRINT_PATH);
     fs::remove_file(src);
     fs::remove_file(TREE_PATH);
 }

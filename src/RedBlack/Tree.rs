@@ -2,7 +2,7 @@ use crate::{NameTable, Entry, RedBlack, REDBLACK_PATH, Utils, usizeSize, thisFil
 use memmap::MmapMut;
 use crate::RedBlack::{Node, NODE_SIZE, NodeToMem};
 use std::ops::Deref;
-use crate::RedBlack::TreePrinter::{print_tree, print_tree_from_map};
+use crate::RedBlack::TreePrinter;
 use std::fs;
 
 pub static mut root_index: usize = 1;
