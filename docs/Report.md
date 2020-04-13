@@ -156,7 +156,7 @@ Depending on the problem you want to solve you can either choose to use the same
 This choice is important for deciding how to store the payload and how we store the nodes in the tree. 
 
 Fixed sized data could imply using a struct - meaning that the whole file is cut in equal sized pieces (structs). This means you can refer to the offset of the struct itself, and not to the byte index of the struct. This is important because byte index number will be much larger than the struct index, meaning it takes more space to store pointers to byte indexes.
-![](../docs/images/bachelor-06.png)
+![](../docs/images/bachelor-05.png)
 <E.g. using a u32 to as a pointer to byte-index result in only being able to refer to max size data size of `2^32 · 8 bytes = 43.4 · 10^9 bytes = 4,3gb`.>
 Struct indexes is great if you know the data-object always will have the same size, but if the amount of data needed to be stored vary a lot, then we will wast space on internal padding in the structs, because they are not filled out. This means we instead can make all data-objects have a dynamic size. This would result in us having to store the size of the data-object in the header (because we don't know the size of it) and need to use byte-index to refer to the data. 
 
@@ -212,7 +212,7 @@ If you want fast lookup speed tables/dictionaries are a great place to start. Ta
 ```
 A simple implementation of table is to just create a full table for all ip-addresses holding a value for each ip. This obviously result in a massive data duplication because a value is stored repeatedly for each key in the associated range. This can easily be improved by actually storing the value in another table and only storing a pointer to it. Now the value is only stored once, but instead the pointer to it is duplicated for each key. 
 
-![](../docs/images/bachelor-05.png)
+![](../docs/images/bachelor-04.png)
 
 One of the downside to this is the full ip range is stored in the database even though you may only have very few entries. A solution is generally to create some kind of hashtable, where keys are hashed and points to some other data-structure (like a linked list), but this is beyond the scope of this project. 
 
@@ -233,7 +233,7 @@ Each value has a header of one byte, which is used to store the length of the da
 The length of the payload is stored on 1 byte, which means that the payload can be at most be `2^8 = 256` bytes long. This is just a design choice, but could easily be extended by changing all headers would need to be 2 bytes long instead. 
 
 On this picture we can see how `SKAT` would be stored.
-![](../docs/images/bachelor-04.png)
+![](../docs/images/bachelor-03.png)
 
 **Space**
 The space needed for this file can be estimated from the average payload size and the number of entries: `(avg(p) + 1) · e`. The `+1` is the header-size of one byte.
@@ -278,7 +278,7 @@ pub struct Node {
 
 **Insertion**
 Each time a entry is added to the tree the a new node will be appended at the end. Because all nodes have the same size, we can point to their index instead of their absolute address. The only difference from the two trees is we store the root-node in the first struct in the redblack tree.
-![](../docs/images/bachelor-07.png)
+![](../docs/images/bachelor-06.png)
 
 Here we have a simple example of what it would look like if these entries were inserted. 
 ```
@@ -322,7 +322,7 @@ Tree structures handles IpV6 well. The only change necessary would be to change 
 This implementation is based on the simple implementation mentioned in section *Tables*. This file consist of ~4,3mil unsigned integers, `u32`, that functions as a key to lookup the value in the `payload_map`.
 
 An illustration of the data-structure can be seen below:
-![](../docs/images/bachelor-03.png)
+![](../docs/images/bachelor-02.png)
 To symbolize a null-pointer (meaning the ip, does not have any value) we just store 0. This means we need to add 1 to all pointers do differentiate  between null-pointers and real pointers that refer to the first value in payload_map at index 0. This is why we e.g. see ip 200 with value 6 point to byte index 5. 
 
 ```
@@ -359,82 +359,80 @@ The amount of possible ips is `2^128 = 3,40e38`, and if all have to store a `u32
 
 # Testing
 
-The tests can be categorized in unit test and benchmarking tests.
-Most files and functions are tested using unit tests. All unit test can be found in source-code in the same file as the function they are testing.
-The benchmarking tests has been run on a 2 gb ram droplet, a 8 gb ram droplet, and on a 16gb ram macbook pro 2016. Detailed specs can found in appendix X. The automated benchmark test script can be found in appendix X, but the overall structure is explained in this section. 
-All tests go through a setup, build, and lookup phase. 
+In the previous sections we have explained the three data-structures, table, BST, and redblack tree. To compare these data-structures the project went through various testing. The tests can be categorized in unit test and benchmarking tests.
+* **Unit tests:** Most files and functions are tested using unit tests. All unit test can be found in source-code in the same file as the function they are testing.
+* **The benchmarking tests** has been run on a 2 gb ram droplet, a 8 gb ram droplet, and on a 16gb ram macbook pro 2016. Detailed specs can found in appendix X. The automated benchmark test script can be found in appendix X, but the overall structure is explained in this section. 
+
+### Benchmarking
+All Benchmark tests go through a setup, build, and lookup phase. Since all three data-structures has the same interface, they can all be tested by using exactly they same functions. 
 
 **Setup - Generating test files**
-Created a function that generate a text file where each line is 2 IP addresses and 1 text string
-e.g.: `125.74.3.0 125.74.3.10 Siteimprove` 
-each line is written to a file and afterwards shuffled by using the unix command `shuf`. <It was necessary to print them to the file immediately instead of shuffling them in ram, because all 150 million entries could be in ram at the same time.>
+This first phase generates lines of 2 IP addresses and 1 text string (e.g.: `125.74.3.0 125.74.3.10 Siteimprove`) and writes them to a file. All lines are shuffled by using the unix command `shuf`. 
+> Note: First I tried shuffling all entries in memory inside rust using a `Vec<&str>` and writing them to a file afterwards, but this was slower and was more memory intensive, than using the unix command. Both methods require that the all entries can be stored in ram at the same time. This means that the shuffling cant happen on a machine with low resources like the 1 gb memory droplet. <Algortimer eksisterer hvor man kan shuffle uden at bruge ram>
 
 **Build data structure**
-The program iterate over each line reading them one by one with regex. <insert ref here>
-This step is deterministic and will alway provide the same out put for the same input file. This means that if we want to do multiple searches with different algorithms, we can do that. This is useful since this step can be very expensive timewise.  
+The program iterate over each line reading them one by one with regex. Both the tested data-structure and payload_table needs to be build at the same time, meaning each entry is sat into both at the same time, because the data-structure needs to know the byte-offset of the currently inserting entry. This step is deterministic and will alway provide the same output for the same input file. This phase it the most expensive.
+> Note: All three data-structures produce the same `payload_table`, so they could in theory share the same payload-file, but implementation wise the all have their own to decouple the data-structures. 
 
-**lookup**
-The lookup ip are collected by running over the shuffled list of entries and collecting every nth entry. A random ip is picked between the upper and lower bounds of the entry. The collected ips are then shuffled again and then used for search lookups.
-The actual searching is done by looping over the chosen random ips, and sequentially searching through the data structure and checks that it returns the correct payload. When finished it will print the time it took to do all the lookups. This number is then used to calculated the average lookup time. 
+**Lookup**
+Testing lookup speed is done by creating some ip-requests and running them on the data-structure. The random requests are collected by iterating over the shuffled list of entries and picking every n'th entry. For each entry a random ip is picked between the upper and lower bound. All the chosen entries are then shuffled again. The actual searching is done by looping over the chosen random ips, and sequentially searching through the data structure and checks that it returns the correct payload. When finished it will print the time it took to do all the lookups. This number is then used to calculated the average lookup time. 
 
 ### Cache tests
-Special cache miss-tests are performed to track how the cache may impact the performance of data structure.
-For testing the cache i used linux command `perf stat -e task-clock,cycles,instructions,cache-references,cache-misses [input]` on the droplet. Between each step they cache is cleared by using the command `sync; echo 3 > /proc/sys/vm/drop_caches`. To make sure we start from an cold cache and each test is not affected by the previous. 
+Special cache miss-tests are performed to track how the cache may impact the performance of data structure. For testing the cache this I used linux command `perf stat -e task-clock,cycles,instructions,cache-references,cache-misses [input]` on the droplets. Between each step they cache is cleared by using the command `sync; echo 3 > /proc/sys/vm/drop_caches`, to make sure we start from an cold cache and each test is not affected by the previous. 
 
 ### Test data
-The full ip-range is 2^32 = ~4.3mil and the given number of ranges are 150.000.000. This means that there is on average a new range every 28th ip. Because there is no information on how these are distributed, these test will assume they are relatively evenly distributed over the full range of range of IPv4. 
+The full ip-range is 2^32 = ~4.3mil and the given number of ranges are 150.000.000. This means that there is on average a new range every 28th ip. Since there is no information on how these are distributed, these test we will assume they are relatively evenly distributed over the full range of range of IPv4. Evenly distributing the ranges would suggest the worst case scenario for the table, because the entries would be spread over more pages, than if all entries were small and next to each other.  
 
-The ranges is random number between 10-18, and the padding/gap between each range is also a random number between 10-18.
-For testing purposes the payload is always 2 chars. This is mainly duo to generating random strings being the most expensive procedure of generating the test data. 
-
-
-// they are equally serpearted becase that is worse case, since the data would be distributed over all pages in the file
+Each range's size is a random number between 10-18, and the padding/gap between each range is also a random number between 10-18. The random aspect is added to make it more realistic, instead of having equal size ranges with equal gap between them.
+<For testing purposes the payload is always 2 chars. This is mainly duo to generating random strings being a very expensive procedure.>
 
 ### Optimizations 
 
-A huge part of the performance optimization came from using a profiler
-The profiler used for this project was the build-in profiler-tool in _Jetbrains Clion_, which is Jetbrains low-level-programming IDE. 
+A huge part of the performance optimization came from the build-in profiler-tool in _Jetbrain's Clion_ (Jetbrain's low-level-programming IDE). In particular its _Flame Chart_ and _Call Tree_ were very helpful. This was mainly used for seeing how much time the process spend in each scope/stackframe/function to find bottlenecks. The profiler use _sampling_. "A sampling profiler probes the target program's call stack at regular intervals using operating system interrupts. Sampling profiles are typically less numerically accurate and specific, but allow the target program to run at near full speed."-wiki
 
-in particular its Flame Chart and Call Tree were very helpful
+https://www.jetbrains.com/help/clion/cpu-profiler.html
+https://en.wikipedia.org/wiki/Profiling_(computer_programming)
 
-This was mainly used for seeing how much time the process spend in each scope/stackframe/function to find bottlenecks.
-
-This was most useful in the beginning both for learning rust and for detecting bottleneck early on. 
-In a early version of this system a new Regex object were initialize every time it read a line for standard input. This was obvious in the profiler, and resulted in object only getting initialized once and just send a pointer to it round in the system. 
-This han been great for learning Rust. 
+This was most useful in the beginning both for learning rust and for detecting bottleneck early on. E.g in the a earlier version of the project a new Regex object were initialize every time it read a line for standard input. In the profiler it was a obvious bottleneck - and was therefore changed to  only getting initialized once and just parse a pointer to it round in the system. 
 
 <Get better images>
 
 ![](../docs/images/treeProfiler.png)
 ![](../docs/images/tableProfiler.png)
 
-<nævn noget om hvilken type profiling det er>
-This was mainly used for seeing how much time the process spend in each scope/stackframe/function to find bottlenecks.
-
-
 ### Debugging
-* Stepping through the debugger
+Debugging the system was mostly done with printlines and by stepping through the code with a debugger. It can be pretty difficult to visualize how exactly each byte is placed in memory maps. The method i used to see it was to print the memory map in bytes. I used this statement `println!("{:?}", &name_table[0..100]);`, which prints out each byte in the range of 0 to 100 of the memory mapped file. This way i can print the map before and after each operation and compare them, and check if it works as intended. 
 
-**printlines**
+**Verifying tree structure**
+It has also been used to check if tree was structured correctly. Both the BST and redblack tree can be printed to standard-out or a file, and a test to verify that the tree is printed correctly. 
 
-It has also been used to check if tree was structured correctly. Both binary tree and the redblack tree module has a function for printing the tree, and also a test to verify that the tree is printed correctly. 
+Underneath we see the printout to the left and the abstraction to the right: 
 
-* Printing tree
-```
---red
--black
-black   <- Root
--black 
-```
+<table><tr><td><pre>
+------X Huawei
+---O Samsung
+------X Google
+O Siteimprove
+------X PwC
+---O SKAT
+------X Apple
 
-## findings
+</pre>
+</td><td><pre>
+
+![](../docs/images/bachelor-07.png)
+</table>
+
+Where `O` is a black node and `X` is a red node. The testdata for generating this can be found in appendix X.
+
+---
+
+## Findings
 
 120mb max
 
 
 ## Test Results
-
-
 
 One of the biggest problems i encountered was i couldn't build the redblack tree from the whole dataset, but only on smaller datasets. 
 
@@ -465,12 +463,8 @@ The table has duplicated data
 ## Code wise?
 
 
-
 ## design choices?
 
-
-
-## Test Data
 
 ## Page swapping
 
