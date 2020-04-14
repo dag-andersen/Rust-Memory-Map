@@ -1,0 +1,27 @@
+HOSTNAME: TestComputer
+
+Benchmark input: n: 100000, range: 10..18, padding: 10..18, namesize: 5 
+ikke relase
+
+
+## create_test_data
+highest ip: 2699192
+
+## load_to_redblack
+redblack load time: 29208
+
+## build_tree
+tree load time: 2481
+
+## load_to_table
+table load time: 2380
+
+
+
+## search_time_tree
+## search_time_redblack
+## search_time_table
+
+Search time --- #38885 micro seconds, #9090 of requests ran, #0 skipped
+Search time --- #34971 micro seconds, #9090 of requests ran, #0 skipped
+Search time --- #16170 micro seconds, #9090 of requests ran, #0 skipped

@@ -1,0 +1,20 @@
+
+root@onegb:~# cargo test --package rust_map --bin rust_map BenchmarkTests::search_time_tree_vs_table -- --exact --nocapture
+    
+test BenchmarkTests::search_time_tree_vs_table ... ## search_time_tree_vs_table
+highest ip: 5399439
+#18181 requests created
+start searching
+--- table score: 23096, #18181 of requests ran
+--- tree score : 75482, #18181 of requests ran
+
+--------------------
+
+root@onegb:~# cargo test --release --package rust_map --bin rust_map BenchmarkTests::search_time_tree_vs_table -- --exact --nocapture
+
+test BenchmarkTests::search_time_tree_vs_table ... ## search_time_tree_vs_table
+highest ip: 5400217
+#18181 requests created
+start searching
+--- table score: 5800, #18181 of requests ran
+--- tree score : 12593, #18181 of requests ran

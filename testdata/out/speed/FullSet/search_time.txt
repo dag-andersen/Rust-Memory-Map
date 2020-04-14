@@ -1,4 +1,6 @@
-1000
+150.000.000 10..18, 10..18
+release mode
+gap 1000
 
 Search time tree   --- #52819286 micro seconds, #149850 of requests ran, #0 skipped
 Search time table  --- #108366560 micro seconds, #149850 of requests ran, #0 skipped
