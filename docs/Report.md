@@ -156,7 +156,9 @@ Depending on the problem you want to solve you can either choose to use the same
 This choice is important for deciding how to store the payload and how we store the nodes in the tree. 
 
 Fixed sized data could imply using a struct - meaning that the whole file is cut in equal sized pieces (structs). This means you can refer to the offset of the struct itself, and not to the byte index of the struct. This is important because byte index number will be much larger than the struct index, meaning it takes more space to store pointers to byte indexes.
-![](../docs/images/bachelor-05.png)
+
+<img src="../docs/images/bachelor-05.png" alt="drawing" width="600"/>
+
 <E.g. using a u32 to as a pointer to byte-index result in only being able to refer to max size data size of `2^32 · 8 bytes = 43.4 · 10^9 bytes = 4,3gb`.>
 Struct indexes is great if you know the data-object always will have the same size, but if the amount of data needed to be stored vary a lot, then we will wast space on internal padding in the structs, because they are not filled out. This means we instead can make all data-objects have a dynamic size. This would result in us having to store the size of the data-object in the header (because we don't know the size of it) and need to use byte-index to refer to the data. 
 
@@ -212,7 +214,7 @@ If you want fast lookup speed tables/dictionaries are a great place to start. Ta
 ```
 A simple implementation of table is to just create a full table for all ip-addresses holding a value for each ip. This obviously result in a massive data duplication because a value is stored repeatedly for each key in the associated range. This can easily be improved by actually storing the value in another table and only storing a pointer to it. Now the value is only stored once, but instead the pointer to it is duplicated for each key. 
 
-![](../docs/images/bachelor-04.png)
+<img src="../docs/images/bachelor-04.png" alt="drawing" height="250"/>
 
 One of the downside to this is the full ip range is stored in the database even though you may only have very few entries. A solution is generally to create some kind of hashtable, where keys are hashed and points to some other data-structure (like a linked list), but this is beyond the scope of this project. 
 
@@ -233,7 +235,8 @@ Each value has a header of one byte, which is used to store the length of the da
 The length of the payload is stored on 1 byte, which means that the payload can be at most be `2^8 = 256` bytes long. This is just a design choice, but could easily be extended by changing all headers would need to be 2 bytes long instead. 
 
 On this picture we can see how `SKAT` would be stored.
-![](../docs/images/bachelor-03.png)
+
+<img src="../docs/images/bachelor-03.png" alt="drawing" width="600"/>
 
 **Space**
 The space needed for this file can be estimated from the average payload size and the number of entries: `(avg(p) + 1) · e`. The `+1` is the header-size of one byte.
@@ -278,7 +281,7 @@ pub struct Node {
 
 **Insertion**
 Each time a entry is added to the tree the a new node will be appended at the end. Because all nodes have the same size, we can point to their index instead of their absolute address. The only difference from the two trees is we store the root-node in the first struct in the redblack tree.
-![](../docs/images/bachelor-06.png)
+<img src="../docs/images/bachelor-06.png" alt="drawing" width="600"/>
 
 Here we have a simple example of what it would look like if these entries were inserted. 
 ```
@@ -322,7 +325,9 @@ Tree structures handles IpV6 well. The only change necessary would be to change 
 This implementation is based on the simple implementation mentioned in section *Tables*. This file consist of ~4,3mil unsigned integers, `u32`, that functions as a key to lookup the value in the `payload_map`.
 
 An illustration of the data-structure can be seen below:
-![](../docs/images/bachelor-02.png)
+
+<img src="../docs/images/bachelor-02.png" alt="drawing" width="600"/>
+
 To symbolize a null-pointer (meaning the ip, does not have any value) we just store 0. This means we need to add 1 to all pointers do differentiate  between null-pointers and real pointers that refer to the first value in payload_map at index 0. This is why we e.g. see ip 200 with value 6 point to byte index 5. 
 
 ```
@@ -386,19 +391,32 @@ The full ip-range is 2^32 = ~4.3mil and the given number of ranges are 150.000.0
 Each range's size is a random number between 10-18, and the padding/gap between each range is also a random number between 10-18. The random aspect is added to make it more realistic, instead of having equal size ranges with equal gap between them.
 <For testing purposes the payload is always 2 chars. This is mainly duo to generating random strings being a very expensive procedure.>
 
-### Optimizations 
+### Profiling 
 
-A huge part of the performance optimization came from the build-in profiler-tool in _Jetbrain's Clion_ (Jetbrain's low-level-programming IDE). In particular its _Flame Chart_ and _Call Tree_ were very helpful. This was mainly used for seeing how much time the process spend in each scope/stackframe/function to find bottlenecks. The profiler use _sampling_. "A sampling profiler probes the target program's call stack at regular intervals using operating system interrupts. Sampling profiles are typically less numerically accurate and specific, but allow the target program to run at near full speed."-wiki
+A huge part of the performance optimization came from the build-in profiler-tool in _Jetbrain's Clion_ (Jetbrain's low-level-programming IDE). In particular its _Flame Chart_ and _Call Tree_ were very helpful. This was mainly used for seeing how much time the process spend in each scope/stackframe/function to find bottlenecks. The profiler use _sampling_.
+"A sampling profiler probes the target program's call stack at regular intervals using operating system interrupts. Sampling profiles are typically less numerically accurate and specific, but allow the target program to run at near full speed."-wiki
 
 https://www.jetbrains.com/help/clion/cpu-profiler.html
 https://en.wikipedia.org/wiki/Profiling_(computer_programming)
 
-This was most useful in the beginning both for learning rust and for detecting bottleneck early on. E.g in the a earlier version of the project a new Regex object were initialize every time it read a line for standard input. In the profiler it was a obvious bottleneck - and was therefore changed to  only getting initialized once and just parse a pointer to it round in the system. 
+This was most useful in the beginning both for learning rust and for detecting bottleneck early on. E.g in the a earlier version of the project a new Regex object were initialize every time it read a line for standard input. In the profiler it was a obvious bottleneck - and was therefore changed to  only getting initialized once and just parse a pointer to it round in the system. This is a simple thing but has a huge impact on the performance. On the left image we see how 56% of the time was spent initializing a Regex object, but it only took 14.7% after the change.
 
-<Get better images>
+<img src="../docs/images/CallTree1000pre.png" alt="drawing" width="49%"/>
+<img src="../docs/images/CallTree1000post.png" alt="drawing" width="49%"/>
 
-![](../docs/images/treeProfiler.png)
-![](../docs/images/tableProfiler.png)
+The height of the trees are also visible in the profiler though the flame graph. The image below is from a profile run with a on a function that builds both Redblack, table, and BST with 100.000 entries and it with a frequency of 5000 samples pr second.
+Since it ran with 100.000 entries we can expect at minimum height of the tree to be `log(100.000)=16`. In the flame graph we can count how many stackframes deep a the redblack's `insert_node` functions goes. The last `insert_leaf_on_node`stackframe is 18 layers deep, which means that the hieght of the tree is 19 (+1 because the inserted leaf also counts). This matches are expectation of a balanced tree.
+Furthermore we can see that the BST height is almost double the height of the redblack tree. This also matches are expectations of a unbalanced tree height to have a hight of `2·log(n)`, proved by Knuth mentioned in a previous section.
+
+<img src="../docs/images/profiler/100 5 arrows.png" alt="drawing" />
+
+>Note: the BST may even be taller/deeper, since the profiler tasks samples on a given interval, so if a stackframe is created and removed in the middle of two samples it would be displayed. 
+
+Another intersting finding was that rust only optimized to tail end recursion when running it in release mode (running it with the `--release`-flag).Below we can see that there only exist one 'insert_leaf_on_node`-stackframe at the time, meaning that the optimizer created tail-end recursion. 
+
+<img src="../docs/images/profiler/release.png" alt="drawing" width="49%"/>
+<img src="../docs/images/profiler/nonrelease.png" alt="drawing" width="49%"/>
+
 
 ### Debugging
 Debugging the system was mostly done with printlines and by stepping through the code with a debugger. It can be pretty difficult to visualize how exactly each byte is placed in memory maps. The method i used to see it was to print the memory map in bytes. I used this statement `println!("{:?}", &name_table[0..100]);`, which prints out each byte in the range of 0 to 100 of the memory mapped file. This way i can print the map before and after each operation and compare them, and check if it works as intended. 
@@ -420,7 +438,7 @@ O Siteimprove
 </pre>
 </td><td><pre>
 
-![](../docs/images/bachelor-07.png)
+<img src="../docs/images/bachelor-07.png" alt="drawing" width="400"/>
 </table>
 
 Where `O` is a black node and `X` is a red node. The testdata for generating this can be found in appendix X.
@@ -640,6 +658,6 @@ IP v6 entries for domain is 3164
 IP v4 entries for pulse is 124127485
 IP v6 entries for pulse is 34027618
 
-124127485+ 17229245+ 9661299+307279+ 19547 + 177765 = 151.000.000
-29846 + 563 + 38018 + 891625 + 3164 + 34027618      =  35.000.000
+124.127.485 + 17.229.245 + 9.661.299 + 307.279 + 19.547 + 177.765    = 151.000.000
+29.846      + 563        + 38.018    + 891.625 + 3.164  + 34.027.618 =  35.000.000
 ```

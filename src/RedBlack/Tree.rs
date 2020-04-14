@@ -21,17 +21,17 @@ pub fn load_root_node(map_path: &str) {
 
 pub fn insert_node(mmap: &mut MmapMut, index: usize, node: &mut Node) {
     NodeToMem::place_node(mmap, index, node);
-    mmap.flush();
+    //mmap.flush();
     if index == 0 {
         panic!("Tried to insert on index 0")
     } else if index != 1 {
         let root = NodeToMem::get_node(mmap, unsafe { root_index });
-        insert_node_on_node(mmap, root, 1, node, index);
+        insert_leaf_on_node(mmap, root, 1, node, index);
     }
     balance(mmap, node, index)
 }
 
-fn insert_node_on_node(mmap: &MmapMut, parent: &mut Node, parentIndex: usize, node: &mut Node, nodeIndex: usize) {
+fn insert_leaf_on_node(mmap: &MmapMut, parent: &mut Node, parentIndex: usize, node: &mut Node, nodeIndex: usize) {
 
     let mut offset_from_node = 0;
 
@@ -62,7 +62,7 @@ fn insert_node_on_node(mmap: &MmapMut, parent: &mut Node, parentIndex: usize, no
     if offset_from_node == 0 { panic!() }
 
     let childNode = NodeToMem::get_node(mmap, offset_from_node);
-    insert_node_on_node(mmap, childNode, offset_from_node, node, nodeIndex);
+    insert_leaf_on_node(mmap, childNode, offset_from_node, node, nodeIndex);
 }
 
 fn balance(mmap: &MmapMut, node: &mut Node, nodeIndex: usize) {

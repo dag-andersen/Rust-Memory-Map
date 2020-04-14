@@ -202,7 +202,7 @@ pub fn generate_lookup_testdata(src: &str, gap: usize) -> Vec<(u32,String)>{
     let mut rng = thread_rng();
 
     let mut lines = get_buffer(src).lines();
-    while let line = lines.nth(gap) {
+    while let line = lines.nth(gap-1) {
         if line.is_none() { break; }
         let line = line.unwrap();
         if line.is_err() { continue }

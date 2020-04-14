@@ -7,10 +7,10 @@ pub fn insert_node(mmap: & mut MmapMut, index: usize, node: &Node) {
     NodeToMem::place_node(mmap, index, &node);
     if index == 0 { return }
     let root = NodeToMem::get_node(&mmap, 0);
-    insert_node_on_node(&mmap, root, index, &node);
+    insert_leaf_on_node(&mmap, root, index, &node);
 }
 
-fn insert_node_on_node(mmap: & MmapMut, parent: &mut Node, index: usize, child: &Node) {
+fn insert_leaf_on_node(mmap: & MmapMut, parent: &mut Node, index: usize, child: &Node) {
 
     let mut offset_from_node = 0;
 
@@ -34,7 +34,7 @@ fn insert_node_on_node(mmap: & MmapMut, parent: &mut Node, index: usize, child: 
     }
 
     let node = NodeToMem::get_node(&mmap, offset_from_node);
-    insert_node_on_node(mmap, node, index, &child);
+    insert_leaf_on_node(mmap, node, index, &child);
 }
 
 pub fn find_node_on_map(ip: u32, mmap: &MmapMut) -> Option<usize> {
