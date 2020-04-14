@@ -46,8 +46,8 @@ mod FileGenerator;
 mod Tree;
 mod RedBlack;
 mod Table;
-mod BenchmarkTests;
-mod DO_BenchmarkTests_merged;
+mod IntegrationTests;
+mod BenchmarkTest;
 mod Utils;
 mod NameTable;
 
@@ -63,7 +63,7 @@ use std::io::prelude::*;
 use rand::distributions::Alphanumeric;
 use rand::prelude::ThreadRng;
 use std::iter::{Map, FilterMap, Filter, FromIterator, Enumerate};
-use crate::DO_BenchmarkTests_merged::create_test_data;
+use crate::BenchmarkTest::create_test_data;
 
 pub struct Entry {
     pub min_ip: u32,
@@ -124,7 +124,7 @@ fn load_to_data_structure(input: &str, payload_path: &str, structure: MmapMut, i
         if l.is_empty() { continue; }
 
         //if i % 50_000 == 0 { print!("", i)}
-        if i % (DO_BenchmarkTests_merged::n as usize/100 + 1) == 0 { print!("-"); io::stdout().flush(); }
+        if i % (BenchmarkTest::n as usize/100 + 1) == 0 { print!("-"); io::stdout().flush(); }
 
         let entry = Utils::get_entry_for_line(&ip_regex, &name_regex, &l);
         if entry.is_none() { continue }

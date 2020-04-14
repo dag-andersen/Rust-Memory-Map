@@ -30,18 +30,6 @@ fn generate_random_ip_firm(rng: &mut ThreadRng) -> String {
     r
 }
 
-pub fn generate_source_file(n: usize, s:&str) {
-    let file = File::create(s).unwrap();
-    let mut file = LineWriter::new(file);
-    let mut rng = rand::thread_rng();
-    for i in 0..n {
-        if i % 1000 == 0 { println!("number of lines created: {}", i); }
-        let s = generate_random_ip_firm(&mut rng);
-        file.write_all( s.as_bytes());
-        file.flush();
-    }
-}
-
 fn gen_firm(rng: &ThreadRng, size: usize) -> String {
     rng.sample_iter(&Alphanumeric).take(size).collect::<String>()
 }
@@ -54,7 +42,7 @@ pub fn transform_u32_to_array_of_u8(x:u32) -> [u8;4] {
     return [b1, b2, b3, b4]
 }
 
-pub fn generate_source_file_with(s:&str, n: u32, range: Range<u32>, padding: Range<u32>, name_size: usize) {
+pub fn generate_source_file(s:&str, n: u32, range: Range<u32>, padding: Range<u32>, name_size: usize) {
     let mut rng = thread_rng();
     //println!("generate_source_file_with");
 
@@ -114,7 +102,7 @@ pub fn generate_source_file_with(s:&str, n: u32, range: Range<u32>, padding: Ran
     println!("writing to file - done");
 }
 
-pub fn generate_source_file_with_in_mem(s:&str, n: u32, range: Range<u32>, padding: Range<u32>, name_size: usize) {
+pub fn generate_source_file_shuffled(s:&str, n: u32, range: Range<u32>, padding: Range<u32>, name_size: usize) {
     let mut rng = thread_rng();
     //println!("generate_source_file_with");
 
@@ -178,7 +166,7 @@ pub fn generate_source_file_with_in_mem(s:&str, n: u32, range: Range<u32>, paddi
 fn gen_input_file() {
     let src = "testtesttesttest";
     fs::remove_file(src);
-    generate_source_file_with(src, 1000,2..2,2..2, 4);
+    generate_source_file(src, 1000, 2..2, 2..2, 4);
 }
 
 //#[test]

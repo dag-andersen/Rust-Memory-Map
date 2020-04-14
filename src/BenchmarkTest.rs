@@ -20,39 +20,23 @@ const range:             Range<u32> = 10..18;
 const padding:           Range<u32> = 10..18;
 const nameLength:             usize = 2;
 const gap:                    usize = 10;
+const shuffle_in_momory:       bool = false;
 
 pub fn create_test_data() {
     clear_files();
 
-    if cfg!(target_os = "windows") {
-        panic!("This is a windows machine - Shame on you!")
-    } else {
-        println!("\nHOSTNAME: {}",String::from_utf8(Command::new("hostname").output().unwrap().stdout).unwrap());
-    }
-    println!("Benchmark input: n: {}, range: {:#?}, padding: {:#?}, namesize: {} \n\n", &n, &range, &padding, &nameLength);
+    println!("\nHOSTNAME: {}",String::from_utf8(Command::new("hostname").output().unwrap().stdout).unwrap());
+    println!("Benchmark input: n: {}, range: {:#?}, padding: {:#?}, namesize: {}, gap:{} \n\n", &n, &range, &padding, &nameLength, &gap);
 
     println!("## create_test_data");
-    FileGenerator::generate_source_file_with(DO_Benchmark_test_pre, n, range, padding, nameLength);
 
-    sleep(time::Duration::from_secs(1));
-
-    if cfg!(target_os = "windows") {
-        panic!("This is a windows machine - Shame on you!")
-    } else if cfg!(target_os = "macos") {
-        Command::new("gshuf")
-            .arg(DO_Benchmark_test_pre)
-            .arg("-o")
-            .arg(DO_Benchmark_test_src)
-            .output()
-            .expect("failed to execute process")
+    if shuffle_in_momory {
+        FileGenerator::generate_source_file_shuffled(DO_Benchmark_test_pre, n, range, padding, nameLength);
     } else {
-        Command::new("shuf")
-            .arg(DO_Benchmark_test_pre)
-            .arg("-o")
-            .arg(DO_Benchmark_test_src)
-            .output()
-            .expect("failed to execute process")
-    };
+        FileGenerator::generate_source_file(DO_Benchmark_test_pre, n, range, padding, nameLength);
+        sleep(time::Duration::from_secs(1));
+        shuffle_file(DO_Benchmark_test_pre,DO_Benchmark_test_src);
+    }
 
     create_redblack();
     create_tree();
@@ -68,6 +52,26 @@ pub fn create_test_data() {
     println!("{}",table_time);
 
     clear_files();
+}
+
+fn shuffle_file(input: &str, output: &str) {
+    if cfg!(target_os = "windows") {
+        panic!("This is a windows machine - Shame on you!")
+    } else if cfg!(target_os = "macos") {
+        Command::new("gshuf")
+            .arg(input)
+            .arg("-o")
+            .arg(output)
+            .output()
+            .expect("failed to execute process")
+    } else {
+        Command::new("shuf")
+            .arg(input)
+            .arg("-o")
+            .arg(output)
+            .output()
+            .expect("failed to execute process")
+    };
 }
 
 fn create_table() {

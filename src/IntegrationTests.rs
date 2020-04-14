@@ -6,7 +6,7 @@ use std::io::{LineWriter, Write};
 use crate::Tree;
 use crate::Tree::TreePrinter;
 use crate::Utils::get_memmap;
-use crate::FileGenerator::{generate_source_file_with, generate_source_file_with_in_mem};
+use crate::FileGenerator::{generate_source_file, generate_source_file_shuffled};
 use std::ops::Range;
 
 #[test]
@@ -14,21 +14,21 @@ fn build_time_tree() {
     println!("## build_time_tree");
     let src = thisFileWillBeDeleted;
 
-    FileGenerator::generate_source_file_with(src, 10,1..1,0..1, 4);
+    FileGenerator::generate_source_file(src, 10, 1..1, 0..1, 4);
     let mut sw = Stopwatch::start_new();
     load_to_tree(src);
     sw.stop();
     println!("score: {}", sw.elapsed().as_millis());
     fs::remove_file(src);
 
-    FileGenerator::generate_source_file_with(src, 10000,1..1,100..100, 4);
+    FileGenerator::generate_source_file(src, 10000, 1..1, 100..100, 4);
     let mut sw = Stopwatch::start_new();
     load_to_tree(src);
     sw.stop();
     println!("score: {}", sw.elapsed().as_millis());
     fs::remove_file(src);
 
-    FileGenerator::generate_source_file_with(src, 10000,10000..10000,100..100, 4);
+    FileGenerator::generate_source_file(src, 10000, 10000..10000, 100..100, 4);
     let mut sw = Stopwatch::start_new();
     load_to_tree(src);
     sw.stop();
@@ -42,21 +42,21 @@ fn build_time_table() {
     println!("## build_time_table");
     let src = thisFileWillBeDeleted;
 
-    FileGenerator::generate_source_file_with(src, 10,1..1,0..1, 4);
+    FileGenerator::generate_source_file(src, 10, 1..1, 0..1, 4);
     let mut sw = Stopwatch::start_new();
     load_to_table(src);
     sw.stop();
     println!("score: {}", sw.elapsed().as_millis());
     fs::remove_file(src);
 
-    FileGenerator::generate_source_file_with(src, 10000,1..1,100..100, 4);
+    FileGenerator::generate_source_file(src, 10000, 1..1, 100..100, 4);
     let mut sw = Stopwatch::start_new();
     load_to_table(src);
     sw.stop();
     println!("score: {}", sw.elapsed().as_millis());
     fs::remove_file(src);
 
-    FileGenerator::generate_source_file_with(src, 10000,10000..10000,100..100, 4);
+    FileGenerator::generate_source_file(src, 10000, 10000..10000, 100..100, 4);
     let mut sw = Stopwatch::start_new();
     load_to_table(src);
     sw.stop();
@@ -100,7 +100,7 @@ fn speed_matrix_tree() {
             writer.write_all(format!("--- range length: {}\n", range_length_scale.pow(range_length)).as_bytes());
             for padding_length in 1..5 {
                 writer.write_all(format!("------ padding length: {}\n", padding_length_scale.pow(padding_length)).as_bytes());
-                FileGenerator::generate_source_file_with(
+                FileGenerator::generate_source_file(
                     in_src,
                     number_of_rows_scale.pow(number_of_rows),
                     1..range_length_scale.pow(range_length),
@@ -132,7 +132,7 @@ fn search_time_tree_vs_RedBlack_vs_table() {
 
     let src = thisFileWillBeDeleted;
     fs::remove_file(src);
-    generate_source_file_with_in_mem(src, n,range, padding, nameLength);
+    generate_source_file_shuffled(src, n, range, padding, nameLength);
     println!("Benchmark input: n: {}, range: {:#?}, padding: {:#?}, namesize: {}, gap: {}\n\n", &n, &range, &padding, &nameLength, &gap);
 
     let requests1 = FileGenerator::generate_lookup_testdata(src, gap);
@@ -212,7 +212,7 @@ fn search_time_tree_vs_RedBlack_vs_table() {
 #[ignore]
 fn test_print_tree_to_file() {
     let src = thisFileWillBeDeleted;
-    FileGenerator::generate_source_file_with(src, 100,1..2,99..100, 4);
+    FileGenerator::generate_source_file(src, 100, 1..2, 99..100, 4);
     load_to_tree(src);
     TreePrinter::print_tree_to_file(TREE_PRINT_PATH);
     fs::remove_file(src);
@@ -223,5 +223,5 @@ fn test_print_tree_to_file() {
 fn genfile() {
     let src = "genfile";
     fs::remove_file(src);
-    generate_source_file_with(src, 10_000_000,1..100,0..100, 4);
+    generate_source_file(src, 10_000_000, 1..100, 0..100, 4);
 }
