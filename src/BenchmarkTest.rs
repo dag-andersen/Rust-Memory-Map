@@ -13,17 +13,17 @@ use std::time::SystemTime;
 
 const DO_Benchmark_test_pre:   &str = "DO_Benchmark_test_pre.txt";
 const DO_Benchmark_test_src:   &str = "DO_Benchmark_test.txt";
-const benchmark_output:        &str = "testdata/out/speed/benchmark.txt";
 
-pub const n:                    u32 = 1000;
+pub const n:                    u32 = 150_000_000;
 const range:             Range<u32> = 10..18;
 const padding:           Range<u32> = 10..18;
-const nameLength:             usize = 2;
+const nameLength:             usize = 50;
 const gap:                    usize = 10;
 const shuffle_in_momory:       bool = false;
 
 pub fn create_test_data() {
-    clear_files();
+    fs::remove_file(DO_Benchmark_test_pre);
+    fs::remove_file(DO_Benchmark_test_src);
 
     println!("\nHOSTNAME: {}",String::from_utf8(Command::new("hostname").output().unwrap().stdout).unwrap());
     println!("Benchmark input: n: {}, range: {:#?}, padding: {:#?}, namesize: {}, gap:{} \n\n", &n, &range, &padding, &nameLength, &gap);
@@ -50,8 +50,6 @@ pub fn create_test_data() {
     println!("{}",tree_time);
     println!("{}",redblack_time);
     println!("{}",table_time);
-
-    clear_files();
 }
 
 fn shuffle_file(input: &str, output: &str) {
@@ -79,15 +77,15 @@ fn create_table() {
     let mut sw = Stopwatch::start_new();
     load_to_table(DO_Benchmark_test_src);
     sw.stop();
-    println!("\ntable load time: {}", sw.elapsed().as_millis());
+    println!("\ntable load time: {}  micro seconds", sw.elapsed().as_micros());
 }
 
 fn create_tree() {
-    println!("\n## build_tree");
+    println!("\n## load_to_tree");
     let mut sw = Stopwatch::start_new();
     load_to_tree(DO_Benchmark_test_src);
     sw.stop();
-    println!("\ntree load time: {}", sw.elapsed().as_millis());
+    println!("\ntree load time: {}  micro seconds", sw.elapsed().as_micros());
     sleep(time::Duration::from_secs(1));
 }
 
@@ -96,7 +94,7 @@ fn create_redblack() {
     let mut sw = Stopwatch::start_new();
     load_to_redblack(DO_Benchmark_test_src);
     sw.stop();
-    println!("\nredblack load time: {}", sw.elapsed().as_millis());
+    println!("\nredblack load time: {}  micro seconds", sw.elapsed().as_micros());
     sleep(time::Duration::from_secs(1));
 }
 
@@ -117,21 +115,10 @@ fn search_time_redblack() -> String{
     search_time(REDBLACK_PAYLOAD, RedBlack::gen_tree_map, RedBlack::find_value_on_map)
 }
 
-fn clear_files() {
-    fs::remove_file(DO_Benchmark_test_pre);
-    fs::remove_file(DO_Benchmark_test_src);
-    fs::remove_file(TREE_PATH);
-    fs::remove_file(TABLE_PATH);
-    fs::remove_file(REDBLACK_PATH);
-    fs::remove_file(TABLE_PAYLOAD);
-    fs::remove_file(TREE_PAYLOAD);
-    fs::remove_file(REDBLACK_PAYLOAD);
-}
-
 fn search_time(payload_path: &str, structure: fn() -> MmapMut, finder: fn(u32, &MmapMut, &MmapMut) -> Option<String>) -> String {
     let src = DO_Benchmark_test_src;
 
-    let requests = FileGenerator::generate_lookup_testdata(src,gap);
+    let requests = FileGenerator::generate_lookup_testdata(src, gap);
     let length = requests.len();
     assert!(length > 0);
 
@@ -152,7 +139,7 @@ fn search_time(payload_path: &str, structure: fn() -> MmapMut, finder: fn(u32, &
                 numberSkipped += 1;
                 //println!("Wrong match - real: {} - found: {} - ip: {}", name, value, ip);
             }
-        } else { numberSkipped += 1; println!("Found none - real name: {} - ip: {}", name, ip) }
+        } else { numberSkipped += 1 }
         if i % (length/100 + 1) == 0 { print!("-"); io::stdout().flush(); }
         i += 1;
     }

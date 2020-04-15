@@ -14,7 +14,7 @@ pub fn save_root_node(map_path: &str) { Tree::save_root_node(map_path) }
 pub fn load_root_node(map_path: &str) { Tree::load_root_node(map_path) }
 
 pub fn gen_tree_map() -> MmapMut { gen_tree_map_on_path(REDBLACK_PATH) }
-pub fn gen_tree_map_on_path(path: &str) -> MmapMut { Utils::get_memmap(path, 7_000_000_000) }
+pub fn gen_tree_map_on_path(path: &str) -> MmapMut { Utils::get_memmap(path, 7_500_000_000) }
 
 pub struct Node {
     pub red: bool,

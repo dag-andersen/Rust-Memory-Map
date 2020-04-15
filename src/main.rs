@@ -78,6 +78,7 @@ impl fmt::Display for Entry {
 }
 
 fn main() {
+    Utils::make_needed_folders();
     create_test_data();
 }
 

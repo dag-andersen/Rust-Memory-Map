@@ -12,6 +12,9 @@
 - efter kun 2 ticks er den oppe på 270 mb
 
 
+dionysos til sidst i tree build before and : 25477976-25243404  254mb
+
+
 - hvis jeg låser nodesne til redblack tree'et så dør den efter 10_000 nodes og de skulle gerne være 48 bytes
  - Det
 

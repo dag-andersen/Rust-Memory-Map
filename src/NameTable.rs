@@ -2,7 +2,7 @@ use crate::{u8Size, Utils, thisFileWillBeDeleted};
 use std::fs;
 use memmap::MmapMut;
 
-pub fn gen_name_table_from_path(path: &str) -> MmapMut { Utils::get_memmap(path, 5_000_000_000) }
+pub fn gen_name_table_from_path(path: &str) -> MmapMut { Utils::get_memmap(path, 10_000_000_000) }
 
 pub fn place_name(mmap: &mut MmapMut, offset: usize, name: &[u8]) -> usize {
     let len = name.len();
