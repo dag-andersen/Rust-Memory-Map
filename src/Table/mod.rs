@@ -6,19 +6,12 @@ use crate::Table;
 
 mod IpTable;
 
-const NODE_SIZE : usize = std::mem::size_of::<Node>();
-
-pub struct Node {
-    pub ip: u32,
-    pub value: usize,
-}
-
 pub fn insert_entry(ip_table: &mut MmapMut, index: usize, entry: Entry, courser: usize) {
-    IpTable::place_entry(ip_table, &entry, courser as u32);
+    IpTable::place_entry(ip_table, &entry, courser as u64);
 }
 
 pub fn gen_ip_table() -> MmapMut { gen_ip_table_from_path(TABLE_PATH) }
-pub fn gen_ip_table_from_path(path: &str) -> MmapMut { Utils::get_memmap(path, 20_000_000_000) }
+pub fn gen_ip_table_from_path(path: &str) -> MmapMut { Utils::get_memmap(path, 40_000_000_000) }
 
 pub fn find_value(ip: u32) -> Option<String> {
     let name_table = NameTable::gen_name_table_from_path(TABLE_PAYLOAD);
