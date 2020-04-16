@@ -1,19 +1,19 @@
-use crate::{TABLE_PATH, u32Size, Entry, FileGenerator, Table, NameTable, TABLE_PAYLOAD};
+use crate::{TABLE_PATH, u32Size, Entry, FileGenerator, Table, NameTable, TABLE_PAYLOAD, u64Size};
 use crate::Table::{IpTable};
 use crate::Utils;
 use memmap::MmapMut;
 use std::fs;
 
-pub fn place_entry(mmap: &mut MmapMut, entry: &Entry, value: u32) {
+pub fn place_entry(mmap: &mut MmapMut, entry: &Entry, value: u64) {
     for ip in entry.min_ip..entry.max_ip+1 {
-        Utils::place_item_raw(mmap, ip as usize * u32Size, &(value + 1)); // +1 because we use 0 for tracking if there is no value reference
+        Utils::place_item_raw(mmap, ip as usize * u64Size, &(value + 1)); // +1 because we use 0 for tracking if there is no value reference
     }
 }
 
-pub fn get_name_on_map(ip: u32, ip_table: &MmapMut) -> Option<u32> {
-    let ip_address = ip as usize * u32Size;
-    let addr = &ip_table[ip_address..ip_address + u32Size];
-    let index = unsafe { *Utils::bytes_to_type_mut::<u32>(addr) };
+pub fn get_name_on_map(ip: u32, ip_table: &MmapMut) -> Option<u64> {
+    let ip_address = ip as usize * u64Size;
+    let addr = &ip_table[ip_address..ip_address + u64Size];
+    let index = unsafe { *Utils::bytes_to_type_mut::<u64>(addr) };
     match index {
         0 => None,
         i => Some(i - 1)// -1 because we use 0 for tracking if there is no value reference
