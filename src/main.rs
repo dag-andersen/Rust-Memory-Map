@@ -48,6 +48,7 @@ mod RedBlack;
 mod Table;
 mod IntegrationTests;
 mod BenchmarkTest;
+mod BenchmarkTests_Separate;
 mod Utils;
 mod NameTable;
 

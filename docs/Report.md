@@ -189,7 +189,7 @@ Another approach could be to only store the lower-bound and then store the delta
 
 An extension of the Binary Search Tree is the redblack tree. A redblack tree is a self-balancing tree structure. This prevents the tree from being imbalanced in exchange of longer build time and bigger nodes. It was invented in 1972 by Rudolf Bayer.
 
-On important point to make is that it is not always beneficial to use a balanced tree. As Donald Knuth proves in *The art of computer programming, Volume 3, Sorting and searching, second edition, page 430* the search time for balanced tree are not insanely better han non-balanced tree on random insertion data. A unbalanced tree has a worse case search time of O(n), but this is very rare and most trees are well balanced. A redblack tree has a ~Log(n) and a BST has a ~2·log(n) search time. Which men both data-structures has a time complexity of O(log(n)). 
+On important point to make is that it is not always beneficial to use a balanced tree. As Donald Knuth proves in *The art of computer programming, Volume 3, Sorting and searching, second edition, page 430* the search time for balanced tree are not insanely better han non-balanced tree on random insertion data. A unbalanced tree has a worse case search time of `O(n)`, but this is very rare and most trees are well balanced. A redblack tree has a `~Log(n)` and a BST has a `~2·log(n)` search time. Which men both data-structures has a time complexity of `O(log(n))`. 
 
 In 1999, Chris Okasaki showed that insertion in a redblack tree only needs to handle four cases and a because, which makes it easy to implement for project like this. 
 
@@ -281,6 +281,7 @@ pub struct Node {
 
 **Insertion**
 Each time a entry is added to the tree the a new node will be appended at the end. Because all nodes have the same size, we can point to their index instead of their absolute address. The only difference from the two trees is we store the root-node in the first struct in the redblack tree.
+
 <img src="../docs/images/bachelor-06.png" alt="drawing" width="600"/>
 
 Here we have a simple example of what it would look like if these entries were inserted. 
@@ -299,7 +300,7 @@ For each field in the struct ordered by declaration order:
 
 Finally, round the size of the struct to the nearest multiple of its alignment.
 Following this algorithm the BST nodes have a size of XX bytes while the redblack nodes have a of 48 bytes. Multiplying this with the 150mil entries, give a total file size of X.X gb for BST and 7.2 gb for redblack tree.
-A small space-optimization in the redblack tree be to let the boolean be stored as the most significant bit of the name-pointer, reducing the size to to only be 44bytes (assuming we would never get a total payload of 2^64 = 1.8 · 10^19 bytes). 
+A small space-optimization in the redblack tree be to let the boolean be stored as the most significant bit of the name-pointer, reducing the size to to only be 44bytes (assuming we would never get a total payload of `2^64 = 1.8 · 10^19 bytes`). 
 
 https://doc.rust-lang.org/std/mem/fn.size_of.html
 https://www.geeksforgeeks.org/is-sizeof-for-a-struct-equal-to-the-sum-of-sizeof-of-each-member/ 
@@ -338,23 +339,16 @@ This data-structure is the simplest implementation wise of all tree. Overall eac
 * In payload_map, read value, `y`, by reading the the `u8` at x.
 * In payload_map, starting from the x+1 read y amount of bytes and return the value.
 
-This would result in
-(1+256) · 150000000 = 38.550.000.000 bytes = 308.400.000.000 bits
-
-This means that 32 bit is not big enough to store all the  
 ```
 
 **Space**
-The space needed for this table is `
-(2^32)*32/8/1000/1000/1000 = 17.2 gb or 
-(2^64)*32/8/1000/1000/1000 = 34.4 gb
-`
+The space needed for this table is `(2^32)*64/8/1000/1000/1000 = 34.4 gb`
 
 **Implementation overview:**
 ``` 
 Lookup speed: constant time. 1 lookups.O(1). 
 Insertion: constant time. 1 lookups. O(1). 
-space: ip_table: 2^32 * 32 = 17.2 gb
+space: ip_table: 2^32 * 64 = 34.4 gb
 ```
 
 **Handling IpV6**
@@ -401,21 +395,21 @@ https://en.wikipedia.org/wiki/Profiling_(computer_programming)
 
 This was most useful in the beginning both for learning rust and for detecting bottleneck early on. E.g in the a earlier version of the project a new Regex object were initialize every time it read a line for standard input. In the profiler it was a obvious bottleneck - and was therefore changed to  only getting initialized once and just parse a pointer to it round in the system. This is a simple thing but has a huge impact on the performance. On the left image we see how 56% of the time was spent initializing a Regex object, but it only took 14.7% after the change.
 
-<img src="../docs/images/CallTree1000pre.png" alt="drawing" width="49%"/>
-<img src="../docs/images/CallTree1000post.png" alt="drawing" width="49%"/>
+<img src="../docs/images/profiler/CallTree1000pre.png" alt="drawing" width="49%"/> <img src="../docs/images/profiler/CallTree1000post.png" alt="drawing" width="49%"/>
 
 The height of the trees are also visible in the profiler though the flame graph. The image below is from a profile run with a on a function that builds both Redblack, table, and BST with 100.000 entries and it with a frequency of 5000 samples pr second.
 Since it ran with 100.000 entries we can expect at minimum height of the tree to be `log(100.000)=16`. In the flame graph we can count how many stackframes deep a the redblack's `insert_node` functions goes. The last `insert_leaf_on_node`stackframe is 18 layers deep, which means that the hieght of the tree is 19 (+1 because the inserted leaf also counts). This matches are expectation of a balanced tree.
 Furthermore we can see that the BST height is almost double the height of the redblack tree. This also matches are expectations of a unbalanced tree height to have a hight of `2·log(n)`, proved by Knuth mentioned in a previous section.
 
+<måske brug ord som "call stack" https://en.wikipedia.org/wiki/Tail_call>
+
 <img src="../docs/images/profiler/100 5 arrows.png" alt="drawing" />
 
->Note: the BST may even be taller/deeper, since the profiler tasks samples on a given interval, so if a stackframe is created and removed in the middle of two samples it would be displayed. 
+>Note: the BST may even be taller/deeper, since the profiler tasks samples on a given interval, so if a stackframe is added and removed to the call stack in the middle of two samples it would not be displayed. 
 
-Another intersting finding was that rust only optimized to tail end recursion when running it in release mode (running it with the `--release`-flag).Below we can see that there only exist one 'insert_leaf_on_node`-stackframe at the time, meaning that the optimizer created tail-end recursion. 
+Another intersting finding was that rust only optimized to tail-end recursion when running it in release mode (running it with the `--release`-flag).Below we can see that there only exist one `insert_leaf_on_node`-stackframe at the time, meaning that the optimizer created tail-end recursion. 
 
-<img src="../docs/images/profiler/release.png" alt="drawing" width="49%"/>
-<img src="../docs/images/profiler/nonrelease.png" alt="drawing" width="49%"/>
+<img src="../docs/images/profiler/release.png" alt="drawing" width="45%"/> <img src="../docs/images/profiler/nonrelease.png" alt="drawing" width="45%"/>
 
 
 ### Debugging
