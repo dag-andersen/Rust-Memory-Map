@@ -10,31 +10,23 @@ use std::thread::sleep;
 use core::time;
 use std::process::Command;
 use std::time::SystemTime;
-use crate::BenchmarkTest::search_time;
+use crate::BenchmarkTest::{search_time, padding, range, input_data, n, input_data_shuffled, nameLength, gap};
 
-const DO_Benchmark_test_pre:   &str = "DO_Benchmark_test_pre.txt";
-const DO_Benchmark_test_src:   &str = "DO_Benchmark_test.txt";
 const benchmark_output:        &str = "testdata/out/speed/benchmark.txt";
-
-pub const n:                    u32 = 100_000;
-const range:             Range<u32> = 10..18;
-const padding:           Range<u32> = 10..18;
-const nameLength:             usize = 1;
-const gap:                    usize = 10;
 
 #[test]
 #[ignore]
 pub fn create_test_data() {
     Utils::make_needed_folders();
-    fs::remove_file(DO_Benchmark_test_pre);
-    fs::remove_file(DO_Benchmark_test_src);
+    fs::remove_file(input_data);
+    fs::remove_file(input_data_shuffled);
 
     let file = OpenOptions::new().write(true).create(true).append(true).open(benchmark_output).unwrap();
     let mut line_writer = LineWriter::new(file);
-    line_writer.write_all(format!("Benchmark input: n: {}, range: {:#?}, padding: {:#?}, namesize: {}, gap:{} \n\n", &n, &range, &padding, &nameLength, &gap).as_bytes());
+    line_writer.write_all(format!("Benchmark input: n: {}, range: {:#?}, padding: {:#?}, payload_size: {}, gap:{} \n\n", &n, &range, &padding, &nameLength, &gap).as_bytes());
 
     println!("## create_test_data");
-    FileGenerator::generate_source_file(DO_Benchmark_test_pre, n, range, padding, nameLength);
+    FileGenerator::generate_source_file(input_data, n, range, padding, nameLength);
 }
 
 #[test]
@@ -42,7 +34,7 @@ pub fn create_test_data() {
 fn create_table() {
     println!("\n## load_to_table");
     let mut sw = Stopwatch::start_new();
-    load_to_table(DO_Benchmark_test_src);
+    load_to_table(input_data_shuffled);
     sw.stop();
     println!("\ntable load time: {}  micro seconds", sw.elapsed().as_micros());
 }
@@ -52,7 +44,7 @@ fn create_table() {
 fn create_tree() {
     println!("\n## load_to_tree");
     let mut sw = Stopwatch::start_new();
-    load_to_tree(DO_Benchmark_test_src);
+    load_to_tree(input_data_shuffled);
     sw.stop();
     println!("\ntree load time: {}  micro seconds", sw.elapsed().as_micros());
     sleep(time::Duration::from_secs(1));
@@ -63,7 +55,7 @@ fn create_tree() {
 fn create_redblack() {
     println!("\n## load_to_redblack");
     let mut sw = Stopwatch::start_new();
-    load_to_redblack(DO_Benchmark_test_src);
+    load_to_redblack(input_data_shuffled);
     sw.stop();
     println!("\nredblack load time: {}  micro seconds", sw.elapsed().as_micros());
     sleep(time::Duration::from_secs(1));

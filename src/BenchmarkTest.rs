@@ -11,31 +11,31 @@ use core::time;
 use std::process::Command;
 use std::time::SystemTime;
 
-const DO_Benchmark_test_pre:   &str = "DO_Benchmark_test_pre.txt";
-const DO_Benchmark_test_src:   &str = "DO_Benchmark_test.txt";
+pub const input_data:               &str = "input_data.txt";
+pub const input_data_shuffled:      &str = "input_data_shuffled.txt";
 
-pub const n:                    u32 = 100_000;
-const range:             Range<u32> = 10..18;
-const padding:           Range<u32> = 10..18;
-const nameLength:             usize = 1;
-const gap:                    usize = 10;
-const shuffle_in_momory:       bool = false;
+pub const n:                         u32 = 150_000_000;
+pub const range:              Range<u32> = 10..18;
+pub const padding:            Range<u32> = 10..18;
+pub const nameLength:              usize = 1;
+pub const gap:                     usize = 10;
+pub const shuffle_in_momory:        bool = false;
 
 pub fn create_test_data() {
-    fs::remove_file(DO_Benchmark_test_pre);
-    fs::remove_file(DO_Benchmark_test_src);
+    fs::remove_file(input_data);
+    fs::remove_file(input_data_shuffled);
 
     println!("\nHOSTNAME: {}",String::from_utf8(Command::new("hostname").output().unwrap().stdout).unwrap());
-    println!("Benchmark input: n: {}, range: {:#?}, padding: {:#?}, namesize: {}, gap:{} \n\n", &n, &range, &padding, &nameLength, &gap);
+    println!("Benchmark input: n: {}, range: {:#?}, padding: {:#?}, payload_size: {}, gap:{} \n\n", &n, &range, &padding, &nameLength, &gap);
 
     println!("## create_test_data");
 
     if shuffle_in_momory {
-        FileGenerator::generate_source_file_shuffled(DO_Benchmark_test_pre, n, range, padding, nameLength);
+        FileGenerator::generate_source_file_shuffled(input_data, n, range, padding, nameLength);
     } else {
-        FileGenerator::generate_source_file(DO_Benchmark_test_pre, n, range, padding, nameLength);
+        FileGenerator::generate_source_file(input_data, n, range, padding, nameLength);
         sleep(time::Duration::from_secs(1));
-        shuffle_file(DO_Benchmark_test_pre,DO_Benchmark_test_src);
+        shuffle_file(input_data, input_data_shuffled);
     }
 
     create_redblack();
@@ -75,7 +75,7 @@ fn shuffle_file(input: &str, output: &str) {
 fn create_table() {
     println!("\n## load_to_table");
     let mut sw = Stopwatch::start_new();
-    load_to_table(DO_Benchmark_test_src);
+    load_to_table(input_data_shuffled);
     sw.stop();
     println!("\ntable load time: {}  micro seconds", sw.elapsed().as_micros());
 }
@@ -83,7 +83,7 @@ fn create_table() {
 fn create_tree() {
     println!("\n## load_to_tree");
     let mut sw = Stopwatch::start_new();
-    load_to_tree(DO_Benchmark_test_src);
+    load_to_tree(input_data_shuffled);
     sw.stop();
     println!("\ntree load time: {}  micro seconds", sw.elapsed().as_micros());
     sleep(time::Duration::from_secs(1));
@@ -92,7 +92,7 @@ fn create_tree() {
 fn create_redblack() {
     println!("\n## load_to_redblack");
     let mut sw = Stopwatch::start_new();
-    load_to_redblack(DO_Benchmark_test_src);
+    load_to_redblack(input_data_shuffled);
     sw.stop();
     println!("\nredblack load time: {}  micro seconds", sw.elapsed().as_micros());
     sleep(time::Duration::from_secs(1));
@@ -116,7 +116,7 @@ fn search_time_redblack() -> String {
 }
 
 pub fn search_time(payload_path: &str, structure: fn() -> MmapMut, finder: fn(u32, &MmapMut, &MmapMut) -> Option<String>) -> String {
-    let src = DO_Benchmark_test_src;
+    let src = input_data_shuffled;
 
     let requests = FileGenerator::generate_lookup_testdata(src, gap);
     let length = requests.len();

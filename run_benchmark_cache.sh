@@ -17,8 +17,7 @@ $cargo_pre_cmd BenchmarkTests_Separate::create_test_data $cargo_post_cmd
 sleep 2
 
 printf "\nshuffling ---------------------------------------------------------------------------------------------------------------------------\n"
-shuf DO_Benchmark_test_pre.txt > DO_Benchmark_test.txt
-
+shuf input_data.txt > input_data_shuffled.txt
 
 
 
