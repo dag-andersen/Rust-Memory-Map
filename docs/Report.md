@@ -413,7 +413,7 @@ Another intersting finding was that rust only optimized to tail-end recursion wh
 
 
 ### Debugging
-Debugging the system was mostly done with printlines and by stepping through the code with a debugger. It can be pretty difficult to visualize how exactly each byte is placed in memory maps. The method i used to see it was to print the memory map in bytes. I used this statement `println!("{:?}", &name_table[0..100]);`, which prints out each byte in the range of 0 to 100 of the memory mapped file. This way i can print the map before and after each operation and compare them, and check if it works as intended. 
+Debugging the system was mostly done with printlines and by stepping through the code with a debugger. It can be pretty difficult to visualize how exactly each byte is placed in memory maps. The method i used to see it was to print the memory map in bytes. I used this statement `println!("{:?}", &name_table[0..100]);`, which prints out each byte in the range of 0 to 100 of the memory mapped file: `[0,0,0,255,90,0 ... ]`. This way i can print the map before and after each operation and compare them, and check if it works as intended. 
 
 **Verifying tree structure**
 It has also been used to check if tree was structured correctly. Both the BST and redblack tree can be printed to standard-out or a file, and a test to verify that the tree is printed correctly. 
@@ -439,62 +439,294 @@ Where `O` is a black node and `X` is a red node. The testdata for generating thi
 
 ---
 
-## Findings
 
-120mb max
+# Experiments
+
+## Machines:
+Mac 2016
+1gb ram 25gb disk - with 100 gb ekstra volume
+220 gb ram 
 
 
-## Test Results
+## 1
+#### Expectation
+I would expect to see that program would keep loading pages into ram as long as there is memory left. And only start offloading pages, when the ram is full.
 
-One of the biggest problems i encountered was i couldn't build the redblack tree from the whole dataset, but only on smaller datasets. 
+#### Results:
 
+done with `perf`
+- 8 gb maskine caper ud ved 270mb - idle på 140mb -> 130 mb diff
+- 2 gb maskiner capper ud ved 200mb - idle på 80mb -> 120 mb diff
+- dionysos capper ud ved 25477976kb - idle 25243404kb -> 254 mb diff
+
+--
+
+Running full data on 1gb droplet:
+<img src="../docs/images/ram_usage_1gb.png" alt="drawing" width="400"/>
+
+11.50% - 14.20% = 2.5%
+2.5% of 1 gb is 25 mb
+
+#### Afterthoughts
+
+This is not what we expect.
+
+## 2
+#### Expectation
+I would expect table to be the quickest, followed by the redblack tree, followed by the BST.
+
+#### Results
+Full 150 mil dataset. On the dionysos. 
+```
+HOSTNAME: dionysos
+Benchmark input: n: 150000000, range: 10..18, padding: 10..18, namesize: 50, gap:10
+## search_time_tree
+Search time --- #46355169 micro seconds, #15000000 of requests ran, #0 skipped
+```
+
+```
+HOSTNAME: dionyso
+Benchmark input: n: 150000000, range: 10..18, padding: 10..18, namesize: 50, gap:10
+## search_time_redblack
+Search time --- #51939314 micro seconds, #15000000 of requests ran, #0 skipped
+```
+
+```
+HOSTNAME: dionysos
+Benchmark input: n: 150000000, range: 10..18, padding: 10..18, namesize: 50, gap:10
+## search_time_table
+Search time --- #16321556 micro seconds, #15000000 of requests ran, #0 skipped
+```
+
+#### Afterthoughts
+
+Table is faster as expected, because it is only one access.
+The tree is actually faster than the redblack tree - this can be explained by it may make better use of locality. When searching down the BST, you search from in the one direction down the file, and the nodes are often close to each other in the file. 
+The redblack tree may have a fewer amount of checks, but they are more randomly distributed on in the file, because of rebalancing. 
+
+
+## 3
+#### expectation 
+
+
+## 3 - Build time
+## Build time
+
+#### Expectation
+
+```
+Dionysos
+redblack load time: 12199050000 micro  <- 000 was added by me
+table load time: 874202017  micro seconds
+tree load time: 686406388  micro seconds
+```
+
+
+```
+Dionysos
+redblack load time: 12199050000 micro  <- 000 was added by me
+table load time: 874202017  micro seconds
+tree load time: 686406388  micro seconds
+```
+
+Here we can see that the redblack tree takes much longer. This is probably because requets much more nodes on the way up the tree while balancing it. When searching down the tree
+
+
+## Caching tests
+
+##### Expectation
+In theory the cache shouldn't matter if the data-set consists of an infinitely large amount of entries, because the cache would be thrashed anyway - But on a more realistic scale (like in this project) this can become a factor when i comes to speed.
+
+We will 
+
+The immediate thought would be that the tree would benefit from this, since the nodes closer to the root would be read much more often than the rest of the tree, meaning that the data stored in the upper nodes can be retrieved from the cache. 
+
+The BST would have better caching because the all top nodes in the tree are all placed right next to each other in the file (and there fore are stored in the same pages), and that is not necessarily the case for the redblack tree, because the root is moved around while balancing the tree. We will expect the gap between the trees to increase the bigger the data set.
+
+For this implementation it is difficult to isolate the cache-miss counting only to the searching. This is coursed by the fact that the last step (mentioned in testing XXX) includes _generating search input_, _the actual lookups_, and _looking up the payload/value in the `payload_map`_  
+Both the _genration serach input_ and looking up the payload_ is the exactly the same step for all three datamodels meaning they can be seen as a constant factor in these cache tests. 
+This means that generating and looking in payloads_table should be stable for all 3 tests.
+For the test performed the payload size was set to `1 byte`, bot make sure almost alle access were cached. 
+
+##### Results
+
+###### _1000 entries_
+
+-- same as below more less
+
+###### _100000 entries_
+
+**1gb machine**
+search_time_tree `523014      cache-misses              #   51.339 % of all cache refs`
+search_time_redblack `555372      cache-misses              #   53.470 % of all cache refs`
+search_time_table `509054      cache-misses              #   52.400 % of all cache refs`
+
+**dionysos**
+search_time_tree `303345      cache-misses              #   39.660 % of all cache refs`
+search_time_redblack `309180      cache-misses              #   40.463 % of all cache refs`
+search_time_table `313328      cache-misses              #   41.127 % of all cache refs`
+
+This is just as expected. Stable cache misses. Higher count for 1 gb machine. Tree having the lowest cache miss-rate.
+
+
+##### _Full data set_
+**dionysos**
+
+search_time_tree `861490651      cache-misses              #   74.770 % of all cache refs`
+search_time_redblack `346787916      cache-misses              #   79.688 % of all cache refs`
+search_time_table `443613227      cache-misses              #   85.219 % of all cache refs`
+
+As expected the table has the worst cache and the tree is best.
+
+##### afterthoughts
+
+As expected the table has the worst cache and the tree is best.
+
+**Important! This doesnt always work**
+
+Testing the cache by calling the specific lookup/search function directly does not always work for the redblack tree. This works roughly 50% of the time and is therefore very inconsistent.
+Running the program  
+
+```rust
+fn main() {
+    ...
+    create_test_data();
+}
+
+pub fn create_test_data() {
+    ...
+    create_redblack();
+    let redblack_time = search_time_redblack();
+    println!("{}",redblack_time);
+}
+
+fn search_time_redblack() -> String {
+    sleep(time::Duration::from_secs(1));
+    println!("\n## search_time_redblack");
+    search_time(REDBLACK_PAYLOAD, RedBlack::gen_tree_map, RedBlack::find_value_on_map)
+}
+```
+
+```
+HOSTNAME: dionysos
+
+Benchmark input: n: 100000, range: 10..18, padding: 10..18, namesize: 2, gap:10
+
+
+## create_test_data
+|--------------------------------------------------------------------------------------------------|
+----------------------------------------------------------------------------------------------------
+highest ip: 2699845
+writing to file - done
+
+## load_to_redblack
+|--------------------------------------------------------------------------------------------------|
+----------------------------------------------------------------------------------------------------
+redblack load time: 5860015  micro seconds
+
+## search_time_redblack
+|--------------------------------------------------------------------------------------------------|
+----------------------------------------------------------------------------------------------------
+Search time --- #8858 micro seconds, #10000 of requests ran, #0 skipped
+```
+
+But if we run the same code 
+```rust
+#[test]
+#[ignore]
+fn search_time_redblack() {
+    sleep(time::Duration::from_secs(1));
+    println!("\n## search_time_redblack");
+    println!("{}",search_time(REDBLACK_PAYLOAD, RedBlack::gen_tree_map, RedBlack::find_value_on_map));
+}
+```
+
+When running `cargo test --release BenchmarkTests_Separate::search_time_redblack -- --nocapture --ignored`
+```
+## search_time_redblack
+|--------------------------------------------------------------------------------------------------|
+----------------------------------------------------------------------------------------------------
+Search time --- #2872 micro seconds, #10000 of requests ran, #8704 skipped
+```
+This technique works with the table and BST, but not for redblack tree.
+
+
+
+## Redblack tree
+
+One of the biggest problems I encountered was i couldn't build the redblack tree from the whole dataset, but only on smaller datasets. 
+
+In C memmap, mlock and all in the same family of functions and you can use them together. In rust there is no such thing. 
+There is a type called `Pin<>`, where can pin memory in ram and 
+
+I haven't managed to find a single place online where pinning and MmupMap is used/mentioned together, making me believe they were either not mean to be used together or no one have every tried. 
+
+i made a test where i ran the redblack tree build, and locked all nodes with mlock (the unsafe c function), and the program died after 1000-1100 nodes. I was quickly to see if this was the whole program in itself that had a limit or it was just the MmupMap . So to test this i also added the mlock to the binary tree, and builded them sequentially without unlocking anything and that ran didn't crash. This means that the limit is not on the process, but on the memmap. 
+
+This was maybe 
+
+What you would expect from a memmap would be to load in page after page in only 
+
+
+When 
+
+
+```rust 
+fn get_node_raw<'a>(mmap: &'a MmapMut, offset: usize) -> &'a mut Node {
+    let byte_map = &mmap[offset..(offset+NODE_SIZE)];
+    let number = unsafe { libc::mlock(byte_map.as_ptr() as *const c_void, byte_map.len()) };
+    assert_eq!(number, 0);
+    node_from_bytes(&byte_map)
+}
+```
+
+
+## Compiler optimizations
+200.000 entries - 10 gap
+Done on a 2gb machine
+-without release
+--- table score: 23096, #18181 of requests ran
+--- tree score : 75482, #18181 of requests ran
+-with release
+--- table score: 5800, #18181 of requests ran
+--- tree score : 12593, #18181 of requests ran
+
+here we can see that the factor table decreases by a factor of 3, and the tree decreases with a factor of 6. This goes hand in hand with thit the change we saw previously with the stackframes and the tail-end recursion. 
+
+>Note: Compiler optimizations can be extremely hard to predict and understand, so i wont jump to any big conclusions based on this. But a interesting test to do. This test was done before the redblack tree implementation. 
+
+
+## something something
 The program 
 
 ```
 ## search_time_tree
 DO_BenchmarkTests::search_time_tree
---- Tree : #79213144 micro seconds, #149850 of requests ran, #0 failed
+--- Tree : #79213144 micro seconds, #150000 of requests ran, #0 failed
 114.919801097 seconds time elapsed
 
 ## search_time_table
 DO_BenchmarkTests::search_time_table
---- table : #105057148 micro seconds, #149850 of requests ran, #0 failed
+--- table : #105057148 micro seconds, #150000 of requests ran, #0 failed
 ```
-This means i am able to process 149850 ip address request in 105057148 micro seconds milliseconds, which is XXX request/milliseconds
-
-
-# Evaluation
-
-Both table and the tree was under goal given from Siteimprove. 
-
-
-The table is clearly not practical for handling ipV6
-The table has duplicated data
-
-
-## Code wise?
-
-
-## design choices?
+This means i am able to process 150000 ip address request in 105057148 micro seconds milliseconds, which is XXX request/milliseconds
 
 
 ## Page swapping
 
 Here we can observe that the tree is quicker than the table. This again sounds weird considering the table should run in constant time and the trees should run in log(n).
 
-
-When doing ~150000 (149850) search through (every 1000 entry) searching in the table and tree, we see that the tree is actually slower than the table. 
+When doing 150000 search through (every 1000 entry) searching in the table and tree, we see that the tree is actually slower than the table. 
 
 The reason for this could be happen would be that 
 
 "your mmap'ed file in memory is loaded (and offloaded) by pages between all the levels of memory (the caches, RAM and swap)."
 
-The requests are random, and all the ranges are close to evenly distributed over the whole ipv4-range. This means that all entries are equally likely, and there is no pattern in what ips are accessed. that kernel has no way of guessing what to load next.
+The requests are random, and all the ranges are close to evenly distributed over the whole ipv4-range. This means that all entries are equally likely, and there is no pattern in what ips are accessed. The kernel has no way of guessing what to load next.
 
 Since the droplet has a limited amount of memory, memmap abstraction has to load and offload pages between disk and memory continuously. 
 
-
-If the table needs random access, then the kernel can't guess what to load and offload, so it just has to pick something. 
+If the table needs random access, then the kernel can't guess what to load and offload, so it just has to pick "random" victim page. 
 In each node and its children are generally stored on the file close to it (They get further apart the deeper you go in the tree). This means that the kernel can access multiple nodes at the same time, since they are loaded in the same page. This means that the kernel can actually search from "left to right" when searching for a nodes (and never from right to left, when it does go up the tree), which should be relatively quick. 
 
 They could also answer why the balanced tree sometimes are a little slower than tree. Because the balancing effect makes sure that it can back and forth when accessing pages.
@@ -533,89 +765,19 @@ This limit was reacted after only searching though 2 procent of the request. and
 While testing it 
 
 
-### Redblack tree
+# Evaluation
 
-In C memmap, mlock and all in the same family of functions and you can use them together. In rust there is no such thing. 
-There is a type called `Pin<>`, where can pin memory in ram and 
+Both table and the tree was under goal given from Siteimprove. 
 
-I haven't managed to find a single place online where pinning and MmupMap is used/mentioned together, making me believe they were either not mean to be used together or no one have every tried. 
-
-i made a test where i ran the redblack tree build, and locked all nodes with mlock (the unsafe c function), and the program died after 1000-1100 nodes. I was quickly to see if this was the whole program in itself that had a limit or it was just the MmupMap . So to test this i also added the mlock to the binary tree, and builded them sequentially without unlocking anything and that ran didn't crash. This means that the limit is not on the process, but on the memmap. 
-
-This was maybe 
-
-What you would expect from a memmap would be to load in page after page in only 
+The table is clearly not practical for handling ipV6
+The table has duplicated data
 
 
-When 
+## Code wise?
 
 
-```rust 
-fn get_node_raw<'a>(mmap: &'a MmapMut, offset: usize) -> &'a mut Node {
-    let byte_map = &mmap[offset..(offset+NODE_SIZE)];
-    let number = unsafe { libc::mlock(byte_map.as_ptr() as *const c_void, byte_map.len()) };
-    assert_eq!(number, 0);
-    node_from_bytes(&byte_map)
-}
-```
+## design choices?
 
-## Cache 
-
-In theory the cache shouldn't matter if the data-set consists of an infinitely large amount of entires, because the cache would be thrashed anyways.
-
-but on a more realistic scale (like in this project) this can become a factor when i comes to speed.
-
-The immediate thought would be that the tree would benefit from this, since the nodes closer to the root would be read much more often than the rest of the tree, meaning that the data stored in the upper nodes can be retrieved from the cache. 
-
-
-It is difficult to isolate the cache-miss counting to the searching only. This means the 3 results include generating the search input, searching in table/tree, and looking it up in the payload_table. This means that generating and looking in payloads_table should be stable for all 3 tests, 
-
-The tress always hit around 30% cache-miss. 
-the table vary from 30-60% cache miss, depending on if the compiler made optimizations and on higher 
-
-<Anden teori... når --release er sat så kører tabellen mere uoptimeret.>
-
-
-// bench28marts.txt - 20.000 entries
-```
-## search_time_table
-Performance counter stats for 'cargo test --color=always --package rust_map --bin rust_map DO_BenchmarkTests::search_time_table -- --exact --nocapture --ignored':
-          66271809      cache-references          #   24.496 M/sec                  
-          40300257      cache-misses              #   60.811 % of all cache refs    
-```
-```
-## search_time_tree
-Performance counter stats for 'cargo test --color=always --package rust_map --bin rust_map DO_BenchmarkTests::search_time_tree -- --exact --nocapture --ignored':
-           3757577      cache-references          #   22.171 M/sec                  
-           1279301      cache-misses              #   34.046 % of all cache refs    
-```
-```
-## search_time_redblack
-Performance counter stats for 'cargo test --color=always --package rust_map --bin rust_map DO_BenchmarkTests::search_time_redblack -- --exact --nocapture --ignored':     
-           3682037      cache-references          #   22.464 M/sec                  
-           1293555      cache-misses              #   35.132 % of all cache refs    
-```
-//bench29marts.txt
-1.000.000 entries 9900 requets
-
-```
-## search_time_tree
-Performance counter stats for 'cargo test --release --color=always --package rust_map --bin rust_map DO_BenchmarkTests::search_time_tree -- --exact --nocapture --ignored':
-           6106911      cache-references          #   19.203 M/sec                  
-           1968104      cache-misses              #   32.227 % of all cache refs    
-```
-```
-## search_time_redblack
-Performance counter stats for 'cargo test --release --color=always --package rust_map --bin rust_map DO_BenchmarkTests::search_time_redblack -- --exact --nocapture --ignored':      
-           6150624      cache-references          #   19.068 M/sec                  
-           1770820      cache-misses              #   28.791 % of all cache refs    
-```
-```
-## search_time_table
-Performance counter stats for 'cargo test --release --color=always --package rust_map --bin rust_map DO_BenchmarkTests::search_time_table -- --exact --nocapture --ignored':    
-           4971538      cache-references          #   19.851 M/sec                  
-           1492896      cache-misses              #   30.029 % of all cache refs    
-```
 
 ### Enchantments / Next Steps 
 
