@@ -13,7 +13,7 @@ cargo build --release --color=always
 sleep 2
 
 printf "\ncreate_test_data --------------------------------------------------------------------------------------------------------------------\n"
-$cargo_pre_cmd_release BenchmarkTests_Separate::create_test_data $cargo_post_cmd
+$cargo_pre_cmd BenchmarkTests_Separate::create_test_data $cargo_post_cmd
 sleep 2
 
 printf "\nshuffling ---------------------------------------------------------------------------------------------------------------------------\n"
@@ -23,15 +23,15 @@ shuf DO_Benchmark_test_pre.txt > DO_Benchmark_test.txt
 
 
 printf "\nbuild_tree --------------------------------------------------------------------------------------------------------------------------\n"
-$cargo_pre_cmd_release BenchmarkTests_Separate::create_tree $cargo_post_cmd
-sleep 2
-
-printf "\nbuild_table -------------------------------------------------------------------------------------------------------------------------\n"
-$perf_cmd $cargo_pre_cmd_release DO_BenchmarkTests::build_table $cargo_post_cmd >> $output
+$cargo_pre_cmd BenchmarkTests_Separate::create_tree $cargo_post_cmd
 sleep 2
 
 printf "\nbuild_redblack ----------------------------------------------------------------------------------------------------------------------\n"
-$cargo_pre_cmd_release BenchmarkTests_Separate::create_redblack $cargo_post_cmd
+$cargo_pre_cmd BenchmarkTests_Separate::create_redblack $cargo_post_cmd
+sleep 2
+
+printf "\nbuild_table -------------------------------------------------------------------------------------------------------------------------\n"
+$cargo_pre_cmd BenchmarkTests_Separate::create_table $cargo_post_cmd
 sleep 2
 
 

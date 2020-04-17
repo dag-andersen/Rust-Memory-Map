@@ -6,66 +6,69 @@ running 1 test
 test BenchmarkTests_Separate::search_time_tree ...
 ## search_time_tree
 |--------------------------------------------------------------------------------------------------|
---------------------------------------------------Search time --- #118 micro seconds, #100 of requests ran, #0 skipped
+--------------------------------------------------
+Search time --- #143 micro seconds, #100 of requests ran, #0 none, #0 wrong
 ok
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 33 filtered out
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 32 filtered out
 
-# started on Thu Apr 16 17:42:16 2020
+# started on Fri Apr 17 20:54:42 2020
 
 
  Performance counter stats for 'cargo test --release --color=always --package rust_map --bin rust_map BenchmarkTests_Separate::search_time_tree -- --exact --nocapture --ignored':
 
-         44.489696      task-clock (msec)         #    0.929 CPUs utilized
-         127611715      cycles                    #    2.868 GHz
-         144930637      instructions              #    1.14  insn per cycle
-            843931      cache-references          #   18.969 M/sec
-            418180      cache-misses              #   49.551 % of all cache refs
+         46.931379      task-clock (msec)         #    0.784 CPUs utilized
+         129175227      cycles                    #    2.752 GHz
+         128512916      instructions              #    0.99  insn per cycle
+           1067038      cache-references          #   22.736 M/sec
+            454495      cache-misses              #   42.594 % of all cache refs
 
-       0.047900232 seconds time elapsed
+       0.059867164 seconds time elapsed
 
 
 running 1 test
 test BenchmarkTests_Separate::search_time_redblack ...
 ## search_time_redblack
 |--------------------------------------------------------------------------------------------------|
---------------------------------------------------Search time --- #106 micro seconds, #100 of requests ran, #77 skipped
+--------------------------------------------------
+Search time --- #193 micro seconds, #100 of requests ran, #0 none, #0 wrong
 ok
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 33 filtered out
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 32 filtered out
 
-# started on Thu Apr 16 17:42:18 2020
+# started on Fri Apr 17 20:54:44 2020
 
 
  Performance counter stats for 'cargo test --release --color=always --package rust_map --bin rust_map BenchmarkTests_Separate::search_time_redblack -- --exact --nocapture --ignored':
 
-         42.973720      task-clock (msec)         #    0.041 CPUs utilized
-         121903251      cycles                    #    2.837 GHz
-         144924851      instructions              #    1.19  insn per cycle
-            816685      cache-references          #   19.004 M/sec
-            417107      cache-misses              #   51.073 % of all cache refs
+         45.609483      task-clock (msec)         #    0.043 CPUs utilized
+         126812423      cycles                    #    2.780 GHz
+         127563241      instructions              #    1.01  insn per cycle
+            966604      cache-references          #   21.193 M/sec
+            470527      cache-misses              #   48.678 % of all cache refs
 
-       1.045979156 seconds time elapsed
+       1.056519486 seconds time elapsed
 
 
 running 1 test
 test BenchmarkTests_Separate::search_time_table ...
 ## search_time_table
 |--------------------------------------------------------------------------------------------------|
---------------------------------------------------Search time --- #137 micro seconds, #100 of requests ran, #0 skipped
+--------------------------------------------------
+Search time --- #909 micro seconds, #100 of requests ran, #0 none, #0 wrong
 ok
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 33 filtered out
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 32 filtered out
 
-# started on Thu Apr 16 17:42:21 2020
+# started on Fri Apr 17 20:54:47 2020
 
 
  Performance counter stats for 'cargo test --release --color=always --package rust_map --bin rust_map BenchmarkTests_Separate::search_time_table -- --exact --nocapture --ignored':
 
-         43.701994      task-clock (msec)         #    0.042 CPUs utilized
-         124810748      cycles                    #    2.856 GHz
-         145167048      instructions              #    1.16  insn per cycle
-            854611      cache-references          #   19.555 M/sec
-            423863      cache-misses              #   49.597 % of all cache refs
+         55.855291      task-clock (msec)         #    0.052 CPUs utilized
+         141494179      cycles                    #    2.533 GHz
+         132455886      instructions              #    0.94  insn per cycle
+           1071495      cache-references          #   19.183 M/sec
+            492336      cache-misses              #   45.949 % of all cache refs
 
-       1.047318832 seconds time elapsed
+       1.084289795 seconds time elapsed
