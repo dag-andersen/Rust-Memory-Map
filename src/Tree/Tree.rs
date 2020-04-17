@@ -45,12 +45,11 @@ pub fn find_node_on_map(ip: u32, mmap: &MmapMut) -> Option<usize> {
         if accNode.min_ip <= ip && ip <= accNode.max_ip { return Some(accNode.name) }
 
         if accNode.max_ip < ip {
-            if accNode.right == 0 { break; }
             offset_from_node = accNode.right;
         } else if accNode.min_ip > ip {
-            if accNode.left == 0 { break; }
             offset_from_node = accNode.left;
         }
+        if offset_from_node == 0 { break; }
         accNode = NodeToMem::get_node(&mmap, offset_from_node);
     }
     None

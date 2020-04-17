@@ -14,10 +14,10 @@ use std::time::SystemTime;
 const DO_Benchmark_test_pre:   &str = "DO_Benchmark_test_pre.txt";
 const DO_Benchmark_test_src:   &str = "DO_Benchmark_test.txt";
 
-pub const n:                    u32 = 150_000_000;
+pub const n:                    u32 = 100_000;
 const range:             Range<u32> = 10..18;
 const padding:           Range<u32> = 10..18;
-const nameLength:             usize = 50;
+const nameLength:             usize = 1;
 const gap:                    usize = 10;
 const shuffle_in_momory:       bool = false;
 
@@ -98,7 +98,7 @@ fn create_redblack() {
     sleep(time::Duration::from_secs(1));
 }
 
-fn search_time_table() -> String{
+fn search_time_table() -> String {
     sleep(time::Duration::from_secs(1));
     println!("\n## search_time_table");
     search_time(TABLE_PAYLOAD, Table::gen_ip_table, Table::find_value_on_map)
@@ -109,13 +109,13 @@ fn search_time_tree() -> String {
     search_time(TREE_PAYLOAD, Tree::gen_tree_map, Tree::find_value_on_map)
 }
 
-fn search_time_redblack() -> String{
+fn search_time_redblack() -> String {
     sleep(time::Duration::from_secs(1));
     println!("\n## search_time_redblack");
     search_time(REDBLACK_PAYLOAD, RedBlack::gen_tree_map, RedBlack::find_value_on_map)
 }
 
-fn search_time(payload_path: &str, structure: fn() -> MmapMut, finder: fn(u32, &MmapMut, &MmapMut) -> Option<String>) -> String {
+pub fn search_time(payload_path: &str, structure: fn() -> MmapMut, finder: fn(u32, &MmapMut, &MmapMut) -> Option<String>) -> String {
     let src = DO_Benchmark_test_src;
 
     let requests = FileGenerator::generate_lookup_testdata(src, gap);
@@ -124,7 +124,8 @@ fn search_time(payload_path: &str, structure: fn() -> MmapMut, finder: fn(u32, &
 
     let structure = structure();
     let name_table = NameTable::gen_name_table_from_path(payload_path);
-    let mut numberSkipped = 0;
+    let mut noneFound = 0;
+    let mut wrongFound = 0;
 
     let string: String = (0..98).map(|_| '-').collect();
     println!("|{}|",string);
@@ -136,13 +137,14 @@ fn search_time(payload_path: &str, structure: fn() -> MmapMut, finder: fn(u32, &
         if value.is_some() {
             let value = value.unwrap();
             if name != value {
-                numberSkipped += 1;
+                wrongFound += 1;
                 //println!("Wrong match - real: {} - found: {} - ip: {}", name, value, ip);
             }
-        } else { numberSkipped += 1 }
+        } else { noneFound += 1 }
         if i % (length/100 + 1) == 0 { print!("-"); io::stdout().flush(); }
         i += 1;
     }
+    print!("\n");
     sw.stop();
-    format!("Search time --- #{} micro seconds, #{} of requests ran, #{} skipped", sw.elapsed().as_micros(), length, numberSkipped)
+    format!("Search time --- #{} micro seconds, #{} of requests ran, #{} none, #{} wrong", sw.elapsed().as_micros(), length, noneFound, wrongFound)
 }

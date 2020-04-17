@@ -10,12 +10,13 @@ use std::thread::sleep;
 use core::time;
 use std::process::Command;
 use std::time::SystemTime;
+use crate::BenchmarkTest::search_time;
 
 const DO_Benchmark_test_pre:   &str = "DO_Benchmark_test_pre.txt";
 const DO_Benchmark_test_src:   &str = "DO_Benchmark_test.txt";
 const benchmark_output:        &str = "testdata/out/speed/benchmark.txt";
 
-pub const n:                    u32 = 10_000_000;
+pub const n:                    u32 = 100_000;
 const range:             Range<u32> = 10..18;
 const padding:           Range<u32> = 10..18;
 const nameLength:             usize = 1;
@@ -87,38 +88,7 @@ fn search_time_tree(){
 #[ignore]
 fn search_time_redblack() {
     sleep(time::Duration::from_secs(1));
+    RedBlack::load_root_node(REDBLACK_PATH);
     println!("\n## search_time_redblack");
     println!("{}",search_time(REDBLACK_PAYLOAD, RedBlack::gen_tree_map, RedBlack::find_value_on_map));
-}
-
-fn search_time(payload_path: &str, structure: fn() -> MmapMut, finder: fn(u32, &MmapMut, &MmapMut) -> Option<String>) -> String {
-    let src = DO_Benchmark_test_src;
-
-    let requests = FileGenerator::generate_lookup_testdata(src, gap);
-    let length = requests.len();
-    assert!(length > 0);
-
-    let structure = structure();
-    let name_table = NameTable::gen_name_table_from_path(payload_path);
-    let mut numberSkipped = 0;
-
-    let string: String = (0..98).map(|_| '-').collect();
-    println!("|{}|",string);
-
-    let mut i = 0;
-    let mut sw = Stopwatch::start_new();
-    for (ip, name) in requests {
-        let value = finder(ip, &structure, &name_table);
-        if value.is_some() {
-            let value = value.unwrap();
-            if name != value {
-                numberSkipped += 1;
-                //println!("Wrong match - real: {} - found: {} - ip: {}", name, value, ip);
-            }
-        } else { numberSkipped += 1 }
-        if i % (length/100 + 1) == 0 { print!("-"); io::stdout().flush(); }
-        i += 1;
-    }
-    sw.stop();
-    format!("Search time --- #{} micro seconds, #{} of requests ran, #{} skipped", sw.elapsed().as_micros(), length, numberSkipped)
 }
