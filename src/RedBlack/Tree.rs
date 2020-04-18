@@ -42,24 +42,24 @@ fn insert_leaf_on_node(mmap: &MmapMut, parent: &mut Node, parentIndex: usize, no
 
     if parent.max_ip < node.max_ip {
         if parent.right == 0 {
-            parent.right = nodeIndex;
-            node.parent = parentIndex;
+            parent.right = nodeIndex as u32;
+            node.parent = parentIndex as u32;
             let mut mmap2 = super::gen_tree_map();
             NodeToMem::place_node(&mut mmap2, nodeIndex, &node);
             return;
         }
-        offset_from_node = parent.right;
+        offset_from_node = parent.right as usize;
     } else if parent.min_ip > node.min_ip {
         if parent.left == 0 {
-            parent.left = nodeIndex;
-            node.parent = parentIndex;
+            parent.left = nodeIndex as u32;
+            node.parent = parentIndex as u32;
             let mut mmap2 = super::gen_tree_map();
             NodeToMem::place_node(&mut mmap2, nodeIndex, &node);
             return;
         }
-        offset_from_node = parent.left;
+        offset_from_node = parent.left as usize;
     }
-    if offset_from_node == 0 { panic!() }
+    if offset_from_node == 0 { panic!("There exist no node at index 0") }
 
     let childNode = NodeToMem::get_node(mmap, offset_from_node);
     insert_leaf_on_node(mmap, childNode, offset_from_node, node, nodeIndex);
@@ -71,41 +71,39 @@ fn balance(mmap: &MmapMut, node: &mut Node, nodeIndex: usize) {
     }
 
     if node.parent != 0 {
-        let mut parent = NodeToMem::get_node(mmap, node.parent);
-        //println!("node: {} ----- parent: {}", node,parent);
+        let mut parent = NodeToMem::get_node(mmap, node.parent as usize);
         if parent.red && parent.parent != 0 {
-            let mut grandparent = NodeToMem::get_node(mmap, parent.parent);
+            let mut grandparent = NodeToMem::get_node(mmap, parent.parent as usize);
             let parentIsLeft = node.parent == grandparent.left;
             let uncleIndex = if parentIsLeft { grandparent.right } else { grandparent.left };
             if uncleIndex != 0 {
-                let mut uncle = NodeToMem::get_node(mmap, uncleIndex);
+                let mut uncle = NodeToMem::get_node(mmap, uncleIndex as usize);
                 if uncle.red {
                     //println!("### Uncle");
                     uncle.red = false;
                     parent.red = false;
                     grandparent.red = true;
-                    balance(mmap, grandparent, parent.parent);
+                    balance(mmap, grandparent, parent.parent as usize);
                     return;
                 }
             }
             if node.parent == grandparent.left {
-                if parent.left == nodeIndex {
+                if nodeIndex == parent.left as usize {
                     //println!("### left left");
                     rightRotate(mmap, parent, grandparent);
                     swapColor(parent,grandparent);
-                    //mmap.flush().expect("didnt flush!!");
-                } else if parent.right == nodeIndex {
+                } else if nodeIndex == parent.right as usize {
                     //println!("### left right");
                     leftRotate(mmap,node, parent);
                     rightRotate(mmap, node, grandparent);
                     swapColor(node,grandparent);
                 } else { panic!("wrong family relation") }
             } else if node.parent == grandparent.right {
-                if parent.right == nodeIndex {
+                if nodeIndex == parent.right as usize {
                     //println!("### right right");
                     leftRotate(mmap,parent, grandparent);
                     swapColor(parent, grandparent);
-                } else if parent.left == nodeIndex {
+                } else if nodeIndex == parent.left as usize {
                     //println!("### right left");
                     rightRotate(mmap,node, parent);
                     leftRotate(mmap,node,grandparent);
@@ -126,7 +124,7 @@ fn swapColor(node1: & mut Node, node2: &mut Node) {
 
 fn leftRotate(mmap: &MmapMut, node: &mut Node, parent: &mut Node) {
     if node.left != 0 {
-        let child = NodeToMem::get_node(mmap, node.left);
+        let child = NodeToMem::get_node(mmap, node.left as usize);
         child.parent = node.parent;
     }
 
@@ -137,9 +135,9 @@ fn leftRotate(mmap: &MmapMut, node: &mut Node, parent: &mut Node) {
     node.parent = oldGrandparentIndex;
 
     match oldGrandparentIndex {
-        0 => unsafe { root_index = parent.parent },
+        0 => unsafe { root_index = parent.parent as usize },
         _ => {
-            let grandparent = NodeToMem::get_node(mmap, oldGrandparentIndex);
+            let grandparent = NodeToMem::get_node(mmap, oldGrandparentIndex as usize);
             match (grandparent, node) {
                 (gp, n) if gp.left == n.left    => gp.left = parent.parent,
                 (gp, n) if gp.right == n.left   => gp.right = parent.parent,
@@ -151,7 +149,7 @@ fn leftRotate(mmap: &MmapMut, node: &mut Node, parent: &mut Node) {
 
 fn rightRotate(mmap: &MmapMut, node: &mut Node, parent: &mut Node) {
     if node.right != 0 {
-        let child = NodeToMem::get_node(mmap, node.right);
+        let child = NodeToMem::get_node(mmap, node.right as usize);
         child.parent = node.parent;
     }
 
@@ -162,9 +160,9 @@ fn rightRotate(mmap: &MmapMut, node: &mut Node, parent: &mut Node) {
     node.parent = oldGrandparentIndex;
 
     match oldGrandparentIndex {
-        0 => unsafe { root_index = parent.parent },
+        0 => unsafe { root_index = parent.parent as usize },
         _ => {
-            let grandparent = NodeToMem::get_node(mmap, oldGrandparentIndex);
+            let grandparent = NodeToMem::get_node(mmap, oldGrandparentIndex as usize);
             match (grandparent, node) {
                 (gp, n) if gp.left == n.right   => gp.left = parent.parent,
                 (gp, n) if gp.right == n.right  => gp.right = parent.parent,
@@ -174,11 +172,11 @@ fn rightRotate(mmap: &MmapMut, node: &mut Node, parent: &mut Node) {
     }
 }
 
-pub fn find_node_on_map(ip: u32, mmap: &MmapMut) -> Option<usize> {
+pub fn find_node_on_map(ip: u32, mmap: &MmapMut) -> Option<u64> {
     let mut accNode = NodeToMem::get_node(mmap, unsafe { root_index });
 
     loop {
-        let mut offset_from_node: usize = 0;
+        let mut offset_from_node: u32 = 0;
         if accNode.min_ip <= ip && ip <= accNode.max_ip { return Some(accNode.name) }
 
         if accNode.max_ip < ip {
@@ -188,7 +186,7 @@ pub fn find_node_on_map(ip: u32, mmap: &MmapMut) -> Option<usize> {
         }
         if offset_from_node == 0 { break; }
 
-        accNode = NodeToMem::get_node(&mmap, offset_from_node);
+        accNode = NodeToMem::get_node(&mmap, offset_from_node as usize);
     }
     None
 }

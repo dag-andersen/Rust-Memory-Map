@@ -106,7 +106,7 @@ fn load_to_table_on_path(input: &str, ip_table: &str) {
     load_to_data_structure(input, TABLE_PAYLOAD, Table::gen_ip_table_from_path(ip_table), Table::insert_entry)
 }
 
-fn load_to_data_structure(input: &str, payload_path: &str, structure: MmapMut, inserter: fn(&mut MmapMut, usize, Entry, usize)) {
+fn load_to_data_structure(input: &str, payload_path: &str, structure: MmapMut, inserter: fn(&mut MmapMut, usize, Entry, u64)) {
 
     fs::remove_file(payload_path);
     let mut structure = structure;
@@ -115,7 +115,7 @@ fn load_to_data_structure(input: &str, payload_path: &str, structure: MmapMut, i
     let ip_regex = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap();
     let name_regex = Regex::new(r"\b(([A-z]|\d)+\s?)+\b").unwrap();
 
-    let mut courser= 0;
+    let mut courser: u64 = 0;
 
     let string: String = (0..98).map(|_| '-').collect();
     println!("|{}|",string);
@@ -133,8 +133,8 @@ fn load_to_data_structure(input: &str, payload_path: &str, structure: MmapMut, i
         let entry = entry.unwrap();
 
         courser = NameTable::place_name(&mut name_table, courser, entry.name.as_bytes());
-        let something = courser - entry.name.len() - 1;
-        inserter(&mut structure, i, entry, something);
+        let payload_index = courser - entry.name.len() as u64 - 1;
+        inserter(&mut structure, i, entry, payload_index);
     }
 }
 

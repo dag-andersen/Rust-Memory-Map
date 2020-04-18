@@ -24,9 +24,9 @@ pub fn place_node(mmap: & mut MmapMut, index: usize, node: & Node) {
 #[test]
 fn test_correct_placement() {
     fs::remove_file(TREE_PATH);
-    let mut name: usize = 5;
+    let mut name: u64 = 5;
 
-    let node1 = super::Node { min_ip: 20, max_ip: 20, left: 0, right: 0, name: Default::default(), };
+    let node1 = super::Node { min_ip: 20, max_ip: 20, left: 0, right: 0, name: Default::default() };
     let node2 = super::Node { min_ip: 20, max_ip: 20, left: 0, right: 0, name };
 
     let mut first_map = Utils::get_memmap(TREE_PATH, 300000000);

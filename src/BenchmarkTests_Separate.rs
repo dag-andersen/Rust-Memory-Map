@@ -23,7 +23,7 @@ pub fn create_test_data() {
 
     let file = OpenOptions::new().write(true).create(true).append(true).open(benchmark_output).unwrap();
     let mut line_writer = LineWriter::new(file);
-    line_writer.write_all(format!("Benchmark input: n: {}, range: {:#?}, padding: {:#?}, payload_size: {}, gap:{} \n\n", &n, &range, &padding, &nameLength, &gap).as_bytes());
+    line_writer.write_all(format!("Benchmark input: n: {}, range: {:#?}, padding: {:#?}, payload_size: {}, gap: {} \n\n", &n, &range, &padding, &nameLength, &gap).as_bytes());
 
     println!("## create_test_data");
     FileGenerator::generate_source_file(input_data, n, range, padding, nameLength);

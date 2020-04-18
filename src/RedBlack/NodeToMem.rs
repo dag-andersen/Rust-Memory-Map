@@ -10,7 +10,7 @@ fn node_to_bytes(node: &Node) -> &[u8] { unsafe { Utils::any_as_u8_slice(node) }
 
 pub fn get_node<'a>(mmap: &'a MmapMut, index: usize) -> &'a mut Node {
     if index == 0 { panic!("Cant get node at index 0") }
-    get_node_raw(mmap,index*NODE_SIZE)
+    get_node_raw(mmap,index * NODE_SIZE)
 }
 
 fn get_node_raw<'a>(mmap: &'a MmapMut, offset: usize) -> &'a mut Node {
@@ -25,7 +25,7 @@ pub fn place_node(mmap: &mut MmapMut, index: usize, node: &Node) {
 #[test]
 fn test_correct_placement() {
     fs::remove_file(REDBLACK_PATH);
-    let mut name: usize = 5;
+    let mut name: u64 = 5;
 
     let node1 = super::Node { min_ip: 20, max_ip: 20, left: 0, right: 0, parent: 0, name: Default::default(), red: Default::default() };
     let node2 = super::Node { min_ip: 20, max_ip: 20, left: 0, right: 0, parent: 0, name, red: Default::default() };

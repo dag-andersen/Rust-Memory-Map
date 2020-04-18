@@ -6,8 +6,8 @@ use crate::Table;
 
 mod IpTable;
 
-pub fn insert_entry(ip_table: &mut MmapMut, index: usize, entry: Entry, courser: usize) {
-    IpTable::place_entry(ip_table, &entry, courser as u64);
+pub fn insert_entry(ip_table: &mut MmapMut, index: usize, entry: Entry, courser: u64) {
+    IpTable::place_entry(ip_table, &entry, courser);
 }
 
 pub fn gen_ip_table() -> MmapMut { gen_ip_table_from_path(TABLE_PATH) }
@@ -21,5 +21,5 @@ pub fn find_value(ip: u32) -> Option<String> {
 
 pub fn find_value_on_map(ip: u32, ip_table: &MmapMut, name_table: &MmapMut) -> Option<String> {
     let index = IpTable::get_name_on_map(ip,ip_table)?;
-    NameTable::get_name(&name_table, index as usize)
+    NameTable::get_name(&name_table, index)
 }

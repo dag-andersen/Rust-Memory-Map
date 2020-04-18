@@ -11,7 +11,6 @@ pub fn insert_node(mmap: & mut MmapMut, index: usize, node: &Node) {
 }
 
 fn insert_leaf_on_node(mmap: & MmapMut, parent: &mut Node, index: usize, child: &Node) {
-
     let mut offset_from_node = 0;
 
     if parent.min_ip <= child.min_ip && child.max_ip <= parent.max_ip {
@@ -21,27 +20,27 @@ fn insert_leaf_on_node(mmap: & MmapMut, parent: &mut Node, index: usize, child: 
 
     if parent.max_ip < child.max_ip {
         if parent.right == 0 {
-            parent.right = index;
+            parent.right = index as u32;
             return;
         }
-        offset_from_node = parent.right;
+        offset_from_node = parent.right as usize;
     } else if parent.min_ip > child.min_ip {
         if parent.left == 0 {
-            parent.left = index;
+            parent.left = index as u32;
             return;
         }
-        offset_from_node = parent.left;
+        offset_from_node = parent.left as usize;
     }
 
     let node = NodeToMem::get_node(&mmap, offset_from_node);
     insert_leaf_on_node(mmap, node, index, &child);
 }
 
-pub fn find_node_on_map(ip: u32, mmap: &MmapMut) -> Option<usize> {
+pub fn find_node_on_map(ip: u32, mmap: &MmapMut) -> Option<u64> {
     let mut accNode = NodeToMem::get_node(&mmap, 0);
 
     loop {
-        let mut offset_from_node: usize = 0;
+        let mut offset_from_node: u32 = 0;
         if accNode.min_ip <= ip && ip <= accNode.max_ip { return Some(accNode.name) }
 
         if accNode.max_ip < ip {
@@ -50,7 +49,7 @@ pub fn find_node_on_map(ip: u32, mmap: &MmapMut) -> Option<usize> {
             offset_from_node = accNode.left;
         }
         if offset_from_node == 0 { break; }
-        accNode = NodeToMem::get_node(&mmap, offset_from_node);
+        accNode = NodeToMem::get_node(&mmap, offset_from_node as usize);
     }
     None
 }

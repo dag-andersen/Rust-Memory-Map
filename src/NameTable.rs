@@ -4,18 +4,21 @@ use memmap::MmapMut;
 
 pub fn gen_name_table_from_path(path: &str) -> MmapMut { Utils::get_memmap(path, 10_000_000_000) }
 
-pub fn place_name(mmap: &mut MmapMut, offset: usize, name: &[u8]) -> usize {
+pub fn place_name(mmap: &mut MmapMut, offset: u64, name: &[u8]) -> u64 {
+    let offset = offset as usize;
     let len = name.len();
     Utils::place_item_raw(mmap, offset, &(len as u8));
-    mmap[offset+u8Size..offset+u8Size+len].copy_from_slice(name);
-    //mmap.flush();
-    offset + u8Size + len
+    let offset = offset + u8Size;
+    mmap[offset..offset+len].copy_from_slice(name);
+    offset as u64 + len as u64
 }
 
-pub fn get_name(mmap: &MmapMut, offset: usize) -> Option<String> {
-    let name_size: u8 = unsafe { *Utils::bytes_to_type_mut(&mmap[offset..(offset+u8Size)]) };
+pub fn get_name(mmap: &MmapMut, offset: u64) -> Option<String> {
+    let offset = offset as usize;
+    let name_size: u8 = unsafe { *Utils::bytes_to_type_mut(&mmap[offset..offset+u8Size]) };
     if name_size == 0 { return None }
-    let nameAsBytes = &mmap[offset+u8Size..offset+u8Size+(name_size as usize)];
+    let offset = offset + u8Size;
+    let nameAsBytes = &mmap[offset..offset+name_size as usize];
     match std::str::from_utf8(nameAsBytes) {
         Ok(T) => Some(T.to_string()),
         Err(E) => None

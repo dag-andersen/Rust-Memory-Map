@@ -20,10 +20,10 @@ pub struct Node {
     pub red: bool,
     pub min_ip: u32,
     pub max_ip: u32,
-    pub left: usize,
-    pub right: usize,
-    pub parent: usize,
-    pub name: usize,
+    pub left: u32,
+    pub right: u32,
+    pub parent: u32,
+    pub name: u64,
 }
 
 impl fmt::Display for Node {
@@ -32,11 +32,11 @@ impl fmt::Display for Node {
     }
 }
 
-pub fn entry_to_node(entry: crate::Entry, index: usize) -> Node {
+pub fn entry_to_node(entry: crate::Entry, index: u64) -> Node {
     Node { red: true, min_ip: entry.min_ip, max_ip: entry.max_ip, left: 0, right: 0, parent: 0, name: index }
 }
 
-pub fn insert_entry(mmap: &mut MmapMut, index: usize, entry: Entry, name_index: usize) {
+pub fn insert_entry(mmap: &mut MmapMut, index: usize, entry: Entry, name_index: u64) {
     let mut node: Node = entry_to_node(entry, name_index + 1);
     Tree::insert_node(mmap, index + 1, &mut node);
 }
