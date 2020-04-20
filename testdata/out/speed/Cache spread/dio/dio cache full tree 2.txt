@@ -1,0 +1,24 @@
+dionysos
+
+running 1 test
+
+## search_time_tree
+|--------------------------------------------------------------------------------------------------|
+----------------------------------------------------------------------------------------------------
+Search time --- #7242235 micro seconds, #1500000 of requests ran, #0 none, #0 wrong
+test BenchmarkTests_Separate::search_time_tree ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 32 filtered out
+
+# started on Sun Apr 19 13:26:09 2020
+
+
+ Performance counter stats for 'cargo test --release --color=always --package rust_map --bin rust_map BenchmarkTests_Separate::search_time_tree -- --exact --nocapture --ignored':
+
+      28850.135536      task-clock (msec)         #    1.000 CPUs utilized
+       57564078098      cycles                    #    1.995 GHz
+      102132240329      instructions              #    1.77  insn per cycle
+         325278095      cache-references          #   11.275 M/sec
+         279978207      cache-misses              #   86.073 % of all cache refs
+
+      28.851502943 seconds time elapsed

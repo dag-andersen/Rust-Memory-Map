@@ -1,0 +1,74 @@
+dionysos
+Benchmark input: n: 1000, range: 10..18, padding: 4199982..4199990, payload_size: 1, gap: 100
+
+
+running 1 test
+
+## search_time_tree
+|--------------------------------------------------------------------------------------------------|
+----------
+Search time --- #61 micro seconds, #10 of requests ran, #0 none, #0 wrong
+test BenchmarkTests_Separate::search_time_tree ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 32 filtered out
+
+# started on Sun Apr 19 10:45:09 2020
+
+
+ Performance counter stats for 'cargo test --release --color=always --package rust_map --bin rust_map BenchmarkTests_Separate::search_time_tree -- --exact --nocapture --ignored':
+
+         43.865707      task-clock (msec)         #    0.999 CPUs utilized
+          86111412      cycles                    #    1.963 GHz
+         128113116      instructions              #    1.49  insn per cycle
+            629104      cache-references          #   14.342 M/sec
+            233615      cache-misses              #   37.135 % of all cache refs
+
+       0.043921297 seconds time elapsed
+
+
+running 1 test
+
+## search_time_redblack
+|--------------------------------------------------------------------------------------------------|
+----------
+Search time --- #62 micro seconds, #10 of requests ran, #0 none, #0 wrong
+test BenchmarkTests_Separate::search_time_redblack ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 32 filtered out
+
+# started on Sun Apr 19 10:45:11 2020
+
+
+ Performance counter stats for 'cargo test --release --color=always --package rust_map --bin rust_map BenchmarkTests_Separate::search_time_redblack -- --exact --nocapture --ignored':
+
+         49.818669      task-clock (msec)         #    0.047 CPUs utilized
+          98742088      cycles                    #    1.982 GHz
+         128383280      instructions              #    1.30  insn per cycle
+            643855      cache-references          #   12.924 M/sec
+            234426      cache-misses              #   36.410 % of all cache refs
+
+       1.063730243 seconds time elapsed
+
+
+running 1 test
+
+## search_time_table
+|--------------------------------------------------------------------------------------------------|
+----------
+Search time --- #102 micro seconds, #10 of requests ran, #0 none, #0 wrong
+test BenchmarkTests_Separate::search_time_table ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 32 filtered out
+
+# started on Sun Apr 19 10:45:15 2020
+
+
+ Performance counter stats for 'cargo test --release --color=always --package rust_map --bin rust_map BenchmarkTests_Separate::search_time_table -- --exact --nocapture --ignored':
+
+         43.670551      task-clock (msec)         #    0.042 CPUs utilized
+          86528508      cycles                    #    1.981 GHz
+         128249113      instructions              #    1.48  insn per cycle
+            631244      cache-references          #   14.455 M/sec
+            223981      cache-misses              #   35.482 % of all cache refs
+
+       1.043981680 seconds time elapsed
