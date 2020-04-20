@@ -447,272 +447,54 @@ Mac 2016
 1gb ram 25gb disk - with 100 gb ekstra volume
 220 gb ram 
 
-
-## 1
-#### Expectation
-I would expect to see that program would keep loading pages into ram as long as there is memory left. And only start offloading pages, when the ram is full.
-
-#### Results:
-
-done with `perf`
-- 8 gb maskine caper ud ved 270mb - idle på 140mb -> 130 mb diff
-- 2 gb maskiner capper ud ved 200mb - idle på 80mb -> 120 mb diff
-- dionysos capper ud ved 25477976kb - idle 25243404kb -> 254 mb diff
-
---
-
-Running full data on 1gb droplet:
-<img src="../docs/images/ram_usage_1gb.png" alt="drawing" width="400"/>
-
-11.50% - 14.20% = 2.5%
-2.5% of 1 gb is 25 mb
-
-#### Afterthoughts
-
-This is not what we expect.
-
-## 2
+## Search time Experiment
 #### Expectation
 I would expect table to be the quickest, followed by the redblack tree, followed by the BST.
 
+From a pure theoretical stand point we would assume that the table is the fastes, followed by the redblack tree, followed by the BST.
+
+The table should run in constant time, because it only needs to do 1 lookup.
+The both trees should have a O(log(n)) search time, but the BST would be expected to be slower than the redblack tree, because it is not blanched therefore need more key comparers for deeper nodes. 
+
+Even though the table has very few accesses, I would expect it to be relatively worse if the ranges are very spread out, since the entries would be placed further from each other in the file and therefore the table can load mutable ranges in same file.
+The trees on the other hand would perform well better on smaller datasizes, because all nodes are stored right next to eachother on the file and will therefore be load on the same page and will be cached.
+
 #### Results
-Full 150 mil dataset. On the dionysos. 
-```
-HOSTNAME: dionysos
-Benchmark input: n: 150000000, range: 10..18, padding: 10..18, namesize: 50, gap:10
-## search_time_tree
-Search time --- #46355169 micro seconds, #15000000 of requests ran, #0 skipped
-```
+All tests are ran with: `range: 10..18, payload_size: 50, gap: 10`.
+15000000 requets, in micro seconds
 
-```
-HOSTNAME: dionyso
-Benchmark input: n: 150000000, range: 10..18, padding: 10..18, namesize: 50, gap:10
-## search_time_redblack
-Search time --- #51939314 micro seconds, #15000000 of requests ran, #0 skipped
-```
+| Dionysos      | 1k      | 100k      | 10 mil        | 150 mil           |
+| ------------- |--------:|----------:|--------------:|------------------:|
+| BST           | 2       | 0.7       | x             | 3.515             |
+| Redblack      | 2       | 0.9       | x             | 3,462             |
+| Table         | 6       | 3.6       | x             | 1.001             |
 
-```
-HOSTNAME: dionysos
-Benchmark input: n: 150000000, range: 10..18, padding: 10..18, namesize: 50, gap:10
-## search_time_table
-Search time --- #16321556 micro seconds, #15000000 of requests ran, #0 skipped
-```
 
-#### Afterthoughts
+All tests are ran with: `range: 10..18, payload_size: 50, gap: 10`.
+| 1gb25gb       | 1k        | 100k          | 150 mil*           |
+| ------------- |----------:|--------------:|------------------:|
+| BST           | 25        | 2.5           | 2724              |
+| Redblack      | 18        | 4.5           | 8700              |
+| Table         | 28        | 1147          | 2730              |
+
+*This was run from a cold cache, because it had to be build on dionysos instead, because the dataset was so big, that the 1gb machine couldnt complete in time.
+
+#### Discussion
+
+* Starting with dionysos, we can see that the table is the fastes on hugedataset, which was what we expected.
+* On thing that is intersting is that both tree actually follow along pretty well. We  These small differences can be cause by random change of few datapoints.
+
+
 
 Table is faster as expected, because it is only one access.
 The tree is actually faster than the redblack tree - this can be explained by it may make better use of locality. When searching down the BST, you search from in the one direction down the file, and the nodes are often close to each other in the file. 
 The redblack tree may have a fewer amount of checks, but they are more randomly distributed on in the file, because of rebalancing. 
 
 
-## 3
-#### expectation 
+The smaller the dataset is the smaller more the usikkhered. Because when we do 1000 entries and 10% lookup, then only 100 requests are actually run which is a much lower sample size than 1500000, which we do with. We need to remember this, since the variation ind the raw testdata is more spread out. 
 
 
-## 3 - Build time
-## Build time
-
-#### Expectation
-
-```
-Dionysos
-redblack load time: 12199050000 micro  <- 000 was added by me
-table load time: 874202017  micro seconds
-tree load time: 686406388  micro seconds
-```
-
-
-```
-Dionysos
-redblack load time: 12199050000 micro  <- 000 was added by me
-table load time: 874202017  micro seconds
-tree load time: 686406388  micro seconds
-```
-
-Here we can see that the redblack tree takes much longer. This is probably because requets much more nodes on the way up the tree while balancing it. When searching down the tree
-
-
-## Caching tests
-
-##### Expectation
-In theory the cache shouldn't matter if the data-set consists of an infinitely large amount of entries, because the cache would be thrashed anyway - But on a more realistic scale (like in this project) this can become a factor when i comes to speed.
-
-We will 
-
-The immediate thought would be that the tree would benefit from this, since the nodes closer to the root would be read much more often than the rest of the tree, meaning that the data stored in the upper nodes can be retrieved from the cache. 
-
-The BST would have better caching because the all top nodes in the tree are all placed right next to each other in the file (and there fore are stored in the same pages), and that is not necessarily the case for the redblack tree, because the root is moved around while balancing the tree. We will expect the gap between the trees to increase the bigger the data set.
-
-For this implementation it is difficult to isolate the cache-miss counting only to the searching. This is coursed by the fact that the last step (mentioned in testing XXX) includes _generating search input_, _the actual lookups_, and _looking up the payload/value in the `payload_map`_  
-Both the _genration serach input_ and looking up the payload_ is the exactly the same step for all three datamodels meaning they can be seen as a constant factor in these cache tests. 
-This means that generating and looking in payloads_table should be stable for all 3 tests.
-For the test performed the payload size was set to `1 byte`, bot make sure almost alle access were cached. 
-
-##### Results
-
-###### _1000 entries_
-
--- same as below more less
-
-###### _100000 entries_
-
-**1gb machine**
-search_time_tree `523014      cache-misses              #   51.339 % of all cache refs`
-search_time_redblack `555372      cache-misses              #   53.470 % of all cache refs`
-search_time_table `509054      cache-misses              #   52.400 % of all cache refs`
-
-**dionysos**
-search_time_tree `303345      cache-misses              #   39.660 % of all cache refs`
-search_time_redblack `309180      cache-misses              #   40.463 % of all cache refs`
-search_time_table `313328      cache-misses              #   41.127 % of all cache refs`
-
-This is just as expected. Stable cache misses. Higher count for 1 gb machine. Tree having the lowest cache miss-rate.
-
-
-##### _Full data set_
-**dionysos**
-
-search_time_tree `861490651      cache-misses              #   74.770 % of all cache refs`
-search_time_redblack `346787916      cache-misses              #   79.688 % of all cache refs`
-search_time_table `443613227      cache-misses              #   85.219 % of all cache refs`
-
-As expected the table has the worst cache and the tree is best.
-
-##### afterthoughts
-
-As expected the table has the worst cache and the tree is best.
-
-**Important! This doesnt always work**
-
-Testing the cache by calling the specific lookup/search function directly does not always work for the redblack tree. This works roughly 50% of the time and is therefore very inconsistent.
-Running the program  
-
-```rust
-fn main() {
-    ...
-    create_test_data();
-}
-
-pub fn create_test_data() {
-    ...
-    create_redblack();
-    let redblack_time = search_time_redblack();
-    println!("{}",redblack_time);
-}
-
-fn search_time_redblack() -> String {
-    sleep(time::Duration::from_secs(1));
-    println!("\n## search_time_redblack");
-    search_time(REDBLACK_PAYLOAD, RedBlack::gen_tree_map, RedBlack::find_value_on_map)
-}
-```
-
-```
-HOSTNAME: dionysos
-
-Benchmark input: n: 100000, range: 10..18, padding: 10..18, namesize: 2, gap:10
-
-
-## create_test_data
-|--------------------------------------------------------------------------------------------------|
-----------------------------------------------------------------------------------------------------
-highest ip: 2699845
-writing to file - done
-
-## load_to_redblack
-|--------------------------------------------------------------------------------------------------|
-----------------------------------------------------------------------------------------------------
-redblack load time: 5860015  micro seconds
-
-## search_time_redblack
-|--------------------------------------------------------------------------------------------------|
-----------------------------------------------------------------------------------------------------
-Search time --- #8858 micro seconds, #10000 of requests ran, #0 skipped
-```
-
-But if we run the same code 
-```rust
-#[test]
-#[ignore]
-fn search_time_redblack() {
-    sleep(time::Duration::from_secs(1));
-    println!("\n## search_time_redblack");
-    println!("{}",search_time(REDBLACK_PAYLOAD, RedBlack::gen_tree_map, RedBlack::find_value_on_map));
-}
-```
-
-When running `cargo test --release BenchmarkTests_Separate::search_time_redblack -- --nocapture --ignored`
-```
-## search_time_redblack
-|--------------------------------------------------------------------------------------------------|
-----------------------------------------------------------------------------------------------------
-Search time --- #2872 micro seconds, #10000 of requests ran, #8704 skipped
-```
-This technique works with the table and BST, but not for redblack tree.
-
-
-
-## Redblack tree
-
-One of the biggest problems I encountered was i couldn't build the redblack tree from the whole dataset, but only on smaller datasets. 
-
-In C memmap, mlock and all in the same family of functions and you can use them together. In rust there is no such thing. 
-There is a type called `Pin<>`, where can pin memory in ram and 
-
-I haven't managed to find a single place online where pinning and MmupMap is used/mentioned together, making me believe they were either not mean to be used together or no one have every tried. 
-
-i made a test where i ran the redblack tree build, and locked all nodes with mlock (the unsafe c function), and the program died after 1000-1100 nodes. I was quickly to see if this was the whole program in itself that had a limit or it was just the MmupMap . So to test this i also added the mlock to the binary tree, and builded them sequentially without unlocking anything and that ran didn't crash. This means that the limit is not on the process, but on the memmap. 
-
-This was maybe 
-
-What you would expect from a memmap would be to load in page after page in only 
-
-
-When 
-
-
-```rust 
-fn get_node_raw<'a>(mmap: &'a MmapMut, offset: usize) -> &'a mut Node {
-    let byte_map = &mmap[offset..(offset+NODE_SIZE)];
-    let number = unsafe { libc::mlock(byte_map.as_ptr() as *const c_void, byte_map.len()) };
-    assert_eq!(number, 0);
-    node_from_bytes(&byte_map)
-}
-```
-
-
-## Compiler optimizations
-200.000 entries - 10 gap
-Done on a 2gb machine
--without release
---- table score: 23096, #18181 of requests ran
---- tree score : 75482, #18181 of requests ran
--with release
---- table score: 5800, #18181 of requests ran
---- tree score : 12593, #18181 of requests ran
-
-here we can see that the factor table decreases by a factor of 3, and the tree decreases with a factor of 6. This goes hand in hand with thit the change we saw previously with the stackframes and the tail-end recursion. 
-
->Note: Compiler optimizations can be extremely hard to predict and understand, so i wont jump to any big conclusions based on this. But a interesting test to do. This test was done before the redblack tree implementation. 
-
-
-## something something
-The program 
-
-```
-## search_time_tree
-DO_BenchmarkTests::search_time_tree
---- Tree : #79213144 micro seconds, #150000 of requests ran, #0 failed
-114.919801097 seconds time elapsed
-
-## search_time_table
-DO_BenchmarkTests::search_time_table
---- table : #105057148 micro seconds, #150000 of requests ran, #0 failed
-```
-This means i am able to process 150000 ip address request in 105057148 micro seconds milliseconds, which is XXX request/milliseconds
-
-
-## Page swapping
+#### Page swapping
 
 Here we can observe that the tree is quicker than the table. This again sounds weird considering the table should run in constant time and the trees should run in log(n).
 
@@ -741,11 +523,160 @@ https://stackoverflow.com/questions/43541420/when-and-how-is-mmaped-memory-swapp
 
 
 On thing that i noticed when running the search test was that the tree search sped up. 
-This was also the case for the table but way less noticeable. This follow the reasoning 
+
+_____
+
+
+## Build time Experiment
+
+#### Expectation
+
+It is difficult to predict how the build time will perform.
+
+**Table**
+The table is most limited by write speed. It should insert each entry in constant time, since it doesn't have to search for the insertion position, but it has to repeatedly store a pointer to the map table, for each ip in the range. For this experiment we have a range ranging between 10 and 18, so the table has to insert 10 to 18 pointers pr entry. I would expect the table to be relativly best on huge dataset, because of the constant insertion time compared to the tress log(n). 
+
+**BST**
+The BST only write twice to memory. One for actually placing the node/struct in the map and re-directing its parents pointer. But the slowing part is that the algorithm have to search down the tree every time. Leaving it with a O(Log(n)) insertion time. I would expect the BST to be the fastes on smaller datasets, because all nodes are stored next to each other in the file, and most nodes would probably loaded in ram + rebalancing is only really helpful if the dataset is big.
+
+**Redblack tree**
+The redblack tree is more difficult to predict, because it also has to balance the tree. Balancing the tree requires references to multiple nodes above the newly inserted node, and potentially many more if a rotation is needed. In this implementation it does not save a reference to the nodes it encounter down the search, so when balancing it has to re-access/request the node/struct in the memory map, meaning it. This should be an issue when the balanced is only one rotation, but this will be an increasingly problem, when the tree grows and bigger rotations happen. Furthermore we have to remember that the the nodes in the redblack tree are stored more spread out compared to the BST, meaning bigger change that the nodes accessed are not stored on the same page.
+I would expect the redblack tree to be the the slowest in all cases, because of the huge amount of node accesses.
+
+##### Dionysos
+
+| Dionysos      | 1k        | 100k      | 150 mil           |
+| --------------|----------:|----------:|------------------:|
+| BST           | 3874      | 204523    | 686406388         | 
+| Redblack      | 62079     | 5907163   | 12199050000       |
+| Table         | 23758     | 1381446   | 874202017         |
+
+The first thing we notice is that the redblack tree is the worst performant data structure, as we expected.
+
+This experiment was also started on the 1gb machine, and i started with the 150mil, but stopped the test after 10 hours after seeing that is has only inserted 10% of the testdata, meaning it would not be able to finished in time, building at that rate. It was never a requrement to be able to build the datastrucutre on a low resource machine, but it could be interstring to do an experiment on how long it would actually take on different datasizes. 
+
+Based on these numbers we can conclude that all of the data-structures are viable option for solving this issue, if ran on machine with specs like dionysos. This build time will increase the slower the machine. In the future a it could be interesting to experiment on how low the specs can be and still be able to build in 24 hours. 
+
+As an very small experiment i tried to place a full array of pointers for each entry in the table instead of placeing each pointer indivually. The implementation was to create a array with the length of the range, and then loop over the array placing all the pointers in the array, and then copying the whole array into the memory map. This didnt make a difference, which also would be expected, since 
+
+The longest build time is redblack tree with a average of 3.4 hours, which is way below the one day limit. 
+
+From this experiment we can conclude that the redblack tree is the least scaleable solution, with this specific implementation. 
+
+
+**Redblack tree on low resources.**
+One of the biggest problems I encountered was i couldn't build the redblack tree from the whole dataset, but only on smaller datasets. 
+
+In C memmap, mlock and all in the same family of functions and you can use them together. In rust there is no such thing. 
+There is a type called `Pin<>`, where can pin memory in ram and 
+
+I haven't managed to find a single place online where pinning and MmupMap is used/mentioned together, making me believe they were either not mean to be used together or no one have every tried. 
+
+i made a test where i ran the redblack tree build, and locked all nodes with mlock (the unsafe c function), and the program died after 1000-1100 nodes. I was quickly to see if this was the whole program in itself that had a limit or it was just the MmupMap . So to test this i also added the mlock to the binary tree, and builded them sequentially without unlocking anything and that ran didn't crash. This means that the limit is not on the process, but on the memmap. 
+
+This was maybe 
+
+What you would expect from a memmap would be to load in page after page in only 
+
+
+When 
+
+
+```rust 
+fn get_node_raw<'a>(mmap: &'a MmapMut, offset: usize) -> &'a mut Node {
+    let byte_map = &mmap[offset..(offset+NODE_SIZE)];
+    let number = unsafe { libc::mlock(byte_map.as_ptr() as *const c_void, byte_map.len()) };
+    assert_eq!(number, 0);
+    node_from_bytes(&byte_map)
+}
+```
 
 
 
-This is also noticable when doing 1485148 searches (every 100) in the table on the 2 gb mem droplet and the 8 db droplet. Here we could expect the 8 bg droplet to perform much better, since it didnt have the offload as much as the 2 gb droplet. As seen below this was not the case. They perform almost the same
+## Caching Experiment
+
+##### Expectation
+In theory the cache shouldn't matter if the data-set consists of an infinitely large amount of entries, because the cache would be thrashed anyway - But on a more realistic scale (like in this project) this can become a factor when i comes to speed.
+
+The immediate thought would be that the tree would benefit from this, since the nodes closer to the root would be read much more often than the rest of the tree, meaning that the data stored in the upper nodes can be retrieved from the cache. 
+
+The BST would have better caching because the all top nodes in the tree are all placed right next to each other in the file (and there fore are stored in the same pages), and that is not necessarily the case for the redblack tree, because the root is moved around while balancing the tree. We will expect the gap between the trees to increase the bigger the data set.
+
+For this implementation it is difficult to isolate the cache-miss counting only to the searching. This is coursed by the fact that the last step (mentioned in testing XXX) includes _generating search input_, _the actual lookups_, and _looking up the payload/value in the `payload_map`_. 
+Both the _genration serach input_ and looking up the payload_ is the exactly the same step for all three datamodels meaning they can be seen as a constant factor in these cache tests. This means that generating and looking in payloads_table should be stable for all 3 tests.For the test performed the payload size was set to `1 byte`, bot make sure almost all accesses in the payload_map were cached. 
+
+##### Results
+
+All tests run with script found on Appendix B.
+
+_den her er ikke spread_
+| 1gb mem       | 1k            | 100k      | 10 mil    |
+| ------------- |--------------:| ---------:|----------:|
+| BST           | 42.594 %      | 51.339 %  | 46.182 %  |
+| Redblack      | 48.678 %      | 53.470 %  | 50.712 %  |
+| Table         | 45.949 %      | 52.400 %  | 10.399 %  |
+
+This is just as expected. Stable cache misses. Higher count for 1 gb machine. Tree having the lowest cache miss-rate.
+
+##### Dionysos - done 
+
+| Dionysos      | 1k            | 100k      | 10 mil    | 150 mil   |
+| ------------- |--------------:| ---------:|----------:|----------:|
+| BST           | 36.693 %      | 42.852 %  | 77.475 %  | 67.873 %  |
+| Redblack      | 36.267 %      | 41.271 %  | 79.102 %  | 69.431 %  |
+| Table         | 35.864 %      | 41.901 %  | 87.384 %  | 79.413 %  |
+
+
+As expected the table has the worst cache and the tree is best.
+
+##### afterthoughts
+
+As expected the table has the worst cache and the tree is best.
+
+______
+
+## Memory Usage Experiment
+#### Expectation
+I would expect to see that program would keep loading pages into memory as long as there is memory left. And only start offloading pages, when the ram is full.
+
+#### Method
+Make a search for every single entry in the table on the full data set on a droplet of digital ocean
+
+#### Results:
+
+**Using `free` command**
+
+| Dionysos      | Idle      | Running       | difference        |
+| ------------- |----------:|--------------:|------------------:|
+| 8             | 140mb     | 270mb         | 130 mb            |
+| 2gb           | 80mb      | 200mb         | 120 mb            |
+| dionysos      |           |               |                   |
+
+Another interesting finding was that the memory capped out after only running 10% af the table build. 
+
+**1gb25gb**
+<img src="../docs/images/ram_usage_1gb.png" alt="drawing" width="400"/>
+
+11.50% - 14.20% = 2.5%
+2.5% of 1 gb is 25 mb
+
+done with `perf`
+
+Spinning up a 8 gb machine on digital ocean - 
+
+- 8 gb maskine caper ud ved 270mb - idle på 140mb -> 130 mb diff
+- 2 gb maskiner capper ud ved 200mb - idle på 80mb -> 120 mb diff
+- dionysos capper ud ved 25477976kb - idle 25243404kb -> 254 mb diff
+
+
+#### Discussion
+As we can see the memory usage never exceeds 17%. This shouldn't be the case since we just ran over 150 million entries equally spread out over 35 gb meaning we would expect to see much larger memory usage.
+
+To figure out why it limits itself to further testing is needed. 
+
+...
+
+This is also noticable when doing 1500000 searches (every 100) in the table on the 2 gb mem droplet and the 8 db droplet. Here we could expect the 8 bg droplet to perform much better, since it didnt have the offload as much as the 2 gb droplet. As seen below this was not the case. They perform almost the same
 
 ```
 100 gap 2 gb
@@ -763,6 +694,33 @@ When doing the searches i tracked the memory usage on the droplet.
 Both droplets on with both tree and table searches had a peak memory usage of 120 mb.
 This limit was reacted after only searching though 2 procent of the request. and they it stayed pretty stable.
 While testing it 
+
+____
+
+
+## Extra intersting findings.
+
+## Compiler optimizations
+200.000 entries - 10 gap
+Done on a 2gb machine
+-without release
+--- table score: 23096, #18181 of requests ran
+--- tree score : 75482, #18181 of requests ran
+-with release
+--- table score: 5800, #18181 of requests ran
+--- tree score : 12593, #18181 of requests ran
+
+here we can see that the factor table decreases by a factor of 3, and the tree decreases with a factor of 6. This goes hand in hand with thit the change we saw previously with the stackframes and the tail-end recursion. 
+
+>Note: Compiler optimizations can be extremely hard to predict and understand, so i wont jump to any big conclusions based on this. But a interesting test to do. This test was done before the redblack tree implementation. 
+
+
+
+
+# Final thoughs
+
+It would be intersting to look into other tress types. Theoreticly fewest amount of key compariosons, but the bottlench is more on the amount of pagefaults. 
+
 
 
 # Evaluation
@@ -816,4 +774,60 @@ IP v6 entries for pulse is 34027618
 
 124.127.485 + 17.229.245 + 9.661.299 + 307.279 + 19.547 + 177.765    = 151.000.000
 29.846      + 563        + 38.018    + 891.625 + 3.164  + 34.027.618 =  35.000.000
+```
+
+
+Appendix B
+
+```bash
+set -e
+
+output='testdata/out/speed/benchmark.txt'
+perf_cmd="perf stat -o $output --append -e task-clock,cycles,instructions,cache-references,cache-misses"
+cargo_pre_cmd='cargo test --release --color=always --package rust_map --bin rust_map'
+cargo_post_cmd='-- --exact --nocapture --ignored'
+
+rm -f $output
+hostname >> $output
+
+printf "\nBUILDING RELEASE --------------------------------------------------------------------------------------------------------------------\n"
+cargo build --release --color=always
+sleep 2
+
+printf "\ncreate_test_data --------------------------------------------------------------------------------------------------------------------\n"
+$cargo_pre_cmd BenchmarkTests_Separate::create_test_data $cargo_post_cmd
+sleep 2
+
+printf "\nshuffling ---------------------------------------------------------------------------------------------------------------------------\n"
+shuf input_data.txt > input_data_shuffled.txt
+
+
+
+printf "\nbuild_tree --------------------------------------------------------------------------------------------------------------------------\n"
+$cargo_pre_cmd BenchmarkTests_Separate::create_tree $cargo_post_cmd
+sleep 2
+
+printf "\nbuild_redblack ----------------------------------------------------------------------------------------------------------------------\n"
+$cargo_pre_cmd BenchmarkTests_Separate::create_redblack $cargo_post_cmd
+sleep 2
+
+printf "\nbuild_table -------------------------------------------------------------------------------------------------------------------------\n"
+$cargo_pre_cmd BenchmarkTests_Separate::create_table $cargo_post_cmd
+sleep 2
+
+
+
+
+
+printf "\nsearch_time_tree --------------------------------------------------------------------------------------------------------------------\n"
+$perf_cmd $cargo_pre_cmd BenchmarkTests_Separate::search_time_tree $cargo_post_cmd >> $output
+sleep 2
+
+printf "\nsearch_time_redblack ----------------------------------------------------------------------------------------------------------------\n"
+$perf_cmd $cargo_pre_cmd BenchmarkTests_Separate::search_time_redblack $cargo_post_cmd >> $output
+sleep 2
+
+printf "\nsearch_time_table -------------------------------------------------------------------------------------------------------------------\n"
+$perf_cmd $cargo_pre_cmd BenchmarkTests_Separate::search_time_table $cargo_post_cmd >> $output
+sleep 2
 ```
