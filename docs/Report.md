@@ -219,7 +219,7 @@ A simple implementation of the table is to just create a full table for all IP-a
 One of the downside to this is the full IP range is stored in the database even though you may only have very few entries. A solution is generally to create some kind of hashtable, where keys are hashed and points to some other data-structure (like a linked list), but this is beyond the scope of this project. 
 
 # Implementation Design
-I this project I have gone for implementing a Binary Search Tree, a redblack tree, and a table. All three implementations have their own module in the source code and have the same interface, so they can be swapped interchangeably. All data-structures are implemented using memory-mapped files. All three implementations use a separate memory-mapped file for storing the payload/data. This memory-mapped file will be referred to as `payload_table`.
+I this project I have gone for implementing a Binary Search Tree, a redblack tree, and a table. All three implementations have their own module in the source code and have the same interface, so they can be swapped interchangeably. All data-structures are implemented using memory-mapped files. All three implementations use a separate memory-mapped file for storing the payload/data. This memory-mapped file will be referred to as `payload_map`.
 In this implementation, I have chosen to store strings as payload, but this could be swapped out with any other datatype.
 
 Lets declare some variables:
@@ -263,21 +263,21 @@ Redblack
 pub struct Node {
     pub min_ip: u32,
     pub max_ip: u32,
-    pub left: usize,
-    pub right: usize,
-    pub name: usize,
+    pub left: u32,
+    pub right: u32,
+    pub name: u64,
 }</pre></td><td><pre>
 pub struct Node {
     pub red: bool,
     pub min_ip: u32,
     pub max_ip: u32,
-    pub left: usize,
-    pub right: usize,
-    pub parent: usize,
-    pub name: usize,
+    pub left: u32,
+    pub right: u32,
+    pub parent: u32,
+    pub name: u64,
 }</pre></td></tr></table>
 
-`min_ip` being the lower-bound, `max_ip` being the higher-bound, `left` being the left child, `right` being the right child, `parent` being the parent node and `name` being a pointer to the `payload_table`, and `red` is the indicator of the node being red or black.
+`min_ip` being the lower-bound, `max_ip` being the higher-bound, `left` being the left child, `right` being the right child, `parent` being the parent node and `name` being a pointer to the `payload_map`, and `red` is the indicator of the node being red or black.
 
 **Insertion**
 Each time an entry is added to the tree a new node will be appended at the end. Because all nodes have the same size, we can point to their index instead of their absolute address. The only difference between the two trees is we store the root-node in the first struct in the redblack tree.
@@ -370,8 +370,8 @@ This first phase generates lines of 2 IP addresses and 1 text string (e.g.: `125
 > Note: First I tried shuffling all entries in memory inside rust using a `Vec<&str>` and writing them to a file afterward, but this was slower and was more memory intensive than using the Unix command. Both methods require that all entries can be stored in ram at the same time. This means that the shuffling cant happens on a machine with low resources like the 1 gb memory droplet. <Algortimer eksisterer hvor man kan shuffle uden at bruge ram>
 
 **Build data structure**
-The program iterate over each line reading them one by one with regex. Both the tested data-structure and payload_table needs to be built at the same time, meaning each entry is sat into both at the same time because the data-structure needs to know the byte-offset of the currently inserted entry. This step is deterministic and will always provide the same output for the same input file. This phase it the most expensive.
-> Note: All three data-structures produce the same `payload_table`, so they could, in theory, share the same payload-file, but implementation wise they all have their own to decouple the data-structures. 
+The program iterate over each line reading them one by one with regex. Both the tested data-structure and payload_map needs to be built at the same time, meaning each entry is sat into both at the same time because the data-structure needs to know the byte-offset of the currently inserted entry. This step is deterministic and will always provide the same output for the same input file. This phase it the most expensive.
+> Note: All three data-structures produce the same `payload_map`, so they could, in theory, share the same payload-file, but implementation wise they all have their own to decouple the data-structures. 
 
 **Lookup**
 Testing lookup speed is done by creating some IP-requests and running them on the data-structure. The random requests are collected by iterating over the shuffled list of entries and picking every n'th entry. For each entry, a random IP is picked between the upper and lower bound. All the chosen entries are then shuffled again. The actual searching is done by looping over the chosen random IPs, and sequentially searching through the data structure and checks that it returns the correct payload. When finished it will print the time it took to do all the lookups. This number is then used to calculate the average lookup time. 
@@ -442,60 +442,66 @@ Where `O` is a black node and `X` is a red node. The testdata for generating thi
 
 # Experiments
 
+To evaluate how the differently models perform, and which live up to the goal/needs.
+All tests has been ran at least 3 time, so limit the amount of random divation. The numbers seen the the tables below are average of the tests results. All tests can be found in the source code. If the time-scope was larger for this projekt, i would have ran more tests to get more accurate results. If a datapoint had a lot of variation for each run, I ran it a few extra time to get a bigger sample size.
+
+> In the results below (and in appendix) the constant for the tests are displayed in this format `range: 10..18, payload_size: 50, gap: 10`, where `range` is the range of each each entry. In this case each entry can be between 10 and 18 IPs. `payload_size` is the size of the payload for each entry. `gap` is the number of entries it skips when it collects random lookup data. a gap of 10 basically means that 1 out of 10 entries will be requested in a test.
+
 ## Machines:
-Mac 2016
-1gb ram 25gb disk - with 100 gb ekstra volume
-220 gb ram 
+1gb ram 25gb disk droplet from digital ocean - with 100 gb ekstra volume. This will be referred to as 1gb Droplet.
+220 gb memory VM. This will be referred to as Dionysos. 
+More specs can be found in appendix X. 
 
 ## Search time Experiment
 #### Expectation
-I would expect the table to be the quickest, followed by the redblack tree, followed by the BST.
 
 From a purely theoretical standpoint, we would assume that the table is the fastest, followed by the redblack tree, followed by the BST.
 
-The table should run in constant time because it only needs to do 1 lookup.
-Both trees should have a O(log(n)) search time, but the BST would be expected to be slower than the redblack tree because it is not blanched therefore need more key comparers for deeper nodes. 
-
-Even though the table has very few accesses, I would expect it to be relatively worse if the ranges are very spread out, since the entries would be placed further from each other in the file and therefore the table can load mutable ranges in the same file.
-The trees, on the other hand, would perform well better on smaller data sizes, because all nodes are stored right next to each other on the file and will, therefore, be load on the same page and will be cached.
+The table should run in constant time because it only needs to do 2 lookups (one in the table and payload_map).
+Both trees should have a `O(log(n))` lookup time, but the BST would be expected to be slower than the redblack tree because it is not blanched therefore need more key comparers for deeper nodes. 
 
 #### Results
-All tests are ran with: `range: 10..18, payload_size: 50, gap: 10`.
-15000000 requets, in micro seconds
 
-| Dionysos      | 1k      | 100k      | 10 mil        | 150 mil           |
-| ------------- |--------:|----------:|--------------:|------------------:|
-| BST           | 2       | 0.7       | x             | 3.515             |
-| Redblack      | 2       | 0.9       | x             | 3,462             |
-| Table         | 6       | 3.6       | x             | 1.001             |
+The tests for this experiment has been ran on both Dionysos and the 1gb droplet.
+All tests are ran with: `range: 10..18, payload_size: 50, gap: 10`. All numbers are in milliseconds. 
 
+These speed tests (besides 150mil on 1gb droplet) are ran right after the build of the model without shutting down the program. This was done to maximize speed by having as many pages already in memory as possible. 
 
-All tests are ran with: `range: 10..18, payload_size: 50, gap: 10`.
-| 1gb25gb       | 1k        | 100k          | 150 mil*           |
+| Dionysos      | 1k      | 100k      | 150 mil           |
+| ------------- |--------:|----------:|------------------:|
+| BST           | 2       | 0.7       | 3.515             |
+| Redblack      | 2       | 0.9       | 3,462             |
+| Table         | 6       | 3.6       | 1.001             |
+
+| 1gb25gb       | 1k        | 100k          | 150 mil*          |
 | ------------- |----------:|--------------:|------------------:|
 | BST           | 25        | 2.5           | 2724              |
 | Redblack      | 18        | 4.5           | 8700              |
 | Table         | 28        | 1147          | 2730              |
 
-*This was run from a cold cache, because it had to be build on dionysos instead, because the dataset was so big, that the 1gb machine couldnt complete in time.
+*The 1gb25gb cant build (as explained in the next experiemnt) meaning that model has to be build on Dionysos and copyed to the 1gb droplet. This means that the cache was cold and no pages were loaded into memory, before the speed test was complete. 
 
 #### Discussion
 
-* Starting with dionysos, we can see that the table is the fastest on the 150mil-dataset, which was what we expected.
+**Dionysos**
+* Starting with Dionysos, we can see that the table is the fastest on the 150mil-dataset, which was what we expected.  
+* One thing that is interesting is that both trees actually follow along pretty well. One could expect the the redblack tree double the speed of the BST, because of the lower height, but this is not the apparently not the case. This can be cause by better usage of locality. When searching down the BST, you search in one direction through the file, and the nodes are often close to each other in the file.
+The redblack tree may have a fewer amount of checks, but nodes are more randomly distributed on in the file, because of rebalancing. 
+<img src="../docs/images/bachelor-10.png" alt="drawing" width="800"/>
+e.g the root is always at node offset 0, and the next nodes will always be on the same page or the following pages, while the redblack tree's root could, in theory, be in the middle of the file, and the next nodes could be on any other page. This means that the redblack tree has a bigger chance of page faults. 
+* For smaller data-sizes the table way worse. Even though the table has very few accesses, I would expect it to be relatively worse if the ranges are very spread out, since the entries would be placed further from each other in the file and therefore the table won't load mutable ranges in the same file. The trees, on the other hand, would perform well better on smaller data sizes, because all nodes are stored right next to each other on the file and will, therefore, be load on the same page and will be cached. This can answer why table is much worse than the tree on smaller more spread out data. 
+
+**1gb25gb droplet**
+For this test we have much more variating numbers with way less pattern/consistency.
 
 
-* One thing that is interesting is that both trees actually follow along pretty well. 
+Another reason could be that the redblack nodes are bigger and therefore less nodes can be stored on the same page. This also has impact on the performance, but this should be minimal duo, but it is good to keep in mind. 
 
+The smaller the dataset is the smaller more the usikkhered. Because when we do 1000 entries and 10% lookup, then only 100 requests are actually run which is a much lower sample size than 1500000, which we do with. We need to remember this since the variation in the raw test data is more spread out. We just have to keep this in mind when reading the results. 
 
 These small differences can be caused by a random change in a few data points.
-
-The table is faster as expected because it is only one access.
-The tree is actually faster than the redblack tree - this can be explained by it may make better use of locality. When searching down the BST, you search in the one direction through the file, and the nodes are often close to each other in the file.
-The redblack tree may have a fewer amount of checks, but nodes are more randomly distributed on in the file, because of rebalancing. 
-e.g the root is always at node offset 0, and the next nodes will always be on the same page or the following pages, while the redblack tree's root could, in theory, be in the middle of the file, and the next nodes could be on any other page. This means that the redblack tree has a bigger chance of page faults. 
-
+```
 "your mmap'ed file in memory is loaded (and offloaded) by pages between all the levels of memory (the caches, RAM and swap)."
-
 The requests are random, and all the ranges are close to evenly distributed over the whole ipv4-range. This means that all entries are equally likely, and there is no pattern in what ips are accessed. The kernel has no way of guessing what to load next.
 
 Since the droplet has a limited amount of memory, memmap abstraction has to load and offload pages between disk and memory continuously. 
@@ -508,35 +514,33 @@ The page size on the vm is 4096 bytes, and each node is 48 bytes, meaning that e
 
 
 In general, we can say that truly random access to a few bytes of data on a file should expect awful performance and if you access contiguous chunks sequentially from both files alternatively, you should expect decent performance.
+```
 
 
 https://stackoverflow.com/questions/43541420/when-and-how-is-mmaped-memory-swapped-in-and-out
 
-The smaller the dataset is the smaller more the usikkhered. Because when we do 1000 entries and 10% lookup, then only 100 requests are actually run which is a much lower sample size than 1500000, which we do with. We need to remember this since the variation in the raw test data is more spread out. We just have to keep this in mind when reading the results. 
+
 
 
 _____
 
 
-## Build time Experiment
+## Build time
 
 #### Expectation
 
-It is difficult to predict how the build time will perform.
 For this project, there were no system requirements for the machine that should build the data-structure. The only requirement was that it had to be built in less than a day. This experiment has been build on Dionysos.
 
 **Table**
-The table is most limited by write speed. It should insert each entry in constant time, since it doesn't have to search for the insertion position, but it has to repeatedly store a pointer to the map table, for each ip in the range. For this experiment we have a range ranging between 10 and 18, so the table has to insert 10 to 18 pointers pr entry. I would expect the table to be relatively best on a huge dataset, because of the constant insertion time compared to the tress log(n). 
+The table is most limited by write speed. It should insert each entry in constant time, since it doesn't have to search for the insertion position, but it has to repeatedly store a pointer to the map table, for each ip in the range. For this experiment we have a range ranging between 10 and 18, so the table has to insert 10 to 18 pointers pr entry. I would expect the table to be best on a huge dataset, because of the constant insertion time compared to the trees' log(n) insertion time. 
 
 **BST**
-The BST only writes twice to memory. One for actually placing the node/struct in the map and re-directing its parents' pointer. But the slowing part is that the algorithm has to search down the tree every time. Leaving it with a O(Log(n)) insertion time. I would expect the BST to be the fastest on smaller datasets because all nodes are stored next to each other in the file, and most nodes would probably be loaded in memory.
+The BST only writes twice to memory. One for actually placing the node/struct in the map and re-directing its parents' pointer. But the slowing part is that the algorithm has to search down the tree every time. Leaving it with a `O(Log(n))` insertion time. I would expect the BST to be the fastest on smaller datasets because all nodes are stored next to each other in the file (great use of locality) and most nodes would probably be loaded in memory.
 
 **Redblack tree**
-The redblack tree is more difficult to predict because it also has to balance the tree. Balancing the tree requires references to multiple nodes above the newly inserted node, and potentially many more if a rotation is needed. In this implementation, it does not save a reference to the nodes it encounters down the search, so when balancing it has to re-access/request the node/struct in the memory map, meaning it. This should be an issue when the balanced is only one rotation, but this will be an increasing problem when the tree grows and bigger rotations happen.
-Furthermore, we have to remember that the nodes in the redblack tree are stored more spread out compared to the BST, meaning bigger change that the nodes accessed are not stored on the same page.
-I would expect the redblack tree to be the slowest in all cases, because of the huge amount of node accesses.
+The redblack tree is more difficult to predict because it also has to balance the tree. Balancing the tree requires references to multiple nodes above the newly inserted node, and potentially many more if a rotation is needed. In this implementation, it does not save a reference to the nodes it encounters down the search, so when balancing it has to re-access/request the node/struct in the memory map. This shouldn't be an issue when the balanced is only one rotation, but this will be an increasing problem when the tree grows and bigger rotations happen.
 
-
+Furthermore, we have to remember that the nodes in the redblack tree are stored more spread out compared to the BST, less use of locallity. I would expect the redblack tree to be the slowest in all cases, because of the huge amount of node accesses.
 
 ##### Dionysos
 
@@ -546,19 +550,23 @@ I would expect the redblack tree to be the slowest in all cases, because of the 
 | Redblack      | 62079     | 5907163   | 12199050000       |
 | Table         | 23758     | 1381446   | 874202017         |
 
-The first thing we notice is that the redblack tree is the worst performing data structure, as we expected. From this experiment, we can conclude that the redblack tree is the least scaleable solution, with this specific implementation. 
+The first thing we notice is that the redblack tree is the worst performing data structure, as we expected. From this experiment, we can conclude that the redblack tree is the least scalable solution, with this specific implementation. 
 
-One interesting point is that 3874/23758=0.16, 204523/1381446 = 0.14, 686406388/874202017 = 0.7, which indicates that the table will catch up to the BST the bigger the dataset. Again this was kind of expected considering constant time scales better than log(n). For bigger datasets the table may have been a better option, but not for this data size.
+One interesting point is that the percentage differency between the BST and table becomes smaller an smaller the bigger the data size. 16% -> 14% -> 70%, which indicates that the table will catch up to the BST the bigger the dataset. Again this was kind of expected considering constant time scales better than log(n). For bigger datasets the table may have been a better option, but not for this data size.
 
-This experiment was also started on the 1gb machine, and I started with the 150mil, but stopped the test after 10 hours after seeing that has only inserted ~10% of the test data, meaning it would not be able to finish in time, building at that rate. It was never a requirement to be able to build the data-structure on a low resource machine, but it could be interesting to do an experiment on how long it would actually take on different data-sizes. 
+This experiment was also tried on the 1gb machine, but with less success. When building the 150 mil datasize, I stopped the 1gb machine after 10 hours after seeing that has only inserted ~10% of the test data, meaning it would not be able to finish in time, building at that rate. It was never a requirement to be able to build the data-structure on a low resource machine, but it could be interesting to do an experiment on how long it would actually take on different data-sizes. 
+
+
+> Note: As a very small experiment, I tried to place a full array of pointers for each entry in the table instead of placing each pointer individually. The implementation was to create an array with the length of the range and then loop over the array placing all the pointers in the array and then copying the whole array into the memory map. This didn't make a difference, which also would be expected, since writing to an array in memory would be the same as writing to the map in memory. 
 
 The longest build time is the redblack tree with an average of 3.4 hours, which is way below the one day limit. Based on these numbers we can conclude that all of the data-structures are a viable option for solving this issue if ran on a machine with specs like Dionysos. This build time will increase the slower the machine. In the future, it could be interesting to experiment on how low the specs can be and still be able to build in 24 hours. 
 
-As a very small experiment, I tried to place a full array of pointers for each entry in the table instead of placing each pointer individually. The implementation was to create an array with the length of the range and then loop over the array placing all the pointers in the array and then copying the whole array into the memory map. This didn't make a difference, which also would be expected, since 
-
-The best performing data structure seems to be the BST - This is probably a combination of only 2 writes to memory, good use of locally, since most nodes are close to each other on disk.
+The best performing data structure seems to be the BST - This is probably a combination of only 2 writes to memory and good use of locally,
 
 For this experiment, I will conclude that the tree is the best option of the tree implementation on this data-size on a high resource machine. 
+
+```
+Skal dette med? 
 
 **Building Redblack tree on low resources.**
 
@@ -577,8 +585,6 @@ I made a test where I ran the redblack tree build, and locked all nodes with mlo
 There is a type called `Pin<>`, where can pin memory in ram, I haven't managed to find a single place online where `Pin<>` and MmupMap is used/mentioned together, making me believe they were either not mean to be used together or no one has ever tried. An interesting experiment in the future would be to pin the nodes, using `pin<>`, while searching done the tree.
 
 
-
-```rust 
 fn get_node_raw<'a>(mmap: &'a MmapMut, offset: usize) -> &'a mut Node {
     let byte_map = &mmap[offset..(offset+NODE_SIZE)];
     let number = unsafe { libc::mlock(byte_map.as_ptr() as *const c_void, byte_map.len()) };
@@ -596,23 +602,14 @@ In theory, the cache shouldn't matter if the data-set consists of an infinitely 
 
 The immediate thought would be that the tree would benefit from this, since the nodes closer to the root would be read much more often than the rest of the tree, meaning that the data stored in the upper nodes can be retrieved from the cache. 
 
-The BST would have better caching because the all top nodes in the tree are all placed right next to each other in the file (and therefore are stored in the same pages), and that is not necessarily the case for the redblack tree, because the root is moved around while balancing the tree. We will expect the gap between the trees to increase the bigger the data set.
+As mentioned a few times in the previous experiments, the BST makes better use of locality. This means that the BST should have fewer cache misses than the redblack table, because more nodes are stored on the same pages. We will expect the percentage difference between the trees to increase the bigger the dataset, because the redblack trees nodes are more an more spread out. 
 
-For this implementation, it is difficult to isolate the cache-miss counting only to the searching. This is coursed by the fact that the last step (mentioned in testing XXX) includes _generating search input_, _the actual lookups_, and _looking up the payload/value in the `payload_map`_. 
-Both the _genration search input_ and looking up the payload_ is exactly the same step for all three data models meaning they can be seen as a constant factor in these cache tests. This means that generating and looking in payloads_table should be stable for all 3 tests. For the test performed the payload size was set to `1 byte`, bot make sure almost all access in the payload_map were cached. 
+For this implementation, it is difficult to isolate the cache-miss counting only to the searching. This is coursed by the fact that the searching-step (mentioned in testing XXX) includes _generating search input_, _the actual lookups_, and _looking up the payload/value in the `payload_map`_. 
+Both the _genration search input_ and looking up the payload_ is exactly the same step for all three data models meaning they can be seen as a constant factor in these cache tests. This means that generating and looking in `payloads_table` should be stable for all 3 tests. For the test performed the payload size was set to `1 byte`, both make sure almost all access in the `payload_map` were cached. 
 
 ##### Results
 
-All tests run with script found on Appendix B.
-
-_den her er ikke spread_
-| 1gb mem       | 1k            | 100k      | 10 mil    |
-| ------------- |--------------:| ---------:|----------:|
-| BST           | 42.594 %      | 51.339 %  | 46.182 %  |
-| Redblack      | 48.678 %      | 53.470 %  | 50.712 %  |
-| Table         | 45.949 %      | 52.400 %  | 10.399 %  |
-
-This is just as expected. Stable cache misses. Higher count for 1 gb machine. Tree having the lowest cache miss-rate.
+All tests run with script found on Appendix X.
 
 ##### Dionysos - done 
 
@@ -621,6 +618,18 @@ This is just as expected. Stable cache misses. Higher count for 1 gb machine. Tr
 | BST           | 36.693 %      | 42.852 %  | 77.475 %  | 67.873 %  |
 | Redblack      | 36.267 %      | 41.271 %  | 79.102 %  | 69.431 %  |
 | Table         | 35.864 %      | 41.901 %  | 87.384 %  | 79.413 %  |
+
+
+_den her er ikke spread_
+| 1gb mem       | 1k            | 100k      | 10 mil    |
+| ------------- |--------------:| ---------:|----------:|
+| BST           | 42.594 %      | 51.339 %  | 46.182 %  |
+| Redblack      | 48.678 %      | 53.470 %  | 50.712 %  |
+| Table         | 45.949 %      | 52.400 %  | 10.399 %  |
+
+Starting with Dionysos, as expected the cache the data is as expected. The table has the highest 
+
+This is just as expected. Stable cache misses. Higher count for 1 gb machine. Tree having the lowest cache miss-rate.
 
 
 As expected the table has the worst cache and the tree is best.
@@ -633,6 +642,9 @@ ______
 
 ## Memory Usage Experiment
 #### Expectation
+
+Memory usage is important part of this projekt and a big focus point, when talking about memory maps. 
+
 I would expect to see that program would keep loading pages into memory as long as there is memory left. And only start offloading pages, when the ram is full.
 
 #### Method
