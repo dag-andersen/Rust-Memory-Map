@@ -27,8 +27,8 @@ fn test_correct_placement() {
     fs::remove_file(REDBLACK_PATH);
     let mut name: u64 = 5;
 
-    let node1 = super::Node { min_ip: 20, max_ip: 20, left: 0, right: 0, parent: 0, name: Default::default(), red: Default::default() };
-    let node2 = super::Node { min_ip: 20, max_ip: 20, left: 0, right: 0, parent: 0, name, red: Default::default() };
+    let node1 = super::Node { min_ip: 20, max_ip: 20, left: 0, right: 0, parent: 0, payload_ptr: Default::default(), red: Default::default() };
+    let node2 = super::Node { min_ip: 20, max_ip: 20, left: 0, right: 0, parent: 0, payload_ptr: name, red: Default::default() };
 
     let mut first_map = Utils::get_memmap(REDBLACK_PATH, 300000000);
     place_node(& mut first_map, 0, &node1);
@@ -37,5 +37,5 @@ fn test_correct_placement() {
     let another_map = Utils::get_memmap(REDBLACK_PATH, 300000000);
     let getnode = get_node(&another_map, 1);
 
-    assert_eq!(name, getnode.name);
+    assert_eq!(name, getnode.payload_ptr);
 }

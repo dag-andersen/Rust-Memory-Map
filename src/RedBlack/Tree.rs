@@ -1,4 +1,4 @@
-use crate::{NameTable, Entry, RedBlack, REDBLACK_PATH, Utils, usizeSize, thisFileWillBeDeleted, REDBLACK_PAYLOAD};
+use crate::{PayloadMap, Entry, RedBlack, REDBLACK_PATH, Utils, usizeSize, thisFileWillBeDeleted, REDBLACK_PAYLOAD};
 use memmap::MmapMut;
 use crate::RedBlack::{Node, NODE_SIZE, NodeToMem};
 use std::ops::Deref;
@@ -36,7 +36,7 @@ fn insert_leaf_on_node(mmap: &MmapMut, parent: &mut Node, parentIndex: usize, no
     let mut offset_from_node = 0;
 
     if parent.min_ip <= node.min_ip && node.max_ip <= parent.max_ip {
-        println!("Overlap for child: {}",node.name);
+        println!("Overlap for child: {}",node.payload_ptr);
         return
     }
 
@@ -177,7 +177,7 @@ pub fn find_node_on_map(ip: u32, mmap: &MmapMut) -> Option<u64> {
 
     loop {
         let mut offset_from_node: u32 = 0;
-        if accNode.min_ip <= ip && ip <= accNode.max_ip { return Some(accNode.name) }
+        if accNode.min_ip <= ip && ip <= accNode.max_ip { return Some(accNode.payload_ptr) }
 
         if accNode.max_ip < ip {
             offset_from_node = accNode.right;
@@ -210,19 +210,19 @@ fn insert_node_and_find_it() {
     let mut tree_map = super::gen_tree_map();
 
     let name1 = 10;
-    let mut entry = Node { red: true, min_ip: 0, max_ip: 5, left: 0, right: 0, parent: 0, name: name1 };
+    let mut entry = Node { red: true, min_ip: 0, max_ip: 5, left: 0, right: 0, parent: 0, payload_ptr: name1 };
     insert_node(&mut tree_map, 1, &mut entry);
 
     let name2 = 20;
-    let mut entry = Node { red: true, min_ip: 6, max_ip: 10, left: 0, right: 0, parent: 0, name: name2 };
+    let mut entry = Node { red: true, min_ip: 6, max_ip: 10, left: 0, right: 0, parent: 0, payload_ptr: name2 };
     insert_node(&mut tree_map, 2, &mut entry);
 
     let name3 = 30;
-    let mut entry = Node { red: true, min_ip: 20, max_ip: 20, left: 0, right: 0, parent: 0, name: name3 };
+    let mut entry = Node { red: true, min_ip: 20, max_ip: 20, left: 0, right: 0, parent: 0, payload_ptr: name3 };
     insert_node(&mut tree_map, 3, &mut entry);
 
     let name4 = 40;
-    let mut entry = Node { red: true, min_ip: 50, max_ip: 650, left: 0, right: 0, parent: 0, name: name4 };
+    let mut entry = Node { red: true, min_ip: 50, max_ip: 650, left: 0, right: 0, parent: 0, payload_ptr: name4 };
     insert_node(&mut tree_map, 4, &mut entry);
 
     let out_name0 = find_node_on_map(0, &tree_map);
@@ -267,27 +267,27 @@ fn insert_node_random_order_and_find_it() {
     let mut tree_map = super::gen_tree_map();
 
     let name3 = 30;
-    let mut entry = Node { red: true, min_ip: 20, max_ip: 20, left: 0, right: 0, parent: 0, name: name3 };
+    let mut entry = Node { red: true, min_ip: 20, max_ip: 20, left: 0, right: 0, parent: 0, payload_ptr: name3 };
     insert_node(&mut tree_map, 1, &mut entry);
 
     let name6 = 40;
-    let mut entry = Node { red: true, min_ip: 802, max_ip: 820, left: 0, right: 0, parent: 0, name: name6 };
+    let mut entry = Node { red: true, min_ip: 802, max_ip: 820, left: 0, right: 0, parent: 0, payload_ptr: name6 };
     insert_node(&mut tree_map, 2, &mut entry);
 
     let name4 = 40;
-    let mut entry = Node { red: true, min_ip: 50, max_ip: 650, left: 0, right: 0, parent: 0, name: name4 };
+    let mut entry = Node { red: true, min_ip: 50, max_ip: 650, left: 0, right: 0, parent: 0, payload_ptr: name4 };
     insert_node(&mut tree_map, 3, &mut entry);
 
     let name2 = 20;
-    let mut entry = Node { red: true, min_ip: 6, max_ip: 10, left: 0, right: 0, parent: 0, name: name2 };
+    let mut entry = Node { red: true, min_ip: 6, max_ip: 10, left: 0, right: 0, parent: 0, payload_ptr: name2 };
     insert_node(&mut tree_map, 4, &mut entry);
 
     let name5 = 40;
-    let mut entry = Node { red: true, min_ip: 800, max_ip: 801, left: 0, right: 0, parent: 0, name: name5 };
+    let mut entry = Node { red: true, min_ip: 800, max_ip: 801, left: 0, right: 0, parent: 0, payload_ptr: name5 };
     insert_node(&mut tree_map, 5, &mut entry);
 
     let name1 = 10;
-    let mut entry = Node { red: true, min_ip: 0, max_ip: 5, left: 0, right: 0, parent: 0, name: name1 };
+    let mut entry = Node { red: true, min_ip: 0, max_ip: 5, left: 0, right: 0, parent: 0, payload_ptr: name1 };
     insert_node(&mut tree_map, 6, &mut entry);
 
     let out_name0 = find_node_on_map(0, &tree_map);

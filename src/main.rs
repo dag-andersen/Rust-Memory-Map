@@ -43,14 +43,14 @@ const u16Size:          usize   = std::mem::size_of::<u16>();
 const u8Size:           usize   = std::mem::size_of::<u8>();
 
 mod FileGenerator;
-mod Tree;
+mod BST;
 mod RedBlack;
 mod Table;
 mod IntegrationTests;
 mod BenchmarkTest;
 mod BenchmarkTests_Separate;
 mod Utils;
-mod NameTable;
+mod PayloadMap;
 
 use std::io::{BufRead, BufReader, LineWriter, Error, Lines};
 use std::ops::Add;
@@ -69,12 +69,12 @@ use crate::BenchmarkTest::create_test_data;
 pub struct Entry {
     pub min_ip: u32,
     pub max_ip: u32,
-    pub name: String,
+    pub payload: String,
 }
 
 impl fmt::Display for Entry {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:p}, n: {}, min: {}, max: {}", &self, self.name, self.min_ip, self.max_ip)
+        write!(f, "{:p}, n: {}, min: {}, max: {}", &self, self.payload, self.min_ip, self.max_ip)
     }
 }
 
@@ -87,7 +87,7 @@ fn load_to_tree(input: &str) { load_to_tree_on_path(input, TREE_PATH) }
 
 fn load_to_tree_on_path(input: &str, map_path: &str) {
     fs::remove_file(map_path);
-    load_to_data_structure(input, TREE_PAYLOAD, Tree::gen_tree_map_on_path(map_path), Tree::insert_entry)
+    load_to_data_structure(input, TREE_PAYLOAD, BST::gen_tree_map_on_path(map_path), BST::insert_entry)
 }
 
 fn load_to_redblack(input: &str) { load_to_redblacktree_on_path(input, REDBLACK_PATH) }
@@ -110,10 +110,10 @@ fn load_to_data_structure(input: &str, payload_path: &str, structure: MmapMut, i
 
     fs::remove_file(payload_path);
     let mut structure = structure;
-    let mut name_table = NameTable::gen_name_table_from_path(payload_path);
+    let mut payload_map = PayloadMap::gen_payload_map_from_path(payload_path);
 
     let ip_regex = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap();
-    let name_regex = Regex::new(r"\b(([A-z]|\d)+\s?)+\b").unwrap();
+    let payload_regex = Regex::new(r"\b(([A-z]|\d)+\s?)+\b").unwrap();
 
     let mut courser: u64 = 0;
 
@@ -128,12 +128,12 @@ fn load_to_data_structure(input: &str, payload_path: &str, structure: MmapMut, i
         //if i % 50_000 == 0 { print!("", i)}
         if i % (BenchmarkTest::n as usize/100 + 1) == 0 { print!("-"); io::stdout().flush(); }
 
-        let entry = Utils::get_entry_for_line(&ip_regex, &name_regex, &l);
+        let entry = Utils::get_entry_for_line(&ip_regex, &payload_regex, &l);
         if entry.is_none() { continue }
         let entry = entry.unwrap();
 
-        courser = NameTable::place_name(&mut name_table, courser, entry.name.as_bytes());
-        let payload_index = courser - entry.name.len() as u64 - 1;
+        courser = PayloadMap::place_payload(&mut payload_map, courser, entry.payload.as_bytes());
+        let payload_index = courser - entry.payload.len() as u64 - 1;
         inserter(&mut structure, i, entry, payload_index);
     }
 }
@@ -144,7 +144,7 @@ fn get_buffer(file: &str) -> BufReader<std::fs::File> {
 
 #[test]
 fn find_hardcoded_node_in_tree() {
-    find_hardcoded_node(load_to_tree,Tree::find_value)
+    find_hardcoded_node(load_to_tree, BST::find_value)
 }
 
 #[test]
@@ -174,7 +174,7 @@ fn find_hardcoded_node(loader: fn(&str), finder: fn(u32) -> Option<String>) {
 
 #[test]
 fn find_random_gen_requests_in_tree() {
-    find_random_gen_request(load_to_tree,Tree::find_value);
+    find_random_gen_request(load_to_tree, BST::find_value);
 }
 
 #[test]
