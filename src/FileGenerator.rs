@@ -8,7 +8,7 @@ use rand::seq::SliceRandom;
 use rand::thread_rng;
 use std::cmp::min;
 use std::{fs, io};
-use crate::{SP_100_000, thisFileWillBeDeleted, get_buffer, Utils, Entry, SP_500_000, SP_5_000_000, SP_50_000, TREE_PATH, load_to_tree_on_path, BST, SP_10_000, SP_1_000_000, load_to_table, load_to_table_on_path, TABLE_PATH, load_to_tree};
+use crate::{SP_100_000, thisFileWillBeDeleted, Utils, Entry, SP_500_000, SP_5_000_000, SP_50_000, TREE_PATH, load_to_tree_on_path, BST, SP_10_000, SP_1_000_000, load_to_table, load_to_table_on_path, TABLE_PATH, load_to_tree};
 use regex::bytes::Regex;
 
 fn generate_random_ip_firm(rng: &mut ThreadRng) -> String {
@@ -189,7 +189,7 @@ pub fn generate_lookup_testdata(src: &str, gap: usize) -> Vec<(u32,String)>{
     let mut vec : Vec<(u32,String)> = Vec::new();
     let mut rng = thread_rng();
 
-    let mut lines = get_buffer(src).lines();
+    let mut lines = Utils::get_buffer(src).lines();
     while let line = lines.nth(gap-1) {
         if line.is_none() { break; }
         let line = line.unwrap();

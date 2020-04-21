@@ -52,7 +52,7 @@ mod BenchmarkTests_Separate;
 mod Utils;
 mod PayloadMap;
 
-use std::io::{BufRead, BufReader, LineWriter, Error, Lines};
+use std::io::{LineWriter, Error, Lines};
 use std::ops::Add;
 use memmap::{MmapMut, MmapOptions};
 use std::io::Read;
@@ -120,7 +120,8 @@ fn load_to_data_structure(input: &str, payload_path: &str, structure: MmapMut, i
     let string: String = (0..98).map(|_| '-').collect();
     println!("|{}|",string);
 
-    for (i, line) in get_buffer(input).lines().enumerate() {
+
+    for (i, line) in Utils::get_buffer(input).lines().enumerate() {
         if line.is_err() { continue }
         let l = line.unwrap();
         if l.is_empty() { continue; }
@@ -136,10 +137,6 @@ fn load_to_data_structure(input: &str, payload_path: &str, structure: MmapMut, i
         let payload_index = courser - entry.payload.len() as u64 - 1;
         inserter(&mut structure, i, entry, payload_index);
     }
-}
-
-fn get_buffer(file: &str) -> BufReader<std::fs::File> {
-    BufReader::new(File::open(file).expect("could not find file"))
 }
 
 #[test]

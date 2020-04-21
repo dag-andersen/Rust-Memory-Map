@@ -1,6 +1,6 @@
 use memmap::{MmapMut, MmapOptions};
-use std::fs::OpenOptions;
-use std::io::{SeekFrom, Write, Seek};
+use std::fs::{OpenOptions, File};
+use std::io::{SeekFrom, Write, Seek, BufReader};
 use crate::{BST, Entry};
 use regex::bytes::Regex;
 
@@ -62,6 +62,10 @@ pub(crate) unsafe fn bytes_to_type_mut<T>(slice: &[u8]) -> &mut T {
 pub(crate) fn place_item_raw<T>(mmap: & mut MmapMut, offset: usize, t: &T) {
     let bytes = unsafe { any_as_u8_slice(t) };
     mmap[offset..(offset+bytes.len())].copy_from_slice(bytes);
+}
+
+pub fn get_buffer(file: &str) -> BufReader<std::fs::File> {
+    BufReader::new(File::open(file).expect("could not find file"))
 }
 
 pub fn make_needed_folders() {
