@@ -1,7 +1,7 @@
 use memmap::{MmapMut, MmapOptions};
 use std::fs::OpenOptions;
 use std::io::{SeekFrom, Write, Seek};
-use crate::{Tree, Entry};
+use crate::{BST, Entry};
 use regex::bytes::Regex;
 
 pub(crate) fn get_entry_for_line(ip_regex: &Regex, name_regex: &Regex, l: &String) -> Option<Entry> {
@@ -15,7 +15,7 @@ pub(crate) fn get_entry_for_line(ip_regex: &Regex, name_regex: &Regex, l: &Strin
     let min_ip = get_u32_for_ip(&l[min_ip_match.range()])?;
     let max_ip = get_u32_for_ip(&l[max_ip_match.range()])?;
 
-    Some(Entry { min_ip, max_ip, name: String::from(&l.as_str()[name_match.range()]) })
+    Some(Entry { min_ip, max_ip, payload: String::from(&l.as_str()[name_match.range()]) })
 }
 
 pub(crate) fn get_u32_for_ip(v: &str) -> Option<u32> {

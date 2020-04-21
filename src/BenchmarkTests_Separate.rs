@@ -1,9 +1,9 @@
 use stopwatch::Stopwatch;
-use crate::{FileGenerator, load_to_tree_on_path, load_to_table, Utils, Table, NameTable, load_to_tree, RedBlack, load_to_redblack, REDBLACK_PATH, Tree, TREE_PATH, TABLE_PATH, TABLE_PAYLOAD, TREE_PAYLOAD, REDBLACK_PAYLOAD};
+use crate::{FileGenerator, load_to_tree_on_path, load_to_table, Utils, Table, PayloadMap, load_to_tree, RedBlack, load_to_redblack, REDBLACK_PATH, BST, TREE_PATH, TABLE_PATH, TABLE_PAYLOAD, TREE_PAYLOAD, REDBLACK_PAYLOAD};
 use std::{fs, io};
 use std::fs::{File, OpenOptions};
 use std::io::{LineWriter, Write};
-use crate::Tree::TreePrinter;
+use crate::BST::TreePrinter;
 use memmap::MmapMut;
 use std::ops::Range;
 use std::thread::sleep;
@@ -73,7 +73,7 @@ fn search_time_table(){
 #[ignore]
 fn search_time_tree(){
     println!("\n## search_time_tree");
-    println!("{}",search_time(TREE_PAYLOAD, Tree::gen_tree_map, Tree::find_value_on_map));
+    println!("{}",search_time(TREE_PAYLOAD, BST::gen_tree_map, BST::find_value_on_map));
 }
 
 #[test]

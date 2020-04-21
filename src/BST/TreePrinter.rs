@@ -1,30 +1,30 @@
-use crate::{Utils, TREE_PATH, Tree, Table, NameTable, thisFileWillBeDeleted, FileGenerator, TREE_PRINT_PATH, SOURCE_PATH_3, SOURCE_PATH_1, TREE_PAYLOAD};
+use crate::{Utils, TREE_PATH, BST, Table, PayloadMap, thisFileWillBeDeleted, FileGenerator, TREE_PRINT_PATH, SOURCE_PATH_3, SOURCE_PATH_1, TREE_PAYLOAD};
 use std::fs::File;
 use std::io::{LineWriter, Write, BufRead};
 use memmap::MmapMut;
-use crate::Tree::{Node, NodeToMem};
+use crate::BST::{Node, NodeToMem};
 use std::fs;
 
 pub(crate) fn print_tree_to_file(s: &str) {
     fs::remove_file(TREE_PRINT_PATH);
     let file = File::create(s).unwrap();
     let mut line_writer = LineWriter::new(file);
-    let tree_map = Tree::gen_tree_map();
-    let name_table = NameTable::gen_name_table_from_path(TREE_PAYLOAD);
+    let tree_map = BST::gen_tree_map();
+    let payload_map = PayloadMap::gen_payload_map_from_path(TREE_PAYLOAD);
     let root = NodeToMem::get_node(&tree_map, 0);
-    print_node_to_file(&tree_map, &name_table, &root, 0, &mut line_writer);
+    print_node_to_file(&tree_map, &payload_map, &root, 0, &mut line_writer);
 }
 
-fn print_node_to_file(mmap: &MmapMut, name_table: &MmapMut, node: &Node, n: usize, writer: &mut LineWriter<File>) {
+fn print_node_to_file(mmap: &MmapMut, payload_map: &MmapMut, node: &Node, n: usize, writer: &mut LineWriter<File>) {
     if node.right != 0 {
-        print_node_to_file(mmap, name_table, &NodeToMem::get_node(&mmap, node.right as usize), n + 1, writer);
+        print_node_to_file(mmap, payload_map, &NodeToMem::get_node(&mmap, node.right as usize), n + 1, writer);
     }
     let indention: String = (0..n).map(|_| '-').collect();
     writer.write_all(indention.as_bytes());
-    writer.write_all(NameTable::get_name(&name_table, node.name as u64 - 1).unwrap().as_bytes());
+    writer.write_all(PayloadMap::get_payload(&payload_map, node.payload_ptr as u64 - 1).unwrap().as_bytes());
     writer.write_all("\n".as_bytes());
     if node.left != 0 {
-        print_node_to_file(mmap, name_table, &NodeToMem::get_node(&mmap, node.left as usize), n + 1, writer);
+        print_node_to_file(mmap, payload_map, &NodeToMem::get_node(&mmap, node.left as usize), n + 1, writer);
     }
 }
 
