@@ -121,8 +121,8 @@ fn speed_matrix_tree() {
 }
 
 #[test]
-fn search_time_tree_vs_RedBlack_vs_table() {
-    println!("## search_time_tree_vs_table");
+fn search_time_BST_vs_RedBlack_vs_table() {
+    println!("## search_time_BST_vs_table");
 
     pub const n:                    u32 = 1500;
     const range:             Range<u32> = 10..18;

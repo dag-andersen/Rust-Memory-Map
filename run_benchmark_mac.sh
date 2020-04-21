@@ -35,8 +35,8 @@ printf "\nBUILDING -------------------------------------------------------------
 cargo build --release --color=always
 sleep 2
 
-printf "\nsearch_time_tree --------------------------------------------------------------------------------------------------------------------\n"
-$cargo_pre_cmd DO_BenchmarkTests::search_time_tree $cargo_post_cmd >> $output
+printf "\nsearch_time_BST --------------------------------------------------------------------------------------------------------------------\n"
+$cargo_pre_cmd DO_BenchmarkTests::search_time_BST $cargo_post_cmd >> $output
 sleep 2
 
 printf "\nsearch_time_redblack ----------------------------------------------------------------------------------------------------------------\n"

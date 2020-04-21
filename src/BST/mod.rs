@@ -8,8 +8,8 @@ pub mod TreePrinter;
 
 const NODE_SIZE : usize = std::mem::size_of::<Node>();
 
-pub fn entry_to_node(entry: crate::Entry, name_index: u64) -> Node {
-    Node { min_ip: entry.min_ip, max_ip: entry.max_ip, left: 0, right: 0, payload_ptr: name_index }
+pub fn entry_to_node(entry: crate::Entry, payload_index: u64) -> Node {
+    Node { min_ip: entry.min_ip, max_ip: entry.max_ip, left: 0, right: 0, payload_ptr: payload_index }
 }
 
 pub struct Node {
@@ -26,8 +26,8 @@ impl fmt::Display for Node {
     }
 }
 
-pub fn insert_entry(mmap: &mut MmapMut, index: usize, entry: Entry, name_index: u64) {
-    let node = entry_to_node(entry, name_index + 1);
+pub fn insert_entry(mmap: &mut MmapMut, index: usize, entry: Entry, payload_index: u64) {
+    let node = entry_to_node(entry, payload_index + 1);
     Tree::insert_node(mmap, index, &node);
 }
 

@@ -3,7 +3,7 @@ use crate::{FileGenerator, load_to_tree_on_path, load_to_table, Utils, Table, Pa
 use std::{fs, io};
 use std::fs::{File, OpenOptions};
 use std::io::{LineWriter, Write};
-use crate::Tree::TreePrinter;
+use crate::BST::TreePrinter;
 use memmap::MmapMut;
 use std::ops::Range;
 use std::thread::sleep;
@@ -104,9 +104,9 @@ fn search_time_table() -> String {
     search_time(TABLE_PAYLOAD, Table::gen_ip_table, Table::find_value_on_map)
 }
 
-fn search_time_tree() -> String {
-    println!("\n## search_time_tree");
-    search_time(TREE_PAYLOAD, Tree::gen_tree_map, Tree::find_value_on_map)
+fn search_time_BST() -> String {
+    println!("\n## search_time_BST");
+    search_time(TREE_PAYLOAD, BST::gen_tree_map, BST::find_value_on_map)
 }
 
 fn search_time_redblack() -> String {
@@ -123,7 +123,7 @@ pub fn search_time(payload_path: &str, structure: fn() -> MmapMut, finder: fn(u3
     assert!(length > 0);
 
     let structure = structure();
-    let name_table = NameTable::gen_name_table_from_path(payload_path);
+    let name_table = PayloadMap::gen_payload_map_from_path(payload_path);
     let mut noneFound = 0;
     let mut wrongFound = 0;
 
