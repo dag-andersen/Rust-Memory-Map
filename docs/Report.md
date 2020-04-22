@@ -5,64 +5,73 @@ Speed is first priority
 
 ## Motivation
 
-What do you do when you want to quickly search through a big data-set that can't be store in ram?
-On a small scale, the easy answer is to just buy a more powerful machine, but this is maybe not always what you want. Should you choose to run a given service on a virtual machine on a cloud-provider like _digital ocean_ then - then rending a machine with many resources quickly becomes expensive. This is where this problem becomes relevant.
+What do you do when you want to quickly search through a big data-set that can't be stored in memory? On a small scale, the easy answer is to just buy a more powerful machine, but this is maybe not always what you want. Should you choose to run a given program on a virtual machine on a cloud-provider like _digital ocean_ then - then rending a machine with many resources quickly becomes expensive. This is where this problem becomes relevant.
+
+If the data cant be in memory it needs to be stored on persistant storage, but 
+The data is not a normal key-value storage, since their keys in this case is a range between two values. This makes the choice of storage less trivial. 
+
+## Problem formulation:	
+- Analyze the requirements from siteimprove in terms of persistent log and key-value store
+- Describe and analyze existing data structures and algorithms for persistent log and key-value stores
+- Design/implement/evaluate a persistent log and key-value store in Rust on modern hardware
+
+## Method:	
+The method is experimental. I will design, implement and evaluate a prototype.
 
 ## Problem explained in detail
+Siteimprove needs a web-service that can look up information of a given IP-address. 
 
-Siteimprove needs a service that can look up information of a given IP-address. The primary focus is fast lookup so their customers can get a result as fast as possible.
-Pre-processing time is not important as long as it doesn't take over a day. 
-It has to use under 
-Space-wise it doesn't matter much either, but again it has to be a realistic/practical amount.
+The structure around the service (handling http request and so on), are already implemented, so they need the new algorithm for the actual data storage and lookup. Siteimprove's service is implemented in Rust, and therefore want the search algorithms to be implemented in Rust or (languages that can port to Rust)
+
+The primary focus is fast lookup so their customers can get a result as fast as possible. Pre-processing time is not important as long as it doesn't take over a day. Space-wise is not important, since disk storage is relatively cheap, but if it had to be run on a cloud provider, it should be kept under 100 GB persistent storage.
+
+The data-structure needs to be build once a week, and doesn't need to handle any new entry insertions after preprocessing/build of the data-structure. 
+
+Siteimprove's wishes for a lookup time 60 ms on average. That is the highest lookup time they want to offer to their customers. 
+
+Part of the challenge was to be able to run the service on a machine with low resources, to pay less for hardware in the long run (especially if ran on a cloud provider). The max memory usage should be 4 gb memory, but we should strive for as low memory usage as possible. 
+
+Siteimprove had not need for persistent logging. 
 
 ### Data
 
-The data is expected to be read from a file or read as a stream.
-Each entry consists of two IP addresses and some related data/payload. The first IP determents the lower bound of the range and the second is the upper bound.
-The payload can vary in size, but bla bla bla.
+The data is expected to be read from _standard input_ from a file or read from a stream. Each entry consists of two IP addresses and some related data/payload. The first IP determents the lower bound of the range and the second is the upper bound.
+The 
 
+The payload can vary in size, but the max payload size is 2^8/256 bytes.It is not possible to access to the real data due to confidentiality, but the average payload size pr. entry. is available. The number of entries are not constant, so the system needs to be able to handle a arbitrary number of entries. We know the usual average entry size, which we will use in this project to test up against. 
 
-It is not possible to access to the real data due to confidentiality, but the average payload size pr. entry. is available. 
-The system needs to handle 150 mil ipv4 ranges and 35 mil ipv6 ranges with a payload of 256 bytes.
+Their system needs to hand 150 million IPv4 entries and 35 million IPv6 entries with a payload of 256 bytes. To limit the scope of this project I will focus on the 150 million IPv4 and draw parallels to how the different data-structures would handle IPv6.
 
-### Assumptions
-* The input data contains no overlapping ranges
-* No IP range is excluded (No IP range should be ignored because of reserved IP-range-blocks) / in other words... all IP addresses are possible.
-* No need to remove or change entries after insertion. 
-* The entries should be able to be stream into the program so no way of knowing how many entries will actually go into the system
-
-### the goal
-Handle 150 mil entries of Ipv4
-Siteimprove's wishes for a lookup time of p99 in 60ms.
-
-The focus of this paper is the 150 mil entry ipv4 - but we will make references towards ipv6.
+So to summarize the conditions / goals
 
 ### Si Rules/Priorities
 ```
 - Language:             Rust.
 - Dataset:              A set of IP ranges to firms.
                         No overlapping ranges. 
-- Pre-processing-time:  Not important.
+- Pre-processing-time:  Less af day.
                         No new entries after first lookup.
-- storage space:        Not important.
-- Lookup-time:          Important.
+- storage space:        At most 100GB.
+- Lookup-time:          First priority.
+                        At most 60 milliseconds for average lookuptime. 
+- Dataset:              150.mil ipv4
+                        Up to 256bytes payload pr entry.
+- Memory:               At most 4gb
 ```
 
-### Si goals 
-I couldn't test on Siteimprove's real data, since it confidential, but could get 
-```
-- Dataset:              150.mil ipv4
-                        35.mil  ipv6
-                        256bytes payload pr entry.
-- Memory:               4gb
-- Lookup-time:          p99 in 60ms.`
-```
+**Assumptions of data**
+* The input data contains no overlapping ranges
+* No IP range is excluded (No IP range should be ignored because of reserved IP-range-blocks) / in other words... all IP addresses are possible.
+* No need to remove or change entries after insertion. 
+* The entries should be able to be stream into the program so no way of knowing how many entries will actually go into the system
 
 ## Why use rust?
 
-"Rust is a multi-paradigm system programming language focused on safety, especially safe concurrency. Rust is syntactically similar to C, but is designed to provide better memory safety while maintaining high performance." - wiki
+Rust is a multi-paradigm system programming language focused on memory safety, especially safe concurrency. - wiki source please
 
-In a survey done by XXX 51% of the security vulnerabilities in the Linux kernel is coursed by concurrency and memory safety issues that are fundamentally impossible to get in rust (unless you use the `unsafe` keyword, which is not recommended)
+Rust performs similar to C, which makes a good choice for performance. 
+https://benchmarksgame-team.pages.debian.net/benchmarksgame/fastest/rust.html
+
 
 ### Safety
 
@@ -75,18 +84,22 @@ This is done by a combination of the concept of ownership (which is basically a 
 Each value in Rust has a variable that’s called its owner.
 There can only be one owner at a time.
 When the owner goes out of scope, the value will be dropped.
-```
 
 This also eliminates C's issue of double free error. 
+```
 
-Rust has a concept of lifetimes. This means that if we have an array of items `[T]` and we create a reference to one of those items `&T` then that reference needs to leave scope before the array itself. In other words, the array needs to have a longer lifetime than outside pointers to its elements - otherwise, the rust compiler won't compile because it can't guarantee that the array isn't de-allocated or changed before accessing `T`. This is both a huge challenge when first starting to work with Rust, but also a really great safety.
+Rust has a concept of lifetimes. This means that if we have an array of items `[T]` and we create a reference to one of those items `&T` then that reference needs to leave scope before the array itself. In other words, the array needs to have a longer lifetime than outside pointers to its elements - otherwise, the rust compiler won't compile because it can't guarantee that the array isn't de-allocated or changed before accessing `T`. This is both a huge challenge when first starting to work with Rust, but also a really great safety. This is great for this project, because we eliminate change of dangling pointers, which can be a pain, when building complecs data-structure which a lot of moving pointers. 
 
+```
+delete?
 //hypotese
 This concept usually works great, but it has its challenges when using a memory map because it can guarantee that the nodes/structs that the pointer points to are still in memory because the page it is stored on is maybe offloaded, by the kernel/memory map. 
+```
+
 Starting this project is was the plan to let nodes refer to each other by using a `&T` when building a tree. But because of these compiler challenges mentioned above, I chose to instead go for an implementation where each node stored a byte-offset to where its children were stored the memory map. 
 
 **Reading from Memory Map**
-Sadly sometimes we can cant use rust's safety, and this is where rust looks more like C.
+Sadly sometimes we can cant use rust's safety, and this is where rust works more like C.
 ```rust
 pub(crate) unsafe fn bytes_to_type<T>(slice: &[u8]) -> &mut T {
     std::slice::from_raw_parts_mut(slice.as_ptr() as *mut T, std::mem::size_of::<T>())
@@ -97,7 +110,7 @@ pub(crate) unsafe fn bytes_to_type<T>(slice: &[u8]) -> &mut T {
 This function returns a reference to a mutable object given a reference to a `u8` array. This function is used to get a reference to a node directly on the memory map. Here we have no guarantee of we are going to get, since it just a pointer and a length that we force to become a reference to type T. I this case we don't have any other way since Memory Map only know the concept of bytes.
 
 **Error handling**
-C doesn't provide good error handling, because the programmer is expected to prevent errors from occurring in the first place. This means C is much harder and unsafe to code combined with it is very difficult to debug. 
+C doesn't provide good error handling, because the programmer is expected to prevent errors from occurring in the first place. -wiki source? This means C is much harder and unsafe to code combined with it is very difficult to debug. 
 
 High level languages like java and C# have use mechanisms such as exceptions. Rust doesn’t have exceptions. Instead, rust has two types of error handling `Result<T, E>` and `Option<T>`. Option can be seen as the same as a result but without an error object. 
 ```rust
@@ -115,8 +128,7 @@ pub(crate) fn get_u32_for_ip(v: &str) -> Option<u32> {
     Some(acc)
 }
 ```
-Both concepts are used in this function. Option is used in the form of `Some` and `None` and Result is used in `Ok(n)` and `Err(E)`. This function takes a string of 4 numbers separated by a dot `.` - e.g. `192.2.103.11` - and returns unsigned integer wrapped in an option. In this case, I use Option as a safe way to use a null-pointer. Being able to handle an error with ease is crucial when needing to deliver save code quickly. 
-
+Both concepts are used in this function above. Option is used in the form of `Some` and `None` and Result is used in `Ok(n)` and `Err(E)`. This function takes a string of 4 numbers separated by a dot `.` - e.g. `192.2.103.11` - and returns unsigned integer wrapped in an option. In this case, I use Option as a safe way to use a null-pointer. Being able to handle an error with ease is crucial when needing to deliver save code quickly. 
 
 https://en.wikibooks.org/wiki/C_Programming/Error_handling
 
@@ -124,8 +136,11 @@ https://en.wikibooks.org/wiki/C_Programming/Error_handling
 Rust does not have an official interface/abstraction for using memory maps, but there exist a few open-source libraries created by the community. 
 Rust's package management system is called cargo and use the crates as the packages. This uses a crate called `memmap` (version `0.7.0`). This library was chosen based on the fact that it had the most stars on Github. The abstraction provided by the external libraries is not extensive compared to the using the native C, meaning that the setting for the map is not as customizable. 
 
+```
+delete?
 Rust has the ability to call directly into C files, and you also have the ability to use most of the c standard library inline by using the `libc`- library/crate. This means we can access functions like `mlock` and `mlockall`. `show example`. 
 But rusts memory safety can not guarantee the result of these function so it forces us we need to use the "unsafe" keyword. Overall this means that we can use both rust functions and c functions as we please, but we can't guarantee what is going to happen.
+```
 
 https://doc.rust-lang.org/nomicon/ffi.html
 

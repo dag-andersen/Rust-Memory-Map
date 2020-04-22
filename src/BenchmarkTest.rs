@@ -42,7 +42,6 @@ pub fn create_test_data() {
     create_tree();
     create_table();
 
-    let tree_time = search_time_tree();
     let redblack_time = search_time_redblack();
     let table_time = search_time_table();
 
