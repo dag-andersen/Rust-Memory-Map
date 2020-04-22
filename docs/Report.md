@@ -65,6 +65,74 @@ So to summarize the conditions / goals
 * No need to remove or change entries after insertion. 
 * The entries should be able to be stream into the program so no way of knowing how many entries will actually go into the system
 
+# Data structures
+There are many ways of searching through key-value pairs. The data for this problem consists of ranges, which means that the choice of database type is not obvious, and depends on different factors. It depends on range-size, gap-size (between each range), payload-size pr. entry, how many keys there can exist in total, and the number of entries - and of course how complicated of an implementation you want. 
+
+if the total set of possible keys are finite. 
+
+This
+This project focuses on tree structures and simple tables table.
+
+For this section we will refer use these variables:
+```
+p = payload size in bytes
+e = number of entries
+```
+## Tables
+```
+delete?
+
+Key-value store is a data storage paradigm
+
+Each key is associated with only one value. This relationship is referred to as a key-value pair.
+https://en.wikipedia.org/wiki/Key-value_database
+https://www.aerospike.com/what-is-a-key-value-store/
+
+The general understanding is that searching in tables is quicker than most data structures because you can get the data by value directly to a specific index by using the key. Tables can be implemented in many different ways, but the main point is that you can get value associated with a specific key by only doing one lookup. 
+```
+A simple implementation of a table is to just create a full table for all IP-addresses holding a value for each IP. This obviously results in massive data duplication because a value is stored repeatedly for each key in the associated range. This can easily be improved by actually storing the value in another table and only storing a pointer to it. Now the value is only stored once, but instead, the pointer to it is duplicated for each key. 
+
+<img src="../docs/images/bachelor-04.png" alt="drawing" height="250"/>
+
+One of the downside to this is the full IP range is stored in the database even though you may only have very few entries. A solution is generally to create some kind of hashtable, where keys are hashed and points to some other data-structure (like a linked list), but this is beyond the scope of this project. 
+
+## Binary Trees
+
+To prevent having a lot of duplicated code, another option is to store each entry as a node in a tree instead. A binary tree is a tree where each nodes has on parent and up to 2 children. 
+A tree corresponding to the binary search-algorithm achieves the theoretical minimum number of key comparisons that necessary to find a value <ref til Knuth side 426>. Binary search has a search worse time complexity of O(log n), which means that we should aim for tree structure with the same time complexity.
+
+### Binary Search Tree (BST)
+BST is a type of binary tree in which the left child of a node has value less than the parent and the right child has value greater than the parent.
+
+On average, binary search trees with n nodes have O(log n) height However, in the worst case, binary search trees can have O(n) height. - wiki. This means 
+
+One of the choices you have to make is to decide if you want to store the payload next to the node itself or the node should store a pointer to payload somewhere else. 
+
+Pros for storing the payload in the node:
+- No need to spend time looking up the payload in a different file.
+- The payload is probably already cached because of it right next to the node it just accessed.
+
+Pros for storing it a separate file:
+- In terms of caching it would be more beneficial to store the payload on a different file because it would mean that the nodes would be closer to each other - meaning they, therefore, make better use of locality while searching down the tree.
+
+Another interesting point is to decide on how you want to store the IP-addresses. The simplest solution is to store the lower bound IP and the upper bound IP - each take up 32 bit - Resulting in 64-bit pr. node.
+Another approach could be to only store the lower-bound and then store the delta to the upper-bound. This is useful if you know that the ranges will be small meaning you could get away with storing it on fewer bytes than 4 (32 bit). This is only useful optimizations if you know how the ranges and gaps are distributed, but since we can't do that in this project we have just gone with the simple solution and storing the full IP address for both upper and lower bound. 
+
+### Redblack Tree
+
+An extension of the Binary Search Tree is the redblack tree. A redblack tree is a self-balancing tree structure. This prevents the tree from being imbalanced in exchange for longer build time and bigger nodes.
+Studies have shown that the redblack tree is the tree with the least performance variations.
+https://en.wikipedia.org/wiki/Binary_search_tree
+
+
+On important point to make is that it is not always beneficial to use a balanced tree. As Donald Knuth proves in *The art of computer programming, Volume 3, Sorting and searching, second edition, page 430* the search time for the balanced tree is not insanely better than a non-balanced tree on random insertion data. An unbalanced tree has a worse case search time of `O(n)`, but this is very rare and most trees are well balanced. A redblack tree has a `~Log(n)` and a BST has a `~2·log(n)` search time. Which men both data-structures has a time complexity of `O(log(n))`. This means that the increasing price of rebalancing the a redblack tree on large random data inserts, may not always be worth the lower height.
+It has been showen, by Chris Okasaki, that insertion in a redblack tree only needs to handle four cases, which makes it easy to implement for project like this. 
+
+<ref Okasaki, Chris (1999-01-01). "Red-black trees in a functional setting". Journal of Functional Programming. 9 (4): 471–477. doi:10.1017/S0956796899003494. ISSN 1469-7653. Archived from the original (PS) on 2007-09-26. Retrieved 2007-05-13.>
+<De 4 cases (5) bliver gennemgået her www.geeksforgeeks.org/red-black-tree-set-2-insert/ >
+
+# Implementation
+
 ## Why use rust?
 
 Rust is a multi-paradigm system programming language focused on memory safety, especially safe concurrency. - wiki source please
@@ -152,17 +220,11 @@ https://stackoverflow.com/questions/33985018/cannot-borrow-x-as-mutable-because-
 https://stackoverflow.com/questions/47618823/cannot-borrow-as-mutable-because-it-is-also-borrowed-as-immutable
 
 
-# Data structures
-There are many ways of searching through key-value pairs
-The data for this problem consists of ranges, which means that the choice of database type is not obvious, and depends on different factors. It depends on range-size, gap-size (between each range), payload-size pr. entry, how many keys there can exist in total, and the number of entries - and of course how complicated of an implementation you want. 
+## Design
+I this project I have gone for implementing a Binary Search Tree, a redblack tree, and a table. All three implementations have their own module in the source code and have the same interface, so they can be swapped interchangeably. All data-structures are implemented using memory-mapped files. All three implementations use a separate memory-mapped file for storing the payload/values. This memory-mapped file will be referred to as `payload_map`.
+In this implementation, I have chosen to store strings as payload, but this could be swapped out with any other datatype.
 
-This project focuses on table and tree structures.
-
-For this section we will refer use these variables:
-```
-p = payload size in bytes
-e = number of entries
-```
+Before diving deeper into the implementations, we have to look at difference between fixed data-sizes, vs dynamic data-sizes. 
 
 #### Fixed vs. dynamic data length 
 
@@ -179,72 +241,14 @@ Struct indexes are great if you know the data-object always will have the same s
 
 
 ```
+delete?
+
 On the other hand, dynamic data size means that --- Dynamic payload means that you for each entry great, since you don't waste space on padding/empty payload, but the downside is that you have to store the size of each block and in the block itself and you have to store the address the addresses payload begins instead of only storing the index to the node/struct of payload you are referring to. --- This is important because this means that the byte index always will be a bigger number than the struct offset. Therefore it is not always beneficial to use dynamically sized payload if the number of pointers is huge since the amount of space needed accumulates. --- This means that an address-pointer of 32b can only point to a max size of ~4.3 byte data ----- For this project I have chosen dynamic payload length because the payload consists of names, which can vary a lot in length. If fixed length was chosen I would either have to accept a large amount of wasted space or not allow names to be over a given length meaning I would cut of names.
 ```
 
-## Binary Trees
 
-### Binary Search Tree (BST)
-BST is a type of binary tree in which the left child of a node has value less than the parent and the right child has value greater than the parent.
-
-One of the choices you have to make is to decide if you want to store the payload next to the node itself or the node should store a pointer to payload somewhere else. 
-
-Pros for storing the payload on the node:
-- No need to spend time looking up the payload in a different file.
-- the payload is probably already cached because of it right next to the node it just accessed.
-
-Pros for storing it a separate file:
-- If the payload is a dynamic size, then the node will not have a fixed size, meaning all nodes in the whole tree would have to store bigger pointers, resulting in extra space needed for each node - as explained above.
-- In terms of caching it would be more beneficial to store the payload on a different file because it would mean that the nodes would be closer to each other - meaning they, therefore, make better use of locality while searching down the tree.
-
-Another interesting point is to decide on how you want to store the IP-addresses. The simplest solution is to store the lower bound IP and the upper bound IP - each take up 32 bit - Resulting in 64-bit pr. node.
-Another approach could be to only store the lower-bound and then store the delta to the upper-bound - this is useful if you know that the ranges will be small meaning you could get away with storing it on fewer bytes than 4 (32 bit). This is only useful optimizations if you know how the ranges and gaps are distributed, but since we can't do that in this project we have just gone with the simple solution and storing the full IP address for both upper and lower bound. 
-
-### Redblack Tree
-
-An extension of the Binary Search Tree is the redblack tree. A redblack tree is a self-balancing tree structure. This prevents the tree from being imbalanced in exchange for longer build time and bigger nodes. It was invented in 1972 by Rudolf Bayer.
-
-On important point to make is that it is not always beneficial to use a balanced tree. As Donald Knuth proves in *The art of computer programming, Volume 3, Sorting and searching, second edition, page 430* the search time for the balanced tree is not insanely better than a non-balanced tree on random insertion data. An unbalanced tree has a worse case search time of `O(n)`, but this is very rare and most trees are well balanced. A redblack tree has a `~Log(n)` and a BST has a `~2·log(n)` search time. Which men both data-structures has a time complexity of `O(log(n))`. 
-
-In 1999, Chris Okasaki showed that insertion in a redblack tree only needs to handle four cases and a because, which makes it easy to implement for project like this. 
-
-<ref Okasaki, Chris (1999-01-01). "Red-black trees in a functional setting". Journal of Functional Programming. 9 (4): 471–477. doi:10.1017/S0956796899003494. ISSN 1469-7653. Archived from the original (PS) on 2007-09-26. Retrieved 2007-05-13.>
-<De 4 cases (5) bliver gennemgået her www.geeksforgeeks.org/red-black-tree-set-2-insert/ >
-
-## Tables
-```
-delete?
-
-Key-value store is a data storage paradigm
-
-A key-value store/key-value database is a simple database that uses an associative array (also known as a dictionary or Map) as the fundamental data model. Each key is associated with only one value. This relationship is referred to as a key-value pair.
-https://en.wikipedia.org/wiki/Key-value_database
-https://www.aerospike.com/what-is-a-key-value-store/
-
-A table (or dictionary) is 
-The general understanding is that searching in tables is quicker than most data structures because you can get the data by value directly to a specific index by using the key. 
-
-
-If you want fast lookup speed tables/dictionaries are a great place to start. Tables can be implemented in many different ways, but the main point is that you can get value associated with a specific key by only doing one lookup. Tables 
-```
-A simple implementation of the table is to just create a full table for all IP-addresses holding a value for each IP. This obviously results in massive data duplication because a value is stored repeatedly for each key in the associated range. This can easily be improved by actually storing the value in another table and only storing a pointer to it. Now the value is only stored once, but instead, the pointer to it is duplicated for each key. 
-
-<img src="../docs/images/bachelor-04.png" alt="drawing" height="250"/>
-
-One of the downside to this is the full IP range is stored in the database even though you may only have very few entries. A solution is generally to create some kind of hashtable, where keys are hashed and points to some other data-structure (like a linked list), but this is beyond the scope of this project. 
-
-# Implementation Design
-I this project I have gone for implementing a Binary Search Tree, a redblack tree, and a table. All three implementations have their own module in the source code and have the same interface, so they can be swapped interchangeably. All data-structures are implemented using memory-mapped files. All three implementations use a separate memory-mapped file for storing the payload/data. This memory-mapped file will be referred to as `payload_map`.
-In this implementation, I have chosen to store strings as payload, but this could be swapped out with any other datatype.
-
-Lets declare some variables:
-```
-p = payload size in bytes
-e = number of entries
-```
-
-## Payload Map
-This memory-mapped file contains all entries' value and the length of the values in bytes. A value is retrieved from the table by giving it the byte index of the header of the value. Each lookup runs in constant time and therefore has a time complexity of *O(1)*. 
+### Payload Map
+This memory-mapped file contains all entries' value and the length of the values in bytes. A value is retrieved from the map by giving it the byte index of the header of the value. Each lookup runs in constant time and therefore has a time complexity of *O(1)*. 
 
 Each value has a header of one byte, which is used to store the length of the data. The length is necessary because we don't know how far we need to read to get the value.
 The length of the payload is stored on 1 byte, which means that the payload can be at most be `2^8 = 256` bytes long. This is just a design choice, but could easily be extended by changing all headers would need to be 2 bytes long instead. 
@@ -254,14 +258,7 @@ On this picture we can see how `SKAT` would be stored.
 <img src="../docs/images/bachelor-03.png" alt="drawing" width="600"/>
 
 **Space**
-The space needed for this file can be estimated from the average payload size and the number of entries: `(avg(p) + 1) · e`. The `+1` is the header-size of one byte.
-If we have 150.000.000 entries with 255 bytes each, we can calculate the largest possible file to be 38.4 gb
-
-```
-what is this - delete?
-dynamic payload
-(34.5-17.3)/(150.000.000/1000/1000/1000) = 114 bytes is the breakpointet.
-```
+The space needed for this file can be calculated from the max payload size and the number of entries: `(255 + 1) · n`, where `n` is the number of entries. The `+1` is the header-size of one byte. If we have 150.000.000 entries with 255 bytes each, we can calculate the largest possible file to be 38.4 GB. We know that average 
 
 ## BST & Redblack Tree
 
@@ -280,7 +277,7 @@ pub struct Node {
     pub max_ip: u32,
     pub left: u32,
     pub right: u32,
-    pub name: u64,
+    pub payload_ptr: u64,
 }</pre></td><td><pre>
 pub struct Node {
     pub red: bool,
@@ -289,13 +286,13 @@ pub struct Node {
     pub left: u32,
     pub right: u32,
     pub parent: u32,
-    pub name: u64,
+    pub payload_ptr: u64,
 }</pre></td></tr></table>
 
-`min_ip` being the lower-bound, `max_ip` being the higher-bound, `left` being the left child, `right` being the right child, `parent` being the parent node and `name` being a pointer to the `payload_map`, and `red` is the indicator of the node being red or black.
+>`min_ip` being the lower-bound IP, `max_ip` being the higher-bound IP, `left` being the left child, `right` being the right child, `parent` being the parent node and `payload_ptr` being a pointer to the `payload_map`, and `red` is the indicator of the node being red or black.
 
 **Insertion**
-Each time an entry is added to the tree a new node will be appended at the end. Because all nodes have the same size, we can point to their index instead of their absolute address. The only difference between the two trees is we store the root-node in the first struct in the redblack tree.
+Each time an entry is added to the tree a new node will be appended at the end of the memory mapped file. Because all nodes have the same size, we can point to their node-offset instead of their byte-offset. The only difference between the two trees is we store the root-node in the first struct in the redblack tree.
 
 <img src="../docs/images/bachelor-06.png" alt="drawing" width="600"/>
 
@@ -306,7 +303,7 @@ Here we have a simple example of what it would look like if these entries were i
 0.0.0.0 0.0.0.2 Siteimprove
 ```
 ![](../docs/images/bachelor-08.png)
-Here we notice that the BST is not balanced and has Node 0 as root and Redblack is balanced and has Node 2 as root. We can also see that 0 valued reference to another node (left,right,parent) is treated as a null-pointer.
+Here we notice that the BST is not balanced and has Node 0 as root and Redblack is balanced and has Node 2 as root. Reference to another node (left,right,parent) with value 0 is treated as a null-pointer.
 
 **Space**
 For each field in the struct ordered by declaration order:
