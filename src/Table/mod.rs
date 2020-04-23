@@ -11,7 +11,7 @@ pub fn insert_entry(ip_table: &mut MmapMut, index: usize, entry: Entry, courser:
 }
 
 pub fn gen_ip_table() -> MmapMut { gen_ip_table_from_path(TABLE_PATH) }
-pub fn gen_ip_table_from_path(path: &str) -> MmapMut { Utils::get_memmap(path, 10_000_000_000) }
+pub fn gen_ip_table_from_path(path: &str) -> MmapMut { Utils::get_memmap(path, 40_000_000_000) }
 
 pub fn find_value(ip: u32) -> Option<String> {
     let name_table = PayloadMap::gen_payload_map_from_path(TABLE_PAYLOAD);

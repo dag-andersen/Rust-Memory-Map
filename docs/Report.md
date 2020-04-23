@@ -633,11 +633,11 @@ All tests run with script found on Appendix X.
 
 
 _den her er ikke spread_
-| 1gb mem       | 1k            | 100k      | 10 mil    |
-| ------------- |--------------:| ---------:|----------:|
-| BST           | 42.594 %      | 51.339 %  | 46.182 %  |
-| Redblack      | 48.678 %      | 53.470 %  | 50.712 %  |
-| Table         | 45.949 %      | 52.400 %  | 10.399 %  |
+| 1gb mem       | 1k            | 100k      | 10 mil    | 150 mil           |
+| ------------- |--------------:| ---------:|----------:|------------------:|
+| BST           | 42.594 %      | 51.339 %  | 46.182 %  | 18.385 %          |
+| Redblack      | 48.678 %      | 53.470 %  | 50.712 %  | not calcualted yet|
+| Table         | 45.949 %      | 52.400 %  | 10.399 %  | 10.545 %          |
 
 Starting with Dionysos, as expected the cache the data is as expected. The table has the highest 
 
