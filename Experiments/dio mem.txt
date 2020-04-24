@@ -1,0 +1,13 @@
+daga@dionysos:/mnt/nvme/daga$ free --mega --total
+              total        used        free      shared  buff/cache   available
+Mem:         131711        9234        1273           0      121203      120378
+Swap:           999         297         701
+Total:       132710        9531        1975
+
+før og efter full tree build 
+
+daga@dionysos:/mnt/nvme/daga$ free --mega --total
+              total        used        free      shared  buff/cache   available
+Mem:         131711        9184       14766           0      107759      120427
+Swap:           999         333         666
+Total:       132710        9518       15433
