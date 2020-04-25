@@ -12,17 +12,17 @@ use memmap::MmapMut;
 
 #[test]
 fn find_hardcoded_node_in_tree() {
-    find_hardcoded_node(BST::load_to_tree, BST::find_value)
+    find_hardcoded_node(BST::build, BST::find_value)
 }
 
 #[test]
 fn find_hardcoded_node_in_redblack() {
-    find_hardcoded_node(RedBlack::load_to_redblack,RedBlack::find_value)
+    find_hardcoded_node(RedBlack::build, RedBlack::find_value)
 }
 
 #[test]
 fn find_hardcoded_node_in_table() {
-    find_hardcoded_node(Table::load_to_table,Table::find_value)
+    find_hardcoded_node(Table::build, Table::find_value)
 }
 
 fn find_hardcoded_node(loader: fn(&str), finder: fn(u32) -> Option<String>) {
@@ -42,22 +42,22 @@ fn find_hardcoded_node(loader: fn(&str), finder: fn(u32) -> Option<String>) {
 
 #[test]
 fn find_random_gen_requests_in_tree_in_hardcoded_data() {
-    find_random_gen_request_in_hardcoded_data(BST::load_to_tree, BST::find_value);
+    find_random_gen_request_in_hardcoded_data(BST::build, BST::find_value);
 }
 
 #[test]
 fn find_random_gen_requests_in_redblack_in_hardcoded_data() {
-    find_random_gen_request_in_hardcoded_data(RedBlack::load_to_redblack,RedBlack::find_value);
+    find_random_gen_request_in_hardcoded_data(RedBlack::build, RedBlack::find_value);
 }
 
 #[test]
 fn find_random_gen_requests_in_table_in_hardcoded_data() {
-    find_random_gen_request_in_hardcoded_data(Table::load_to_table,Table::find_value);
+    find_random_gen_request_in_hardcoded_data(Table::build, Table::find_value);
 }
 
-fn find_random_gen_request_in_hardcoded_data(loader: fn(&str), finder: fn(u32) -> Option<String>) {
+fn find_random_gen_request_in_hardcoded_data(builder: fn(&str), finder: fn(u32) -> Option<String>) {
     let scr = test_set_5;
-    loader(scr);
+    builder(scr);
     let requests = FileGenerator::generate_lookup_testdata(scr,50);
 
     for (ip, name) in requests {
@@ -69,22 +69,21 @@ fn find_random_gen_request_in_hardcoded_data(loader: fn(&str), finder: fn(u32) -
 }
 
 #[test]
-fn build_and_search_table() {
-    build_and_search_datastructure(TABLE_PAYLOAD, Table::load_to_table, Table::gen_ip_table, Table::find_value_on_map)
+fn build_and_search_table_with_random_data() {
+    build_and_search_datastructure_with_random_data(TABLE_PAYLOAD, Table::build, Table::gen_ip_table, Table::find_value_on_map)
 }
 
 #[test]
-fn build_and_search_BST() {
-    build_and_search_datastructure(TREE_PAYLOAD, BST::load_to_tree,BST::gen_tree_map, BST::find_value_on_map)
+fn build_and_search_BST_with_random_data() {
+    build_and_search_datastructure_with_random_data(TREE_PAYLOAD, BST::build, BST::gen_tree_map, BST::find_value_on_map)
 }
 
 #[test]
-fn build_and_search_redblack() {
-    build_and_search_datastructure(REDBLACK_PAYLOAD,  RedBlack::load_to_redblack,RedBlack::gen_tree_map, RedBlack::find_value_on_map)
+fn build_and_search_redblack_with_random_data() {
+    build_and_search_datastructure_with_random_data(REDBLACK_PAYLOAD, RedBlack::build, RedBlack::gen_tree_map, RedBlack::find_value_on_map)
 }
 
-fn build_and_search_datastructure(payload_path: &str, builder: fn(&str), structure: fn() -> MmapMut, finder: fn(u32, &MmapMut, &MmapMut) -> Option<String>) {
-    println!("## search_time_BST_vs_table");
+fn build_and_search_datastructure_with_random_data(payload_path: &str, builder: fn(&str), structure: fn() -> MmapMut, finder: fn(u32, &MmapMut, &MmapMut) -> Option<String>) {
 
     pub const n:                    u32 = 1500;
     const range:             Range<u32> = 10..18;

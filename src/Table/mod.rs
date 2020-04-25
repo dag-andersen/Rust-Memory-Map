@@ -1,5 +1,5 @@
 use core::fmt;
-use crate::{Entry, Utils, TABLE_PATH, PayloadMap, TABLE_PAYLOAD, build_to_data_structure};
+use crate::{Entry, Utils, TABLE_PATH, PayloadMap, TABLE_PAYLOAD, build_data_structure};
 use memmap::MmapMut;
 use std::fs;
 use crate::Table;
@@ -7,13 +7,13 @@ use crate::Table;
 mod IpTable;
 
 pub fn gen_ip_table() -> MmapMut { gen_ip_table_from_path(TABLE_PATH) }
-
 pub fn gen_ip_table_from_path(path: &str) -> MmapMut { Utils::get_memmap(path, 10_000_000_000) }
-pub fn load_to_table(input: &str) { load_to_table_on_path(input, TABLE_PATH) }
 
-fn load_to_table_on_path(input: &str, ip_table: &str) {
+pub fn build(input: &str) { build_to_path(input, TABLE_PATH) }
+
+fn build_to_path(input: &str, ip_table: &str) {
     fs::remove_file(ip_table);
-    build_to_data_structure(input, TABLE_PAYLOAD, Table::gen_ip_table_from_path(ip_table), Table::insert_entry)
+    build_data_structure(input, TABLE_PAYLOAD, Table::gen_ip_table_from_path(ip_table), Table::insert_entry)
 }
 
 pub fn insert_entry(ip_table: &mut MmapMut, index: usize, entry: Entry, courser: u64) {

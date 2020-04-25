@@ -79,7 +79,7 @@ fn main() {
     create_test_data();
 }
 
-fn build_to_data_structure(input: &str, payload_path: &str, structure: MmapMut, inserter: fn(&mut MmapMut, usize, Entry, u64)) {
+fn build_data_structure(input: &str, payload_path: &str, structure: MmapMut, inserter: fn(&mut MmapMut, usize, Entry, u64)) {
 
     fs::remove_file(payload_path);
     let mut structure = structure;

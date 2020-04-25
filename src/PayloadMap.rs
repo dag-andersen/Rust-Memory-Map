@@ -26,7 +26,7 @@ pub fn get_payload(mmap: &MmapMut, offset: u64) -> Option<String> {
 }
 
 #[test]
-fn place_and_get_names() {
+fn place_and_get_payload() {
     let scr = thisFileWillBeDeleted;
 
     let mut mmap = Utils::get_memmap(scr, 1_000);

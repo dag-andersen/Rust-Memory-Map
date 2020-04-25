@@ -35,7 +35,7 @@ fn print_node_to_file(mmap: &MmapMut, name_table: &MmapMut, node: &Node, n: usiz
 fn print_tree_and_read_1() {
     let src = thisFileWillBeDeleted;
     fs::remove_file(REDBLACK_PATH);
-    super::load_to_redblack(test_set_1);
+    super::build(test_set_1);
     print_tree_to_file(src);
     let mut iter = Utils::get_buffer(src).lines().map(|x| x.unwrap() );
     assert_eq!(iter.next(), Some("------X christoffersen".to_string()));
@@ -51,7 +51,7 @@ fn print_tree_and_read_1() {
 fn print_tree_and_read_2() {
     let src = thisFileWillBeDeleted;
     fs::remove_file(REDBLACK_PATH);
-    super::load_to_redblack(test_set_3);
+    super::build(test_set_3);
     print_tree_to_file(src);
     let mut iter = Utils::get_buffer(src).lines().map(|x| x.unwrap() );
     assert_eq!(iter.next(), Some("------X christoffersen".to_string()));
@@ -67,7 +67,7 @@ fn print_tree_and_read_2() {
 #[ignore]
 fn print_tree() {
     fs::remove_file(REDBLACK_PATH);
-    super::load_to_redblack(test_set_4);
+    super::build(test_set_4);
     print_tree_to_file(REDBLACK_PRINT_PATH);
     fs::remove_file(REDBLACK_PATH);
 }

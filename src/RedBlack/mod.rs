@@ -1,5 +1,5 @@
 use core::fmt;
-use crate::{Entry, Utils, REDBLACK_PATH, PayloadMap, Table, REDBLACK_PAYLOAD, build_to_data_structure};
+use crate::{Entry, Utils, REDBLACK_PATH, PayloadMap, Table, REDBLACK_PAYLOAD, build_data_structure};
 use memmap::MmapMut;
 use crate::RedBlack::Tree::root_index;
 use std::fs;
@@ -17,12 +17,12 @@ pub fn load_root_node(map_path: &str) { Tree::load_root_node(map_path) }
 pub fn gen_tree_map() -> MmapMut { gen_tree_map_on_path(REDBLACK_PATH) }
 pub fn gen_tree_map_on_path(path: &str) -> MmapMut { Utils::get_memmap(path, 7_500_000_000) }
 
-pub fn load_to_redblack(input: &str) { load_to_redblacktree_on_path(input, REDBLACK_PATH) }
+pub fn build(input: &str) { build_to_path(input, REDBLACK_PATH) }
 
-pub fn load_to_redblacktree_on_path(input: &str, map_path: &str) {
+fn build_to_path(input: &str, map_path: &str) {
     reset_root_index();
     fs::remove_file(map_path);
-    build_to_data_structure(input, REDBLACK_PAYLOAD, gen_tree_map_on_path(map_path), insert_entry);
+    build_data_structure(input, REDBLACK_PAYLOAD, gen_tree_map_on_path(map_path), insert_entry);
     save_root_node(map_path);
 }
 
