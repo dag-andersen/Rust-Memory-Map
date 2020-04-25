@@ -60,7 +60,7 @@ use std::io::prelude::*;
 use rand::distributions::Alphanumeric;
 use rand::prelude::ThreadRng;
 use std::iter::{Map, FilterMap, Filter, FromIterator, Enumerate};
-use crate::BenchmarkTest::create_test_data;
+use crate::BenchmarkTest::build_and_search_data_structures;
 
 pub struct Entry {
     pub min_ip: u32,
@@ -76,7 +76,7 @@ impl fmt::Display for Entry {
 
 fn main() {
     Utils::make_needed_folders();
-    create_test_data();
+    build_and_search_data_structures();
 }
 
 fn build_data_structure(input: &str, payload_path: &str, structure: MmapMut, inserter: fn(&mut MmapMut, usize, Entry, u64)) {
@@ -88,18 +88,16 @@ fn build_data_structure(input: &str, payload_path: &str, structure: MmapMut, ins
     let ip_regex = Regex::new(r"(\d{1,3}[.]){3}(\d{1,3})").unwrap();
     let payload_regex = Regex::new(r"\b(([A-z]|\d)+\s?)+\b").unwrap();
 
-    let mut courser: u64 = 0;
-
     let string: String = (0..98).map(|_| '-').collect();
     println!("|{}|",string);
 
+    let mut courser: u64 = 0;
 
     for (i, line) in Utils::get_buffer(input).lines().enumerate() {
         if line.is_err() { continue }
         let l = line.unwrap();
         if l.is_empty() { continue; }
 
-        //if i % 50_000 == 0 { print!("", i)}
         if i % (BenchmarkTest::n as usize/100 + 1) == 0 { print!("-"); io::stdout().flush(); }
 
         let entry = Utils::get_entry_for_line(&ip_regex, &payload_regex, &l);

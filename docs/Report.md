@@ -380,19 +380,55 @@ space: ip_table: 2^32 * 64 = 34.4 gb
 **Handling IpV6**
 In practice this implementation won't work with IpV6.
 IpV6 is 128 bit instead of IpV4's 32 bit.
-The amount of possible ips is `2^128 = 3,40e38`, and if all have to store a `u32` it result in a file a `3,40e38*32/8/1000/1000 = 1.3e30 gb` file.
+The amount of possible ips is `2^128 = 3,40e38`, and if all have to store a `u32` it result in a file a `3,40e38*32/8/1000/1000 = 1.3·10^d30 gb` file.
 
-# Testing
+# Testing, Debugging, and Profiling
 
 To ensure the data structures functioned correctly almost all functions in the code has unit-tests. 
 An important node is that the tests has to be run with the flag `--test-threads 1`, to make sure they run sequential, because many functions use the same file, and this eliminates risk race-conditions. 
 
-The tests can be categorized into unit tests and benchmarking tests.
-* **Unit tests:** Most files and functions are tested using unit tests. All unit tests can be found in source-code in the same file as the function they are testing.
-* **Integration tests** has been run on a 2 gb ram droplet, a 8 gb ram droplet, and on a 16gb ram MacBook pro 2016. Detailed specs can found in appendix X. The automated benchmark test script can be found in appendix X, but the overall structure is explained in this section. 
+The tests can be categorized into unit tests and integration tests.
+
+
+### Unit tests
+
+Most files and functions are tested using unit tests. All unit tests can be found in source-code in the same file as the function they are testing. Below I have chosen to highlight some of the more speciel tests. 
+
+**Verifying tree structure**
+
+The unit tests also include test that check that the tree was build was built correctly. Both the BST and redblack tree can be printed to standard-out or a file, and both have a test to verify that the tree is printed correctly. 
+
+Underneath we see the printout to the left and the abstraction to the right of a redblack tree, Where `O` is a black node and `X` is a red node. These tests are on fixed data set (meaning it is not random generated), which means we can check if every single line matches with what we expect. The testdata for generating this can be found in appendix X.
+
+<table><tr><td><pre>
+------X Huawei
+---O Samsung
+------X Google
+O Siteimprove
+------X PwC
+---O SKAT
+------X Apple
+
+</pre>
+</td><td><pre>
+
+<img src="../docs/images/bachelor-07.png" alt="drawing" width="400"/>
+</table>
+
+The method above works great on small data-sets, but i doesn't scale, so i have added a test, that checks that the redblack tree is build correctly. The function can be seen below.
+
+```rust
+fn is_tree_corrupt(mmap: &MmapMut, parent_red: bool, node: &Node) -> bool {
+    if parent_red == true && node.red == true { return true }
+    let right_is_corrupt = node.right != 0 && is_tree_corrupt(mmap, node.red, NodeToMem::get_node(&mmap, node.right as usize));
+    let left_is_corrupt  = node.left  != 0 && is_tree_corrupt(mmap, node.red, NodeToMem::get_node(&mmap, node.left  as usize));
+    return right_is_corrupt || left_is_corrupt
+}
+```
+This function traveres the redblack tree and checks if a child and its parent is red, which is illegal state, and should have triggered a rebalance. In the source code, a positive and negative test is performed on 50.000 random inserted elements, to ensure that the tree redblack tree was build correctly. This function will return `true` if the tree is corrupted and `false` otherwise. 
 
 ### Integration tests 
-All Benchmark tests go through a setup, build, and lookup phase. Since all three data-structures has the same interface, they can all be tested by using exactly they same functions. 
+The Integration tests go through a setup, build, and lookup phase. Since all three data-structures has the same interface, they can all be tested by using exactly the same functions. 
 
 **Setup - Generating test files**
 This first phase generates lines of 2 IP addresses and 1 text string (e.g.: `125.74.3.0 125.74.3.10 Siteimprove`) and writes them to a file. All lines are shuffled by using the Unix command `shuf`. 
@@ -405,14 +441,8 @@ The program iterate over each line reading them one by one with regex. Both the 
 **Lookup**
 Testing lookup speed is done by creating some IP-requests and running them on the data-structure. The random requests are collected by iterating over the shuffled list of entries and picking every n'th entry. For each entry, a random IP is picked between the upper and lower bound. All the chosen entries are then shuffled again. The actual searching is done by looping over the chosen random IPs, and sequentially searching through the data structure and checks that it returns the correct payload. When finished it will print the time it took to do all the lookups. This number is then used to calculate the average lookup time. 
 
-### Cache tests
-Special cache miss-tests are performed to track how the cache may impact the performance of data structure. For testing the cache this I used Linux command `perf stat -e task-clock,cycles,instructions,cache-references,cache-misses [input]` on the droplets. Between each step they cache is cleared by using the command `sync; echo 3 > /proc/sys/vm/drop_caches`, to make sure we start from a cold cache and each test is not affected by the previous. 
-
-### Test data
-The full IP-range is 2^32 = ~4.3mil and the given number of ranges is 150.000.000. This means that there is on average a new range every 28th IP. Since there is no information on how these are distributed, these test we will assume they are relatively evenly distributed over the full range of IPv4. Evenly distributing the ranges would suggest the worst-case scenario for the table, because the entries would be spread over more pages, than if all entries were small and next to each other.  
-
-Each range's size is a random number between 10-18, and the padding/gap between each range is also a random number between 10-18. The random aspect is added to make it more realistic, instead of having equal size ranges with an equal gap between them.
-<For testing purposes the payload is always 2 chars. This is mainly duo to generating random strings being a very expensive procedure.>
+### Debugging
+Debugging the system was mostly done with printlines and by stepping through the code with a debugger. It can be pretty difficult to visualize how exactly each byte is placed in memory maps. The method I used to see it was to print the memory map in bytes. I used this statement `println!("{:?}", &name_table[0..100]);`, which prints out each byte in the range of 0 to 100 of the memory-mapped file: `[0,0,0,255,90,0 ... ]`. This way I can print the map before and after each operation and compare them, and check if it works as intended. 
 
 ### Profiling 
 
@@ -441,31 +471,6 @@ Another interesting finding was that rust only optimized to tail-end recursion w
 <img src="../docs/images/profiler/release.png" alt="drawing" width="45%"/> <img src="../docs/images/profiler/nonrelease.png" alt="drawing" width="45%"/>
 
 
-### Debugging
-Debugging the system was mostly done with printlines and by stepping through the code with a debugger. It can be pretty difficult to visualize how exactly each byte is placed in memory maps. The method I used to see it was to print the memory map in bytes. I used this statement `println!("{:?}", &name_table[0..100]);`, which prints out each byte in the range of 0 to 100 of the memory-mapped file: `[0,0,0,255,90,0 ... ]`. This way I can print the map before and after each operation and compare them, and check if it works as intended. 
-
-**Verifying tree structure**
-It has also been used to check if the tree was structured correctly. Both the BST and redblack tree can be printed to standard-out or a file, and a test to verify that the tree is printed correctly. 
-
-Underneath we see the printout to the left and the abstraction to the right: 
-
-<table><tr><td><pre>
-------X Huawei
----O Samsung
-------X Google
-O Siteimprove
-------X PwC
----O SKAT
-------X Apple
-
-</pre>
-</td><td><pre>
-
-<img src="../docs/images/bachelor-07.png" alt="drawing" width="400"/>
-</table>
-
-Where `O` is a black node and `X` is a red node. The testdata for generating this can be found in appendix X.
-
 ---
 
 
@@ -479,6 +484,21 @@ All tests has been ran at least 3 time, so limit the amount of random divination
 ```
 In the previous sections, we have explained the three data-structures, table, BST, and redblack tree. To compare these data-structures the project went through various experiments. 
 ```
+
+```
+delete?
+has been run on a 2 gb ram droplet, a 8 gb ram droplet, and on a 16gb ram MacBook pro 2016. Detailed specs can found in appendix X. The automated benchmark test script can be found in appendix X, but the overall structure is explained in this section. 
+```
+
+### Test data
+The full IP-range is 2^32 = ~4.3mil and the given number of ranges is 150.000.000. This means that there is on average a new range every 28th IP. Since there is no information on how these are distributed, these test we will assume they are relatively evenly distributed over the full range of IPv4. Evenly distributing the ranges would suggest the worst-case scenario for the table, because the entries would be spread over more pages, than if all entries were small and next to each other.  
+
+Each range's size is a random number between 10-18, and the padding/gap between each range is also a random number between 10-18. The random aspect is added to make it more realistic, instead of having equal size ranges with an equal gap between them.
+<For testing purposes the payload is always 2 chars. This is mainly duo to generating random strings being a very expensive procedure.>
+
+### Cache tests
+Special cache miss-tests are performed to track how the cache may impact the performance of data structure. For testing the cache this I used Linux command `perf stat -e task-clock,cycles,instructions,cache-references,cache-misses [input]` on the droplets. Between each step they cache is cleared by using the command `sync; echo 3 > /proc/sys/vm/drop_caches`, to make sure we start from a cold cache and each test is not affected by the previous. 
+
 
 
 ## Machines:

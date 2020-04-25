@@ -62,12 +62,3 @@ fn print_tree_and_read_2() {
     fs::remove_file(src);
     fs::remove_file(REDBLACK_PATH);
 }
-
-#[test]
-#[ignore]
-fn print_tree() {
-    fs::remove_file(REDBLACK_PATH);
-    super::build(test_set_4);
-    print_tree_to_file(REDBLACK_PRINT_PATH);
-    fs::remove_file(REDBLACK_PATH);
-}

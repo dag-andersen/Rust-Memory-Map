@@ -70,20 +70,20 @@ fn find_random_gen_request_in_hardcoded_data(builder: fn(&str), finder: fn(u32) 
 
 #[test]
 fn build_and_search_table_with_random_data() {
-    build_and_search_datastructure_with_random_data(TABLE_PAYLOAD, Table::build, Table::gen_ip_table, Table::find_value_on_map)
+    build_and_search_data_structure_with_random_data(TABLE_PAYLOAD, Table::build, Table::gen_ip_table, Table::find_value_on_map)
 }
 
 #[test]
 fn build_and_search_BST_with_random_data() {
-    build_and_search_datastructure_with_random_data(TREE_PAYLOAD, BST::build, BST::gen_tree_map, BST::find_value_on_map)
+    build_and_search_data_structure_with_random_data(TREE_PAYLOAD, BST::build, BST::gen_tree_map, BST::find_value_on_map)
 }
 
 #[test]
 fn build_and_search_redblack_with_random_data() {
-    build_and_search_datastructure_with_random_data(REDBLACK_PAYLOAD, RedBlack::build, RedBlack::gen_tree_map, RedBlack::find_value_on_map)
+    build_and_search_data_structure_with_random_data(REDBLACK_PAYLOAD, RedBlack::build, RedBlack::gen_tree_map, RedBlack::find_value_on_map)
 }
 
-fn build_and_search_datastructure_with_random_data(payload_path: &str, builder: fn(&str), structure: fn() -> MmapMut, finder: fn(u32, &MmapMut, &MmapMut) -> Option<String>) {
+fn build_and_search_data_structure_with_random_data(payload_path: &str, builder: fn(&str), structure: fn() -> MmapMut, finder: fn(u32, &MmapMut, &MmapMut) -> Option<String>) {
 
     pub const n:                    u32 = 1500;
     const range:             Range<u32> = 10..18;
@@ -96,11 +96,12 @@ fn build_and_search_datastructure_with_random_data(payload_path: &str, builder: 
     generate_source_file_shuffled(src, n, range, padding, nameLength);
     println!("Benchmark input: n: {}, range: {:#?}, padding: {:#?}, payload_size: {}, gap: {}\n\n", &n, &range, &padding, &nameLength, &gap);
 
+    builder(src);
+
     let requests = FileGenerator::generate_lookup_testdata(src, gap);
     let length = requests.len();
     println!("#{} requests created", length);
 
-    builder(src);
     let data_structure = structure();
     let payload_table = PayloadMap::gen_payload_map_from_path(payload_path);
 

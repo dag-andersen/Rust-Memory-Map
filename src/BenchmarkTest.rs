@@ -25,7 +25,7 @@ pub const nameLength:              usize = 1;
 pub const gap:                     usize = 1000;
 pub const shuffle_in_momory:        bool = false;
 
-pub fn create_test_data() {
+pub fn build_and_search_data_structures() {
     fs::remove_file(input_data);
     fs::remove_file(input_data_shuffled);
 

@@ -7,7 +7,7 @@ use crate::Table;
 mod IpTable;
 
 pub fn gen_ip_table() -> MmapMut { gen_ip_table_from_path(TABLE_PATH) }
-pub fn gen_ip_table_from_path(path: &str) -> MmapMut { Utils::get_memmap(path, 10_000_000_000) }
+pub fn gen_ip_table_from_path(path: &str) -> MmapMut { Utils::get_memmap(path, 5_000_000_000) }
 
 pub fn build(input: &str) { build_to_path(input, TABLE_PATH) }
 

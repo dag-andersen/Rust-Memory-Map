@@ -1,4 +1,4 @@
-use crate::{PayloadMap, Entry, RedBlack, REDBLACK_PATH, Utils, usizeSize, thisFileWillBeDeleted, REDBLACK_PAYLOAD};
+use crate::{PayloadMap, Entry, RedBlack, REDBLACK_PATH, Utils, usizeSize, thisFileWillBeDeleted, REDBLACK_PAYLOAD, test_set_5};
 use memmap::MmapMut;
 use crate::RedBlack::{Node, NODE_SIZE, NodeToMem};
 use std::ops::Deref;
@@ -320,4 +320,39 @@ fn insert_node_random_order_and_find_it() {
 
     fs::remove_file(REDBLACK_PATH);
     fs::remove_file(REDBLACK_PAYLOAD);
+}
+
+#[test]
+fn tree_is_correct() {
+    let scr = test_set_5;
+    super::build(scr);
+
+    let mut mmap = super::gen_tree_map();
+    let mut root = NodeToMem::get_node(&mmap, unsafe { root_index });
+    assert!(!is_tree_corrupt(&mmap, root.red, root));
+}
+
+#[test]
+fn tree_is_corrupt() {
+    let scr = test_set_5;
+    super::build(scr);
+
+    let mut mmap = super::gen_tree_map();
+    NodeToMem::get_node(&mmap, 1).red = true;
+    NodeToMem::get_node(&mmap, 2).red = true;
+    NodeToMem::get_node(&mmap, 3).red = true;
+    NodeToMem::get_node(&mmap, 4).red = true;
+    NodeToMem::get_node(&mmap, 5).red = true;
+    mmap.flush();
+
+    let mut mmap = super::gen_tree_map();
+    let mut root = NodeToMem::get_node(&mmap, unsafe { root_index });
+    assert!(is_tree_corrupt(&mmap, root.red, root));
+}
+
+fn is_tree_corrupt(mmap: &MmapMut, parent_red: bool, node: &Node) -> bool {
+    if parent_red == true && node.red == true { return true }
+    let right_is_corrupt = node.right != 0 && is_tree_corrupt(mmap, node.red, NodeToMem::get_node(&mmap, node.right as usize));
+    let left_is_corrupt  = node.left  != 0 && is_tree_corrupt(mmap, node.red, NodeToMem::get_node(&mmap, node.left  as usize));
+    return right_is_corrupt || left_is_corrupt
 }
