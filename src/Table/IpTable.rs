@@ -26,7 +26,7 @@ fn place_entry_and_get_payload() {
     fs::remove_file(TABLE_PATH);
     fs::remove_file(TABLE_PAYLOAD);
 
-    let mut ip_table = super::gen_ip_table();
+    let mut ip_table = super::gen_ip_table_small();
 
     let value = 5;
 

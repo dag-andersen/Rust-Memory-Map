@@ -44,7 +44,7 @@ mod RedBlack;
 mod Table;
 mod IntegrationTests;
 mod BenchmarkTest;
-mod BenchmarkTests_Separate;
+//mod BenchmarkTests_Separate;
 mod Utils;
 mod PayloadMap;
 
@@ -60,7 +60,11 @@ use std::io::prelude::*;
 use rand::distributions::Alphanumeric;
 use rand::prelude::ThreadRng;
 use std::iter::{Map, FilterMap, Filter, FromIterator, Enumerate};
-use crate::BenchmarkTest::build_and_search_data_structures;
+use crate::BenchmarkTest::{build_and_search_data_structures, input_data_shuffled, input_data, shuffle_in_momory, range, create_table, shuffle_file, create_redblack, create_BST, search_time_BST, search_time_redblack, search_time_table};
+use clap::{Arg, App, SubCommand};
+use std::process::Command;
+use std::thread::sleep;
+use core::time;
 
 pub struct Entry {
     pub min_ip: u32,
@@ -73,6 +77,8 @@ impl fmt::Display for Entry {
         write!(f, "{:p}, n: {}, min: {}, max: {}", &self, self.payload, self.min_ip, self.max_ip)
     }
 }
+
+pub static mut number_of_entries: u32 = 150_000_000;
 
 fn main() {
     Utils::make_needed_folders();
@@ -93,12 +99,14 @@ fn build_data_structure(input: &str, payload_path: &str, structure: MmapMut, ins
 
     let mut courser: u64 = 0;
 
+    let n = unsafe { number_of_entries };
+
     for (i, line) in Utils::get_buffer(input).lines().enumerate() {
         if line.is_err() { continue }
         let l = line.unwrap();
         if l.is_empty() { continue; }
 
-        if i % (BenchmarkTest::n as usize/100 + 1) == 0 { print!("-"); io::stdout().flush(); }
+        if i % (n as usize/100 + 1) == 0 { print!("-"); io::stdout().flush(); }
 
         let entry = Utils::get_entry_for_line(&ip_regex, &payload_regex, &l);
         if entry.is_none() { continue }

@@ -10,7 +10,7 @@ use std::thread::sleep;
 use core::time;
 use std::process::Command;
 use std::time::SystemTime;
-use crate::BenchmarkTest::{search_time, padding, range, input_data, n, input_data_shuffled, nameLength, gap};
+use crate::BenchmarkTest::{search_time, range, input_data, n, input_data_shuffled, payload_lenght, gap};
 
 const benchmark_output:        &str = "testdata/out/speed/benchmark.txt";
 
@@ -23,10 +23,10 @@ pub fn create_test_data() {
 
     let file = OpenOptions::new().write(true).create(true).append(true).open(benchmark_output).unwrap();
     let mut line_writer = LineWriter::new(file);
-    line_writer.write_all(format!("Benchmark input: n: {}, range: {:#?}, padding: {:#?}, payload_size: {}, gap: {} \n\n", &n, &range, &padding, &nameLength, &gap).as_bytes());
+    line_writer.write_all(format!("Benchmark input: n: {}, range: {:#?}, payload_size: {}, gap: {} \n\n", &n, &range, &payload_lenght, &gap).as_bytes());
 
     println!("## create_test_data");
-    FileGenerator::generate_source_file(input_data, n, range, padding, nameLength);
+    FileGenerator::generate_source_file_equal_spread(input_data, n, range, payload_lenght);
 }
 
 #[test]
@@ -41,7 +41,7 @@ fn create_table() {
 
 #[test]
 #[ignore]
-fn create_tree() {
+fn create_BST() {
     println!("\n## load_to_tree");
     let mut sw = Stopwatch::start_new();
     BST::build(input_data_shuffled);

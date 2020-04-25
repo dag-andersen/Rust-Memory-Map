@@ -11,26 +11,7 @@ use std::{fs, io};
 use crate::{thisFileWillBeDeleted, Utils, Entry, test_set_6, TREE_PATH, BST, test_set_5, TABLE_PATH};
 use regex::bytes::Regex;
 
-fn generate_random_ip_firm(rng: &mut ThreadRng) -> String {
-    let ip1 : u8 = rng.gen();
-    let ip2 : u8 = rng.gen();
-    let ip3 : u8 = rng.gen();
-    let ip4 : u8 = rng.gen();
-    let mut r = String::new();
-    r.push_str(&format!("{}",ip1));      r.push('.');
-    r.push_str(&format!("{}",ip2));      r.push('.');
-    r.push_str(&format!("{}",ip3));      r.push('.');
-    r.push_str(&format!("{}",ip4 >> 1)); r.push(' ');
-    r.push_str(&format!("{}",ip1));      r.push('.');
-    r.push_str(&format!("{}",ip2));      r.push('.');
-    r.push_str(&format!("{}",ip3));      r.push('.');
-    r.push_str(&format!("{}",ip4));      r.push(' ');
-    let name = gen_firm(& rng, 4);
-    r.push_str(&name); r.push_str("\n");
-    r
-}
-
-fn gen_firm(rng: &ThreadRng, size: usize) -> String {
+fn generate_random_payload(rng: &ThreadRng, size: usize) -> String {
     rng.sample_iter(&Alphanumeric).take(size).collect::<String>()
 }
 
@@ -42,9 +23,14 @@ pub fn transform_u32_to_array_of_u8(x:u32) -> [u8;4] {
     return [b1, b2, b3, b4]
 }
 
-pub fn generate_source_file(s:&str, n: u32, range: Range<u32>, padding: Range<u32>, name_size: usize) {
+pub fn generate_source_file_equal_spread(s:&str, n: u32, range: Range<u32>, payload_size: usize) {
+    let piece = (std::u32::MAX as f64 / n as f64) as u32;
+    let padding = piece - range.end..piece - range.start;
+    generate_source_file(s, n, range, padding, payload_size)
+}
+
+pub fn generate_source_file(s:&str, n: u32, range: Range<u32>, padding: Range<u32>, payload_size: usize) {
     let mut rng = thread_rng();
-    //println!("generate_source_file_with");
 
     let mut ip_curser: u32 = 0;
 
@@ -71,7 +57,7 @@ pub fn generate_source_file(s:&str, n: u32, range: Range<u32>, padding: Range<u3
         //if i % 500_000 == 0 { println!("lines generated: {}", i)}
         //if i % (n/10) == 0 { println!("10% done")}
 
-        let name = gen_firm(& rng, name_size);
+        let name = generate_random_payload(& rng, payload_size);
 
         let min_ip: [u8; 4] = transform_u32_to_array_of_u8( min_ip);
         let max_ip: [u8; 4] = transform_u32_to_array_of_u8(max_ip);
@@ -102,7 +88,13 @@ pub fn generate_source_file(s:&str, n: u32, range: Range<u32>, padding: Range<u3
     println!("writing to file - done");
 }
 
-pub fn generate_source_file_shuffled(s:&str, n: u32, range: Range<u32>, padding: Range<u32>, name_size: usize) {
+pub fn generate_source_file_shuffled_equal_spread(s:&str, n: u32, range: Range<u32>, payload_size: usize) {
+    let hej = 2 ^ 32 / n;
+    let padding = hej - range.end..hej - range.start;
+    generate_source_file_shuffled(s, n, range, padding, payload_size)
+}
+
+pub fn generate_source_file_shuffled(s:&str, n: u32, range: Range<u32>, padding: Range<u32>, payload_size: usize) {
     let mut rng = thread_rng();
     //println!("generate_source_file_with");
 
@@ -122,7 +114,7 @@ pub fn generate_source_file_shuffled(s:&str, n: u32, range: Range<u32>, padding:
 
         //if i % 500_000 == 0 { println!("lines generated: {}", i)}
 
-        let name = gen_firm(& rng, name_size);
+        let name = generate_random_payload(& rng, payload_size);
 
         vec.push((min_ip,max_ip,name));
     }
@@ -160,13 +152,6 @@ pub fn generate_source_file_shuffled(s:&str, n: u32, range: Range<u32>, padding:
         counter += 1;
     }
     //println!("writing to file - done");
-}
-
-//#[test]
-fn gen_input_file() {
-    let src = "testtesttesttest";
-    fs::remove_file(src);
-    generate_source_file(src, 1000, 2..2, 2..2, 4);
 }
 
 pub fn generate_lookup_testdata(src: &str, gap: usize) -> Vec<(u32,String)>{

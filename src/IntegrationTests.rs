@@ -22,7 +22,7 @@ fn find_hardcoded_node_in_redblack() {
 
 #[test]
 fn find_hardcoded_node_in_table() {
-    find_hardcoded_node(Table::build, Table::find_value)
+    find_hardcoded_node(Table::build_to_path_small, Table::find_value_small)
 }
 
 fn find_hardcoded_node(loader: fn(&str), finder: fn(u32) -> Option<String>) {
@@ -52,7 +52,7 @@ fn find_random_gen_requests_in_redblack_in_hardcoded_data() {
 
 #[test]
 fn find_random_gen_requests_in_table_in_hardcoded_data() {
-    find_random_gen_request_in_hardcoded_data(Table::build, Table::find_value);
+    find_random_gen_request_in_hardcoded_data(Table::build_to_path_small, Table::find_value_small);
 }
 
 fn find_random_gen_request_in_hardcoded_data(builder: fn(&str), finder: fn(u32) -> Option<String>) {
@@ -70,7 +70,7 @@ fn find_random_gen_request_in_hardcoded_data(builder: fn(&str), finder: fn(u32) 
 
 #[test]
 fn build_and_search_table_with_random_data() {
-    build_and_search_data_structure_with_random_data(TABLE_PAYLOAD, Table::build, Table::gen_ip_table, Table::find_value_on_map)
+    build_and_search_data_structure_with_random_data(TABLE_PAYLOAD, Table::build_to_path_small, Table::gen_ip_table_small, Table::find_value_on_map)
 }
 
 #[test]
