@@ -1,5 +1,5 @@
 use stopwatch::Stopwatch;
-use crate::{FileGenerator, load_to_tree_on_path, load_to_table, Utils, Table, PayloadMap, load_to_tree, RedBlack, load_to_redblack, REDBLACK_PATH, BST, TREE_PATH, TABLE_PATH, TABLE_PAYLOAD, TREE_PAYLOAD, REDBLACK_PAYLOAD};
+use crate::{FileGenerator, Utils, Table, PayloadMap, RedBlack, REDBLACK_PATH, BST, TREE_PATH, TABLE_PATH, TABLE_PAYLOAD, TREE_PAYLOAD, REDBLACK_PAYLOAD};
 use std::{fs, io};
 use std::fs::{File, OpenOptions};
 use std::io::{LineWriter, Write};
@@ -14,11 +14,15 @@ use std::time::SystemTime;
 pub const input_data:               &str = "input_data.txt";
 pub const input_data_shuffled:      &str = "input_data_shuffled.txt";
 
-pub const n:                         u32 = 150_000_000;
+// 100_000 - 42000
+// 10_000_000 - 420
+// 1_000 - 4200000
+
+pub const n:                         u32 = 10_000_000;
 pub const range:              Range<u32> = 10..18;
-pub const padding:            Range<u32> = 10..18;
+pub const padding:            Range<u32> = 420-18..420-10;
 pub const nameLength:              usize = 1;
-pub const gap:                     usize = 10;
+pub const gap:                     usize = 1000;
 pub const shuffle_in_momory:        bool = false;
 
 pub fn create_test_data() {
@@ -42,12 +46,11 @@ pub fn create_test_data() {
     create_tree();
     create_table();
 
-    let search_time = search_time_BST();
+    let tree_time = search_time_BST();
     let table_time = search_time_table();
 
     println!();
     println!("{}",tree_time);
-    println!("{}",redblack_time);
     println!("{}",table_time);
 }
 
@@ -74,7 +77,7 @@ fn shuffle_file(input: &str, output: &str) {
 fn create_table() {
     println!("\n## load_to_table");
     let mut sw = Stopwatch::start_new();
-    load_to_table(input_data_shuffled);
+    Table::build(input_data_shuffled);
     sw.stop();
     println!("\ntable load time: {}  micro seconds", sw.elapsed().as_micros());
 }
@@ -82,7 +85,7 @@ fn create_table() {
 fn create_tree() {
     println!("\n## load_to_tree");
     let mut sw = Stopwatch::start_new();
-    load_to_tree(input_data_shuffled);
+    BST::build(input_data_shuffled);
     sw.stop();
     println!("\ntree load time: {}  micro seconds", sw.elapsed().as_micros());
     sleep(time::Duration::from_secs(1));
@@ -91,7 +94,7 @@ fn create_tree() {
 fn create_redblack() {
     println!("\n## load_to_redblack");
     let mut sw = Stopwatch::start_new();
-    load_to_redblack(input_data_shuffled);
+    RedBlack::build(input_data_shuffled);
     sw.stop();
     println!("\nredblack load time: {}  micro seconds", sw.elapsed().as_micros());
     sleep(time::Duration::from_secs(1));

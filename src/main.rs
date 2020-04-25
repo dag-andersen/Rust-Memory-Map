@@ -14,16 +14,12 @@
 #![allow(unused_imports)]
 #![allow(unused_results)]
 
-const SOURCE_PATH_1:            &str    = "testdata/in/set1.txt";
-const SOURCE_PATH_2:            &str    = "testdata/in/set2.txt";
-const SOURCE_PATH_3:            &str    = "testdata/in/set3.txt";
-const SOURCE_PATH_4:            &str    = "testdata/in/set4.txt";
-const SP_10_000:                &str    = "testdata/in/10_000.txt";
-const SP_50_000:                &str    = "testdata/in/50_000.txt";
-const SP_100_000:               &str    = "testdata/in/100_000.txt";
-const SP_500_000:               &str    = "testdata/in/500_000.txt";
-const SP_1_000_000:             &str    = "testdata/in/1_000_000.txt";
-const SP_5_000_000:             &str    = "testdata/in/5_000_000.txt";
+const test_set_1:               &str    = "testdata/in/set1.txt";
+const test_set_2:               &str    = "testdata/in/set2.txt";
+const test_set_3:               &str    = "testdata/in/set3.txt";
+const test_set_4:               &str    = "testdata/in/set4.txt";
+const test_set_5:               &str    = "testdata/in/10_000.txt";
+const test_set_6:               &str    = "testdata/in/50_000.txt";
 const TREE_PRINT_PATH:          &str    = "testdata/out/tree/tree_print.txt";
 const TREE_PATH:                &str    = "testdata/out/tree/map.txt";
 const TREE_PAYLOAD:             &str    = "testdata/out/tree/NAME_TABLE.txt";
@@ -83,30 +79,7 @@ fn main() {
     create_test_data();
 }
 
-fn load_to_tree(input: &str) { load_to_tree_on_path(input, TREE_PATH) }
-
-fn load_to_tree_on_path(input: &str, map_path: &str) {
-    fs::remove_file(map_path);
-    load_to_data_structure(input, TREE_PAYLOAD, BST::gen_tree_map_on_path(map_path), BST::insert_entry)
-}
-
-fn load_to_redblack(input: &str) { load_to_redblacktree_on_path(input, REDBLACK_PATH) }
-
-fn load_to_redblacktree_on_path(input: &str, map_path: &str) {
-    RedBlack::reset_root_index();
-    fs::remove_file(map_path);
-    load_to_data_structure(input, REDBLACK_PAYLOAD, RedBlack::gen_tree_map_on_path(map_path), RedBlack::insert_entry);
-    RedBlack::save_root_node(map_path);
-}
-
-fn load_to_table(input: &str) { load_to_table_on_path(input, TABLE_PATH) }
-
-fn load_to_table_on_path(input: &str, ip_table: &str) {
-    fs::remove_file(ip_table);
-    load_to_data_structure(input, TABLE_PAYLOAD, Table::gen_ip_table_from_path(ip_table), Table::insert_entry)
-}
-
-fn load_to_data_structure(input: &str, payload_path: &str, structure: MmapMut, inserter: fn(&mut MmapMut, usize, Entry, u64)) {
+fn build_data_structure(input: &str, payload_path: &str, structure: MmapMut, inserter: fn(&mut MmapMut, usize, Entry, u64)) {
 
     fs::remove_file(payload_path);
     let mut structure = structure;
@@ -136,63 +109,5 @@ fn load_to_data_structure(input: &str, payload_path: &str, structure: MmapMut, i
         courser = PayloadMap::place_payload(&mut payload_map, courser, entry.payload.as_bytes());
         let payload_index = courser - entry.payload.len() as u64 - 1;
         inserter(&mut structure, i, entry, payload_index);
-    }
-}
-
-#[test]
-fn find_hardcoded_node_in_tree() {
-    find_hardcoded_node(load_to_tree, BST::find_value)
-}
-
-#[test]
-fn find_hardcoded_node_in_redblack() {
-    find_hardcoded_node(load_to_redblack,RedBlack::find_value)
-}
-
-#[test]
-fn find_hardcoded_node_in_table() {
-    find_hardcoded_node(load_to_table,Table::find_value)
-}
-
-fn find_hardcoded_node(loader: fn(&str), finder: fn(u32) -> Option<String>) {
-    loader(SOURCE_PATH_1);
-
-    let name = finder(Utils::get_u32_for_ip("000.000.000.015").unwrap());
-    assert!(name.is_some());
-    assert_eq!(name.unwrap(),"Siteimprove");
-
-    let name = finder(Utils::get_u32_for_ip("000.000.002.015").unwrap());
-    assert!(name.is_some());
-    assert_eq!(name.unwrap(),"Olesen");
-
-    assert!(finder(Utils::get_u32_for_ip("000.000.000.001").unwrap()).is_none());
-    assert!(finder(Utils::get_u32_for_ip("001.000.000.000").unwrap()).is_none());
-}
-
-#[test]
-fn find_random_gen_requests_in_tree() {
-    find_random_gen_request(load_to_tree, BST::find_value);
-}
-
-#[test]
-fn find_random_gen_requests_in_redblack() {
-    find_random_gen_request(load_to_redblack,RedBlack::find_value);
-}
-
-#[test]
-fn find_random_gen_requests_in_table() {
-    find_random_gen_request(load_to_table,Table::find_value);
-}
-
-fn find_random_gen_request(loader: fn(&str), finder: fn(u32) -> Option<String>) {
-    let scr = SP_10_000;
-    loader(scr);
-    let requests = FileGenerator::generate_lookup_testdata(scr,50);
-
-    for (ip, name) in requests {
-        let value = finder(ip);
-        assert!(value.is_some());
-        let value = value.unwrap();
-        assert_eq!(name, value)
     }
 }

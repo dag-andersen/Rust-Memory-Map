@@ -1,5 +1,5 @@
 use stopwatch::Stopwatch;
-use crate::{FileGenerator, TREE_PRINT_PATH, TREE_PATH, load_to_tree_on_path, load_to_table, Utils, TABLE_PATH, u32Size, SP_100_000, SP_10_000, thisFileWillBeDeleted, Table, SP_1_000_000, SP_500_000, SP_50_000, PayloadMap, load_to_tree, load_to_redblack, RedBlack, REDBLACK_PAYLOAD, TABLE_PAYLOAD, TREE_PAYLOAD};
+use crate::{FileGenerator, TREE_PRINT_PATH, TREE_PATH, Utils, TABLE_PATH, u32Size, test_set_5, thisFileWillBeDeleted, Table, test_set_6, PayloadMap, RedBlack, REDBLACK_PAYLOAD, TABLE_PAYLOAD, TREE_PAYLOAD, test_set_1};
 use std::fs;
 use std::fs::File;
 use std::io::{LineWriter, Write};
@@ -8,121 +8,82 @@ use crate::BST::TreePrinter;
 use crate::Utils::get_memmap;
 use crate::FileGenerator::{generate_source_file, generate_source_file_shuffled};
 use std::ops::Range;
+use memmap::MmapMut;
 
 #[test]
-fn build_time_tree() {
-    println!("## build_time_tree");
-    let src = thisFileWillBeDeleted;
-
-    FileGenerator::generate_source_file(src, 10, 1..1, 0..1, 4);
-    let mut sw = Stopwatch::start_new();
-    load_to_tree(src);
-    sw.stop();
-    println!("score: {}", sw.elapsed().as_millis());
-    fs::remove_file(src);
-
-    FileGenerator::generate_source_file(src, 10000, 1..1, 100..100, 4);
-    let mut sw = Stopwatch::start_new();
-    load_to_tree(src);
-    sw.stop();
-    println!("score: {}", sw.elapsed().as_millis());
-    fs::remove_file(src);
-
-    FileGenerator::generate_source_file(src, 10000, 10000..10000, 100..100, 4);
-    let mut sw = Stopwatch::start_new();
-    load_to_tree(src);
-    sw.stop();
-    println!("score: {}", sw.elapsed().as_millis());
-    fs::remove_file(src);
+fn find_hardcoded_node_in_tree() {
+    find_hardcoded_node(BST::build, BST::find_value)
 }
 
-//#[ignore]
 #[test]
-fn build_time_table() {
-    println!("## build_time_table");
-    let src = thisFileWillBeDeleted;
-
-    FileGenerator::generate_source_file(src, 10, 1..1, 0..1, 4);
-    let mut sw = Stopwatch::start_new();
-    load_to_table(src);
-    sw.stop();
-    println!("score: {}", sw.elapsed().as_millis());
-    fs::remove_file(src);
-
-    FileGenerator::generate_source_file(src, 10000, 1..1, 100..100, 4);
-    let mut sw = Stopwatch::start_new();
-    load_to_table(src);
-    sw.stop();
-    println!("score: {}", sw.elapsed().as_millis());
-    fs::remove_file(src);
-
-    FileGenerator::generate_source_file(src, 10000, 10000..10000, 100..100, 4);
-    let mut sw = Stopwatch::start_new();
-    load_to_table(src);
-    sw.stop();
-    println!("score: {}", sw.elapsed().as_millis());
-    fs::remove_file(src);
+fn find_hardcoded_node_in_redblack() {
+    find_hardcoded_node(RedBlack::build, RedBlack::find_value)
 }
 
-//#[test]
-fn build_time_tree_vs_table() {
-    println!("## build_time_tree_vs_table");
-    let src = SP_100_000;
-
-    let mut sw = Stopwatch::start_new();
-    load_to_tree(src);
-    sw.stop();
-    println!("tree score:  {}", sw.elapsed().as_millis());
-
-    let mut sw = Stopwatch::start_new();
-    load_to_table(src);
-    sw.stop();
-    println!("table score: {}", sw.elapsed().as_millis());
+#[test]
+fn find_hardcoded_node_in_table() {
+    find_hardcoded_node(Table::build, Table::find_value)
 }
 
-const PATH_SPEED_TEST_2:         &str = "testdata/out/speed/speed_test_2.txt";
+fn find_hardcoded_node(loader: fn(&str), finder: fn(u32) -> Option<String>) {
+    loader(test_set_1);
 
-//#[test]
-fn speed_matrix_tree() {
-    let in_src = thisFileWillBeDeleted;
-    let out_src = PATH_SPEED_TEST_2;
+    let name = finder(Utils::get_u32_for_ip("000.000.000.015").unwrap());
+    assert!(name.is_some());
+    assert_eq!(name.unwrap(),"Siteimprove");
 
-    let file = File::create(out_src).unwrap();
-    let mut writer = LineWriter::new(file);
+    let name = finder(Utils::get_u32_for_ip("000.000.002.015").unwrap());
+    assert!(name.is_some());
+    assert_eq!(name.unwrap(),"Olesen");
 
-    const number_of_rows_scale: u32 =   4;
-    const range_length_scale:   u32 = 100;
-    const padding_length_scale: u32 = 100;
+    assert!(finder(Utils::get_u32_for_ip("000.000.000.001").unwrap()).is_none());
+    assert!(finder(Utils::get_u32_for_ip("001.000.000.000").unwrap()).is_none());
+}
 
-    for number_of_rows in 1..5 {
-        writer.write_all(format!("Number of rows: {}\n", number_of_rows_scale.pow(number_of_rows)).as_bytes());
-        for range_length in 1..5 {
-            writer.write_all(format!("--- range length: {}\n", range_length_scale.pow(range_length)).as_bytes());
-            for padding_length in 1..5 {
-                writer.write_all(format!("------ padding length: {}\n", padding_length_scale.pow(padding_length)).as_bytes());
-                FileGenerator::generate_source_file(
-                    in_src,
-                    number_of_rows_scale.pow(number_of_rows),
-                    1..range_length_scale.pow(range_length),
-                    1..padding_length_scale.pow(padding_length),
-                    4);
-                let mut sw = Stopwatch::start_new();
-                load_to_tree(in_src);
-                TreePrinter::print_tree_to_file(TREE_PRINT_PATH);
-                sw.stop();
-                writer.write_all(format!("------------------------------ {}",sw.elapsed().as_micros()).as_bytes());
-                writer.write_all("\n".as_bytes());
-                fs::remove_file(in_src);
-            }
-            writer.write_all("\n".as_bytes());
-        }
-        writer.write_all("\n".as_bytes());
+#[test]
+fn find_random_gen_requests_in_tree_in_hardcoded_data() {
+    find_random_gen_request_in_hardcoded_data(BST::build, BST::find_value);
+}
+
+#[test]
+fn find_random_gen_requests_in_redblack_in_hardcoded_data() {
+    find_random_gen_request_in_hardcoded_data(RedBlack::build, RedBlack::find_value);
+}
+
+#[test]
+fn find_random_gen_requests_in_table_in_hardcoded_data() {
+    find_random_gen_request_in_hardcoded_data(Table::build, Table::find_value);
+}
+
+fn find_random_gen_request_in_hardcoded_data(builder: fn(&str), finder: fn(u32) -> Option<String>) {
+    let scr = test_set_5;
+    builder(scr);
+    let requests = FileGenerator::generate_lookup_testdata(scr,50);
+
+    for (ip, name) in requests {
+        let value = finder(ip);
+        assert!(value.is_some());
+        let value = value.unwrap();
+        assert_eq!(name, value)
     }
 }
 
 #[test]
-fn search_time_BST_vs_RedBlack_vs_table() {
-    println!("## search_time_BST_vs_table");
+fn build_and_search_table_with_random_data() {
+    build_and_search_datastructure_with_random_data(TABLE_PAYLOAD, Table::build, Table::gen_ip_table, Table::find_value_on_map)
+}
+
+#[test]
+fn build_and_search_BST_with_random_data() {
+    build_and_search_datastructure_with_random_data(TREE_PAYLOAD, BST::build, BST::gen_tree_map, BST::find_value_on_map)
+}
+
+#[test]
+fn build_and_search_redblack_with_random_data() {
+    build_and_search_datastructure_with_random_data(REDBLACK_PAYLOAD, RedBlack::build, RedBlack::gen_tree_map, RedBlack::find_value_on_map)
+}
+
+fn build_and_search_datastructure_with_random_data(payload_path: &str, builder: fn(&str), structure: fn() -> MmapMut, finder: fn(u32, &MmapMut, &MmapMut) -> Option<String>) {
 
     pub const n:                    u32 = 1500;
     const range:             Range<u32> = 10..18;
@@ -133,95 +94,24 @@ fn search_time_BST_vs_RedBlack_vs_table() {
     let src = thisFileWillBeDeleted;
     fs::remove_file(src);
     generate_source_file_shuffled(src, n, range, padding, nameLength);
-    println!("Benchmark input: n: {}, range: {:#?}, padding: {:#?}, namesize: {}, gap: {}\n\n", &n, &range, &padding, &nameLength, &gap);
+    println!("Benchmark input: n: {}, range: {:#?}, padding: {:#?}, payload_size: {}, gap: {}\n\n", &n, &range, &padding, &nameLength, &gap);
 
-    let requests1 = FileGenerator::generate_lookup_testdata(src, gap);
-    let requests2 = requests1.clone();
-    let requests3 = requests1.clone();
-    let length = requests1.len();
+    let requests = FileGenerator::generate_lookup_testdata(src, gap);
+    let length = requests.len();
     println!("#{} requests created", length);
 
-    load_to_table(src);
-    let name_table = PayloadMap::gen_payload_map_from_path(TABLE_PAYLOAD);
-    let ip_table = Table::gen_ip_table();
-
-    let mut counter = 0;
-
-    println!("start searching");
-    let mut sw = Stopwatch::start_new();
-    for (ip, name) in requests1 {
-        let value = Table::find_value_on_map(ip, &ip_table, &name_table);
-        assert!(value.is_some());
-        let value = value.unwrap();
-        //if counter % (length/10) == 0 { println!("Found: {:.2}%", counter as f32/length as f32); }
-        //if name != value {
-        //    println!("Wrong match - real: {} - found: {} - ip: {}", name, value, ip);
-        //}
-        assert_eq!(name, value);
-        //counter += 1;
-    }
-    sw.stop();
-    let tableTime = sw.elapsed().as_micros();
-    println!("--- Table time: {}, #{} of requests ran", tableTime, length);
-
-    counter = 0;
-    load_to_tree(src);
-    let mmap = BST::gen_tree_map();
-    let name_table = PayloadMap::gen_payload_map_from_path(TREE_PAYLOAD);
+    builder(src);
+    let data_structure = structure();
+    let payload_table = PayloadMap::gen_payload_map_from_path(payload_path);
 
     let mut sw = Stopwatch::start_new();
-    for (ip, name) in requests2 {
-        let value = BST::find_value_on_map(ip, &mmap, &name_table);
+    for (ip, name) in requests {
+        let value = finder(ip, &data_structure, &payload_table);
         assert!(value.is_some());
         let value = value.unwrap();
-        //if counter % (length/10) == 0 { println!("Found: {:.2}%", counter as f32/length as f32); }
-        //if name != value {
-        //    println!("Wrong match - real: {} - found: {} - ip: {}", name, value, ip);
-        //}
         assert_eq!(name, value);
-        //counter += 1;
     }
     sw.stop();
     let treeTime = sw.elapsed().as_micros();
-    println!("--- BST time : {}, #{} of requests ran", treeTime, length);
-
-    counter = 0;
-    load_to_redblack(src);
-    let mmap = RedBlack::gen_tree_map();
-    let name_table = PayloadMap::gen_payload_map_from_path(REDBLACK_PAYLOAD);
-
-    let mut sw = Stopwatch::start_new();
-    for (ip, name) in requests3 {
-        let value = RedBlack::find_value_on_map(ip, &mmap, &name_table);
-        assert!(value.is_some());
-        let value = value.unwrap();
-        //if counter % (length/10) == 0 { println!("Found: {:.2}%", counter as f32/length as f32); }
-        //if name != value {
-        //    println!("Wrong match - real: {} - found: {} - ip: {}", name, value, ip);
-        //}
-        assert_eq!(name, value);
-        //counter += 1;
-    }
-    sw.stop();
-    let treeTime = sw.elapsed().as_micros();
-    println!("--- ReadBlack time : {}, #{} of requests ran", treeTime, length);
-    //assert!(tableTime < treeTime)
-}
-
-#[test]
-#[ignore]
-fn test_print_tree_to_file() {
-    let src = thisFileWillBeDeleted;
-    FileGenerator::generate_source_file(src, 100, 1..2, 99..100, 4);
-    load_to_tree(src);
-    TreePrinter::print_tree_to_file(TREE_PRINT_PATH);
-    fs::remove_file(src);
-}
-
-#[test]
-#[ignore]
-fn genfile() {
-    let src = "genfile";
-    fs::remove_file(src);
-    generate_source_file(src, 10_000_000, 1..100, 0..100, 4);
+    println!("--- speed: {} microseconds, #{} of requests ran", treeTime, length);
 }

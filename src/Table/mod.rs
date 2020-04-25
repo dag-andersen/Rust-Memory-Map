@@ -1,17 +1,24 @@
 use core::fmt;
-use crate::{Entry, Utils, TABLE_PATH, PayloadMap, TABLE_PAYLOAD};
+use crate::{Entry, Utils, TABLE_PATH, PayloadMap, TABLE_PAYLOAD, build_data_structure};
 use memmap::MmapMut;
 use std::fs;
 use crate::Table;
 
 mod IpTable;
 
+pub fn gen_ip_table() -> MmapMut { gen_ip_table_from_path(TABLE_PATH) }
+pub fn gen_ip_table_from_path(path: &str) -> MmapMut { Utils::get_memmap(path, 10_000_000_000) }
+
+pub fn build(input: &str) { build_to_path(input, TABLE_PATH) }
+
+fn build_to_path(input: &str, ip_table: &str) {
+    fs::remove_file(ip_table);
+    build_data_structure(input, TABLE_PAYLOAD, Table::gen_ip_table_from_path(ip_table), Table::insert_entry)
+}
+
 pub fn insert_entry(ip_table: &mut MmapMut, index: usize, entry: Entry, courser: u64) {
     IpTable::place_entry(ip_table, &entry, courser);
 }
-
-pub fn gen_ip_table() -> MmapMut { gen_ip_table_from_path(TABLE_PATH) }
-pub fn gen_ip_table_from_path(path: &str) -> MmapMut { Utils::get_memmap(path, 40_000_000_000) }
 
 pub fn find_value(ip: u32) -> Option<String> {
     let name_table = PayloadMap::gen_payload_map_from_path(TABLE_PAYLOAD);
