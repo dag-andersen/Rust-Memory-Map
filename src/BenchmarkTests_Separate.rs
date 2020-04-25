@@ -1,5 +1,5 @@
 use stopwatch::Stopwatch;
-use crate::{FileGenerator, load_to_tree_on_path, load_to_table, Utils, Table, PayloadMap, load_to_tree, RedBlack, load_to_redblack, REDBLACK_PATH, BST, TREE_PATH, TABLE_PATH, TABLE_PAYLOAD, TREE_PAYLOAD, REDBLACK_PAYLOAD};
+use crate::{FileGenerator, Utils, Table, PayloadMap, RedBlack, REDBLACK_PATH, BST, TREE_PATH, TABLE_PATH, TABLE_PAYLOAD, TREE_PAYLOAD, REDBLACK_PAYLOAD};
 use std::{fs, io};
 use std::fs::{File, OpenOptions};
 use std::io::{LineWriter, Write};
@@ -34,7 +34,7 @@ pub fn create_test_data() {
 fn create_table() {
     println!("\n## load_to_table");
     let mut sw = Stopwatch::start_new();
-    load_to_table(input_data_shuffled);
+    Table::load_to_table(input_data_shuffled);
     sw.stop();
     println!("\ntable load time: {}  micro seconds", sw.elapsed().as_micros());
 }
@@ -44,7 +44,7 @@ fn create_table() {
 fn create_tree() {
     println!("\n## load_to_tree");
     let mut sw = Stopwatch::start_new();
-    load_to_tree(input_data_shuffled);
+    BST::load_to_tree(input_data_shuffled);
     sw.stop();
     println!("\ntree load time: {}  micro seconds", sw.elapsed().as_micros());
     sleep(time::Duration::from_secs(1));
@@ -55,7 +55,7 @@ fn create_tree() {
 fn create_redblack() {
     println!("\n## load_to_redblack");
     let mut sw = Stopwatch::start_new();
-    load_to_redblack(input_data_shuffled);
+    RedBlack::load_to_redblack(input_data_shuffled);
     sw.stop();
     println!("\nredblack load time: {}  micro seconds", sw.elapsed().as_micros());
     sleep(time::Duration::from_secs(1));

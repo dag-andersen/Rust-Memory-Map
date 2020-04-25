@@ -8,7 +8,7 @@ use rand::seq::SliceRandom;
 use rand::thread_rng;
 use std::cmp::min;
 use std::{fs, io};
-use crate::{SP_100_000, thisFileWillBeDeleted, Utils, Entry, SP_500_000, SP_5_000_000, SP_50_000, TREE_PATH, load_to_tree_on_path, BST, SP_10_000, SP_1_000_000, load_to_table, load_to_table_on_path, TABLE_PATH, load_to_tree};
+use crate::{thisFileWillBeDeleted, Utils, Entry, test_set_6, TREE_PATH, BST, test_set_5, TABLE_PATH};
 use regex::bytes::Regex;
 
 fn generate_random_ip_firm(rng: &mut ThreadRng) -> String {
@@ -167,18 +167,6 @@ fn gen_input_file() {
     let src = "testtesttesttest";
     fs::remove_file(src);
     generate_source_file(src, 1000, 2..2, 2..2, 4);
-}
-
-//#[test]
-fn gen_tree() {
-    let src = SP_1_000_000;
-    load_to_tree(src);
-}
-
-//#[test]
-fn gen_table() {
-    let src = SP_1_000_000;
-    load_to_table(src);
 }
 
 pub fn generate_lookup_testdata(src: &str, gap: usize) -> Vec<(u32,String)>{
