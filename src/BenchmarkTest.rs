@@ -70,6 +70,9 @@ pub fn build_and_search_data_structures() {
     };
     unsafe { number_of_entries = n }
 
+    let piece = (std::u32::MAX as f64 / n as f64) as u32;
+    let padding = piece - range.end..piece - range.start;
+
     let payload_size = match matches.value_of("payload_size") {
         None => 50,
         Some(s) => s.parse::<usize>().unwrap_or(50)
@@ -82,7 +85,7 @@ pub fn build_and_search_data_structures() {
 
     if matches.is_present("print_info") {
         println!("\nHOSTNAME: {}", String::from_utf8(Command::new("hostname").output().unwrap().stdout).unwrap());
-        println!("Benchmark input: n: {}, range: {:#?}, payload_size: {}, gap:{} \n\n", &n, &range, payload_size, &gap_size);
+        println!("Benchmark input: n: {}, range: {:#?}, padding: {:#?}, payload_size: {}, gap:{} \n\n", &n, &range, &padding, payload_size, &gap_size);
     }
 
     let input = match shuffled_file_str {
@@ -91,9 +94,9 @@ pub fn build_and_search_data_structures() {
             fs::remove_file(input_data);
             fs::remove_file(input_data_shuffled);
             if shuffle_in_momory {
-                FileGenerator::generate_source_file_shuffled_equal_spread(input_data, n, range, payload_size);
+                FileGenerator::generate_source_file_shuffled(input_data, n, range, padding, payload_size);
             } else {
-                FileGenerator::generate_source_file_equal_spread(input_data, n, range, payload_size);
+                FileGenerator::generate_source_file(input_data, n, range, padding, payload_size);
                 sleep(time::Duration::from_secs(1));
                 shuffle_file(input_data, input_data_shuffled);
             }
@@ -109,14 +112,15 @@ pub fn build_and_search_data_structures() {
     if matches.is_present("build_redblack") { create_redblack(input); }
     if matches.is_present("build_BST") { create_BST(input); }
 
-    if matches.is_present("search_BST") { search_time_BST(input,gap_size); }
-    if matches.is_present("search_table") { search_time_table(input,gap_size); }
-    if matches.is_present("search_redblack") { search_time_redblack(input,gap_size); }
+    if matches.is_present("search_BST") { println!("{}",search_time_BST(input,gap_size)); }
+    if matches.is_present("search_table") { println!("{}",search_time_table(input,gap_size)); }
+    if matches.is_present("search_redblack") { println!("{}",search_time_redblack(input,gap_size)); }
 }
 
 pub fn shuffle_file(input: &str, output: &str) {
     if cfg!(target_os = "windows") {
-        panic!("This is a windows machine - Shame on you!")
+        println!("This program does not work on windows!");
+        exit(1)
     } else if cfg!(target_os = "macos") {
         Command::new("gshuf")
             .arg(input)

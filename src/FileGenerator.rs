@@ -23,12 +23,6 @@ pub fn transform_u32_to_array_of_u8(x:u32) -> [u8;4] {
     return [b1, b2, b3, b4]
 }
 
-pub fn generate_source_file_equal_spread(s:&str, n: u32, range: Range<u32>, payload_size: usize) {
-    let piece = (std::u32::MAX as f64 / n as f64) as u32;
-    let padding = piece - range.end..piece - range.start;
-    generate_source_file(s, n, range, padding, payload_size)
-}
-
 pub fn generate_source_file(s:&str, n: u32, range: Range<u32>, padding: Range<u32>, payload_size: usize) {
     let mut rng = thread_rng();
 
@@ -88,15 +82,8 @@ pub fn generate_source_file(s:&str, n: u32, range: Range<u32>, padding: Range<u3
     println!("writing to file - done");
 }
 
-pub fn generate_source_file_shuffled_equal_spread(s:&str, n: u32, range: Range<u32>, payload_size: usize) {
-    let hej = 2 ^ 32 / n;
-    let padding = hej - range.end..hej - range.start;
-    generate_source_file_shuffled(s, n, range, padding, payload_size)
-}
-
 pub fn generate_source_file_shuffled(s:&str, n: u32, range: Range<u32>, padding: Range<u32>, payload_size: usize) {
     let mut rng = thread_rng();
-    //println!("generate_source_file_with");
 
     let mut vec : Vec<(u32,u32,String)> = Vec::new();
     let mut ip_curser: u32 = 0;
