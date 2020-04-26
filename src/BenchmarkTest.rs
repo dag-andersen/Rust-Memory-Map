@@ -21,11 +21,11 @@ pub const shuffle_in_momory:        bool = false;
 pub fn build_and_search_data_structures() {
     let matches = App::new("Rust Memory Map")
         .version("0.1.0")
-        .author("Dag Andersen <hckrmnjones@hack.gov>")
+        .author("Dag Andersen <dagbjerreandersen@gmail.com>")
         .about("Searching in memory mapped files")
-        .arg(Arg::with_name("n")
+        .arg(Arg::with_name("number_of_entries")
             .short("n")
-            .long("number")
+            .long("number_of_entries")
             .takes_value(true)
             .help("The number of entries"))
         .arg(Arg::with_name("payload_size")
@@ -37,34 +37,41 @@ pub fn build_and_search_data_structures() {
             .short("g")
             .long("gap_size")
             .takes_value(true)
-            .help("the gap between each entry"))
+            .help("The number of entries it skips while selecting/collecting entries to search for"))
         .arg(Arg::with_name("input_file")
             .short("f")
             .long("input_file")
             .takes_value(true)
-            .help("the file for building the data-structure"))
+            .help("The file for building the data-structure"))
         .arg(Arg::with_name("generate_data")
             .long("generate_data")
-            .help("the file for building the data-structure"))
+            .help("Generates random entries instead of getting the input from a file"))
         .arg(Arg::with_name("print_info")
-            .long("print_info"))
+            .long("print_info")
+             .help("Prints the setup for this run"))
         .arg(Arg::with_name("build_table")
-            .long("build_table"))
+            .long("build_table")
+            .help("Builds a Table for given input"))
         .arg(Arg::with_name("build_BST")
-            .long("build_BST"))
+            .long("build_BST")
+            .help("Builds a BST for given input"))
         .arg(Arg::with_name("build_redblack")
-            .long("build_redblack"))
+            .long("build_redblack")
+            .help("Builds a Redblack Tree for given input"))
         .arg(Arg::with_name("search_table")
-            .long("search_table"))
+            .long("search_table")
+            .help("Searches the Table with <number_of_entries / gap_size> number of entries"))
         .arg(Arg::with_name("search_BST")
-            .long("search_BST"))
+            .long("search_BST")
+            .help("Searches down the BST with <number_of_entries / gap_size> number of entries"))
         .arg(Arg::with_name("search_redblack")
-            .long("search_redblack"))
+            .long("search_redblack")
+            .help("Searches down the Redblack Tree with <number_of_entries / gap_size> number of entries"))
         .get_matches();
 
     let shuffled_file_str = matches.value_of("input_file");
 
-    let n = match matches.value_of("n") {
+    let n = match matches.value_of("number_of_entries") {
         None => 150_000_000,
         Some(s) => s.parse::<u32>().unwrap_or(150_000_000)
     };
@@ -108,13 +115,13 @@ pub fn build_and_search_data_structures() {
         }
     };
 
-    if matches.is_present("build_table") { create_table(input); }
-    if matches.is_present("build_redblack") { create_redblack(input); }
     if matches.is_present("build_BST") { create_BST(input); }
+    if matches.is_present("build_redblack") { create_redblack(input); }
+    if matches.is_present("build_table") { create_table(input); }
 
     if matches.is_present("search_BST") { println!("{}",search_time_BST(input,gap_size)); }
-    if matches.is_present("search_table") { println!("{}",search_time_table(input,gap_size)); }
     if matches.is_present("search_redblack") { println!("{}",search_time_redblack(input,gap_size)); }
+    if matches.is_present("search_table") { println!("{}",search_time_table(input,gap_size)); }
 }
 
 pub fn shuffle_file(input: &str, output: &str) {

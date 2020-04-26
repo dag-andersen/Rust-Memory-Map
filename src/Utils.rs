@@ -5,12 +5,9 @@ use crate::{BST, Entry};
 use regex::bytes::Regex;
 
 pub(crate) fn get_entry_for_line(ip_regex: &Regex, name_regex: &Regex, l: &String) -> Option<Entry> {
-
     let min_ip_match = ip_regex.find(l.as_bytes()).expect("didnt find min ip");
     let max_ip_match = ip_regex.find_at(l.as_bytes(), min_ip_match.end()).expect("didnt find max ip");
     let name_match = name_regex.find_at(l.as_bytes(), max_ip_match.end()).expect("didnt find name");
-
-    //println!("min:{}- max:{}- name:{}", &l[min_ip_match.range()], &l[max_ip_match.range()], &l[name_match.range()]);
 
     let min_ip = get_u32_for_ip(&l[min_ip_match.range()])?;
     let max_ip = get_u32_for_ip(&l[max_ip_match.range()])?;
