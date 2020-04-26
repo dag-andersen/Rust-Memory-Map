@@ -425,14 +425,20 @@ fn is_tree_corrupt(mmap: &MmapMut, parent_red: bool, node: &Node) -> bool {
     return right_is_corrupt || left_is_corrupt
 }
 ```
-This function traveres the redblack tree and checks if a child and its parent is red, which is illegal state, and should have triggered a rebalance. In the source code, a positive and negative test is performed on 50.000 random inserted elements, to ensure that the tree redblack tree was build correctly. This function will return `true` if the tree is corrupted and `false` otherwise. 
+This function traveres the redblack tree and checks if a child and its parent is red, which is illegal state, and should have triggered a rebalance. In the source code, a positive and negative test is performed on 50.000 random inserted elements, to ensure that the tree redblack tree was build correctly. This function will return `true` if the tree is corrupted and `false` otherwise. This test doesn't detect if any nodes are disconnected from the tree (meaning they are not reachable from the root), but many other test detect that.
 
-### Integration tests 
-The Integration tests go through a setup, build, and lookup phase. Since all three data-structures has the same interface, they can all be tested by using exactly the same functions. 
+### Integration Tests 
+Since all three data-structures has the same interface, they can all be tested by using exactly the same functions. 
+The integration tests include:
+* Hardcoded input and the requited IPs are also hardcoded
+* Hardcoded input but the selected Ip-requests are a random subset from the hardcoded input
+* Random generated input data, with random selected IP-request and the selected Ip-requests are a random subset from the input
+
+The Integration tests go through a setup, build, and lookup phase. 
 
 **Setup - Generating test files**
-This first phase generates lines of 2 IP addresses and 1 text string (e.g.: `125.74.3.0 125.74.3.10 Siteimprove`) and writes them to a file. All lines are shuffled by using the Unix command `shuf`. 
-> Note: First I tried shuffling all entries in memory inside rust using a `Vec<&str>` and writing them to a file afterward, but this was slower and was more memory intensive than using the Unix command. Both methods require that all entries can be stored in ram at the same time. This means that the shuffling cant happens on a machine with low resources like the 1 gb memory droplet. <Algortimer eksisterer hvor man kan shuffle uden at bruge ram>
+This first phase generates lines of 2 IP addresses and 1 text string (e.g.: `125.74.3.0 125.74.3.10 Siteimprove`) and writes them to a file. All lines are shuffled by using the linux command `shuf`. 
+> Note: First I tried shuffling all entries in memory inside rust using a `Vec<&str>` and writing them to a file afterward, but this was slower and was more memory intensive than using the linux command. Both methods require that all entries can be stored in ram at the same time. This means that the shuffling cant happens on a machine with low resources like the 1 gb memory droplet, if the dataset is big. <Algortimer eksisterer hvor man kan shuffle uden at bruge ram>
 
 **Build data structure**
 The program iterate over each line reading them one by one with regex. Both the tested data-structure and payload_map needs to be built at the same time, meaning each entry is sat into both at the same time because the data-structure needs to know the byte-offset of the currently inserted entry. This step is deterministic and will always provide the same output for the same input file. This phase it the most expensive.
@@ -473,43 +479,48 @@ Another interesting finding was that rust only optimized to tail-end recursion w
 
 ---
 
+# Running the program
+
+The program is ran through the command line. This version of the program can either generate data self or read it from a file. What the program is suppose to do is specified with flags. The full list of flags and options can be found in appendix X. The program cant 
 
 # Experiments
 
-To evaluate how the differently models perform, and which live up to the goal/needs.
-All tests has been ran at least 3 time, so limit the amount of random divination. The numbers seen the the tables below are averages of the tests results. If a datapoint had a lot of variation for each run, I ran it a few extra time to get a bigger sample size. If the time-scope was larger for this projekt, i would have ran more tests to get more accurate results. All tests can be found in the source code.
-
-> In the results below (and in appendix) the constant for the tests are displayed in this format `range: 10..18, payload_size: 50, gap: 10`, where `range` is the range of each each entry. In this case each entry can be between 10 and 18 IPs. `payload_size` is the size of the payload for each entry. `gap` is the number of entries it skips when it collects random lookup data. a gap of 10 basically means that 1 out of 10 entries will be requested in a test.
+To evaluate how the differently models perform, and which live up to the goal/needs, i have done 4 experiments. 
 
 ```
 In the previous sections, we have explained the three data-structures, table, BST, and redblack tree. To compare these data-structures the project went through various experiments. 
 ```
 
-```
-delete?
-has been run on a 2 gb ram droplet, a 8 gb ram droplet, and on a 16gb ram MacBook pro 2016. Detailed specs can found in appendix X. The automated benchmark test script can be found in appendix X, but the overall structure is explained in this section. 
-```
+
+All tests has been ran at least 3 time, so limit the amount of random divination. The numbers seen the the tables below are averages of the tests results. If a datapoint had a lot of variation for each run, I ran it a few extra time to get a bigger sample size. If the time-scope was larger for this project, i would have ran more tests to get more accurate results. All tests can be found in the source code.
 
 ### Test data
-The full IP-range is 2^32 = ~4.3mil and the given number of ranges is 150.000.000. This means that there is on average a new range every 28th IP. Since there is no information on how these are distributed, these test we will assume they are relatively evenly distributed over the full range of IPv4. Evenly distributing the ranges would suggest the worst-case scenario for the table, because the entries would be spread over more pages, than if all entries were small and next to each other.  
 
-Each range's size is a random number between 10-18, and the padding/gap between each range is also a random number between 10-18. The random aspect is added to make it more realistic, instead of having equal size ranges with an equal gap between them.
-<For testing purposes the payload is always 2 chars. This is mainly duo to generating random strings being a very expensive procedure.>
+The full IP-range for IPv4 is 2^32 = ~4.3 billion and the number of entries is 150.000.000. This means that there is on average a new range every 28th IP (`2^32/150.000.000 = 28.7`). Since there is no information on how these are distributed, these test we will assume they are relatively evenly distributed over the full range of IPv4.
 
-### Cache tests
-Special cache miss-tests are performed to track how the cache may impact the performance of data structure. For testing the cache this I used Linux command `perf stat -e task-clock,cycles,instructions,cache-references,cache-misses [input]` on the droplets. Between each step they cache is cleared by using the command `sync; echo 3 > /proc/sys/vm/drop_caches`, to make sure we start from a cold cache and each test is not affected by the previous. 
+This means when we experiment on 150 million entries, we set all ranges to be a random number between 10-18 and the gap between the ranges to be between 10-18, because this on average adds up to 28 for each entry. 
+
+Evenly distributing ranges would suggest the worst-case scenario for the table, because the entries would be spread over more pages, than if all entries were small and close to each other.  
+
+To see how the data-structures handle differently sized data-set, the tests also include datasets on e.g. 100k entries. A data-size of 100k entries means that the padding/gap between each entry is `~42000`, because `2^32/100.000 - 10..18 (range) = 42.950` (we round down to remove the random chance of the largest ip to overflow the highest ip possible IPv4 address).
+
+The test data is generated as explained in _Integration Tests_ above.
+
+> In the results below (and in appendix) the constant for the tests are displayed in this format `range: 10..18, payload_size: 50, gap: 10`, where `range` is the range of each each entry. In this case each entry can be between 10 and 18 IPs. `payload_size` is the size of the payload for each entry. `gap` is the number of entries it skips when it collects random lookup data. A gap of 10 basically means that 1 out of 10 entries will be requested in a test.
 
 
+### Machines
 
-## Machines:
-1gb ram 25gb disk droplet from digital ocean - with 100 gb ekstra volume. This will be referred to as 1gb Droplet.
-220 gb memory VM. This will be referred to as Dionysos. 
-More specs can be found in appendix X. 
+The experiment is run on different machines. Both high a low memory machines are included. The focus of this project is to search on a low resource machine, so this will be our main focus with the final evaluation - but still use a high resource machine as a benchmark. All machines specs can be found in appendix X. The machines will be referred to as following:
+* Dionysos: 220 gb memory machine on a XX disk.
+* 1gb droplet: 1 gb memory, 1 cpu, x disk hosted on digital ocean.
+* 2gb droplet: 1 gb memory, 1 cpu, x disk hosted on digital ocean.
+* 8gb droplet: 1 gb memory, 1 cpu, x disk hosted on digital ocean.
 
 ## Search time Experiment
 #### Expectation
 
-From a purely theoretical standpoint, we would assume that the table is the fastest, followed by the redblack tree, followed by the BST. The table should run in constant time because it only needs to do 2 lookups (one in the table and ond in payload_map).Both trees should have a `O(log(n))` lookup time, but the BST would be expected to be slower than the redblack tree because it is not blanched therefore need more key comparers for deeper nodes. 
+From a purely theoretical standpoint, we would assume that the table is the fastest, followed by the redblack tree, followed by the BST. The table should run in constant time because it only needs to do 2 lookups (one in the table and ond in payload_map). Both trees should have a `O(log(n))` lookup time, but the BST would be expected to be slower than the redblack tree because it is not blanched therefore need more key comparers for deeper nodes. 
 
 #### Results
 
@@ -518,17 +529,18 @@ All tests are ran with: `range: 10..18, payload_size: 50, gap: 10`. All numbers 
 
 These speed tests (besides 150mil on 1gb droplet) are ran right after the build of the model without shutting down the program. This was done to maximize speed by having as many pages already in memory as possible. 
 
-| Dionysos      | 1k      | 100k      | 10 mil            | 150 mil           |
-| ------------- |--------:|----------:|------------------:|------------------:|
-| BST           | 2       | 0.7       | 2.1               | 3.515             |
-| Redblack      | 2       | 0.9       | 1.7               | 3,462             |
-| Table         | 6       | 3.6       | 2.7               | 1.001             |
+| model         | 1k      | 100k      | 10 mil    | 150 mil    |
+| :------------ |--------:|----------:|----------:|-----------:|
+| BST           | 3       | 0.7       | 2.1       | 3.74      |
+| Redblack      | 3       | 0.9       | 1.7       | 3.15      |
+| Table         | 6       | 3.6       | 3.4       | 1.001      |
 
-| 1gb mem       | 1k        | 100k          | 150 mil*          |
-| ------------- |----------:|--------------:|------------------:|
-| BST           | 25        | 2.5           | 2724              |
-| Redblack      | 18        | 4.5           | 8700              |
-| Table         | 28        | 1147          | 2730              |
+**1gb mem**
+| model         | 1k        | 100k    | 150 mil*   |
+| :------------ |----------:|--------:|-----------:|    
+| BST           | 1.5       | 0.8     | 2724       |
+| Redblack      | 1.5       | 0.8     | 8700       |
+| Table         | 5.5       | 4.5     | 2730       |
 
 > `*` The 1gb25gb can't build (as explained in the next experiemnt) meaning that model has to be build on Dionysos and copied to the 1gb droplet. This means that the cache was cold and no pages were loaded into memory, before the speed speed test ran. 
 
@@ -591,15 +603,21 @@ The BST only writes twice to memory. One for actually placing the node/struct in
 
 **Redblack tree**
 The redblack tree is more difficult to predict because it also has to balance the tree. Balancing the tree requires references to multiple nodes above the newly inserted node, and potentially many more if a rotation is needed. In this implementation, it does not save a reference to the nodes it encounters down the search, so when balancing it has to re-access/request the node/struct in the memory map. This shouldn't be an issue when the balanced is only one rotation, but this will be an increasing problem when the tree grows and bigger rotations happen.
-Furthermore, we have to remember that the nodes in the redblack tree are stored more spread out compared to the BST, less use of locallity. I would expect the redblack tree to be the slowest in all cases, because of the huge amount of node accesses.
+Furthermore, we have to remember that the nodes in the redblack tree are stored more spread out compared to the BST, less use of locality. I would expect the redblack tree to be the slowest in all cases, because of the huge amount of node accesses.
 
 ##### Dionysos
 
-| Dionysos      | 1k        | 100k      | 10  mil           | 150 mil           |
-| --------------|----------:|----------:|------------------:|------------------:|
-| BST           | 3874      | 204523    | 29716768          | 686406388         |  
-| Redblack      | 62079     | 5907163   | 655914608         | 12199050000       |
-| Table         | 23758     | 1381446   | 144225979         | 874202017         |
+| Dionysos      | 1k        | 100k      | 10  mil      | 150 mil           |
+| --------------|----------:|----------:|-------------:|------------------:|
+| BST           | 3874      | 204523    | 29716768     | 857455857         |  
+| Redblack      | 62079     | 6156475   | 655914608    | 11897741304       |
+| Table         | 23758     | 1381446   | 144225979    | 930878211         |
+
+| avg pr entry  | 1k        | 100k      | 10  mil      | 150 mil            |
+| --------------|----------:|----------:|-------------:|-------------------:|
+| BST           | 3.8      | 2.0        | 3.0          | 4.5                |  
+| Redblack      | 62.1     | 59.1       | 65.6         | 81.3               |
+| Table         | 23.8     | 13.8       | 14.4         | 5.8                |
 
 The first thing we notice is that the redblack tree is the worst performing data structure, as we expected. From this experiment, we can conclude that the redblack tree is the least scalable solution, with this specific implementation. 
 
@@ -646,14 +664,14 @@ fn get_node_raw<'a>(mmap: &'a MmapMut, offset: usize) -> &'a mut Node {
 ## Memory Usage Experiment
 #### Expectation
 
-Memory usage is important part of this project and a big focus point, when talking about memory maps. 
+Memory is an important factor when working with memory mapped files. The kernel should keep loading in pages as long as there is free memory left  - and only start offloading pages, when the memory is full.
 
-I would expect to see that program would keep loading pages into memory as long as there is memory left. And only start offloading pages, when the ram is full.
+Your mmap'ed file in memory is loaded (and offloaded) by pages between all the levels of memory (the caches, RAM and swap).
 
-Each page is 4kb which means that if we build a table where something is located on all pages in the whole file, then we would expect all pages to be loaded into memory until there is no free memory. 
+Each page are 4kb, which means that if we access data at least once every 4kb, we will request all pages in the whole file. So if we build the full table with a padding/gap of 10-18 bytes, we would have to load in all 2^32*64 bit (34.4 GB).
 
 #### Method
-To test this i built the table on the 1gb machine, with 150 entries, and check memory usage, before and under the building the table. Here we would expect it to use all ram available and after that loading and offloading pages (paging). 
+To test this i built a table on four different machines, with 150 entries, and check memory usage, before and under the building the table. Here we would expect it to use all ram available and after that loading and offloading pages (paging). 
 This is done by calling the Linux command `free`, that prints the current memory usage in kilobytes, before and while the program is running. 
 
 For this experiment i have also tested it on two more droplets, to see if it made a difference.
@@ -662,24 +680,25 @@ For this experiment i have also tested it on two more droplets, to see if it mad
 
 **Using `free` command**
 
-| Machine       | Idle      | Running       | Difference        |
-| ------------- |----------:|--------------:|------------------:|
-| 1gb25gb       | 97mb      | 160mb         | 63 mb             |
-| 2gb           | 80mb      | 200mb         | 120 mb            |
-| 8gb           | 140mb     | 270mb         | 130 mb            |
-| 8gb           | 8782412mb | 8849484mb     | 67 mb             |
+| Machine       | Idle      | Running       | Difference    |
+| ------------- |----------:|--------------:|--------------:|
+| 1gb25gb       | 97mb      | 160mb         | 63 mb         |
+| 2gb           | 80mb      | 200mb         | 120 mb        |
+| 8gb           | 140mb     | 270mb         | 130 mb        |
+| Dionysos      | 8782412mb | 8849484mb     | 67 mb         |
 
-Another interesting finding was that the memory capped out after only running 10% af the table build. 
-This means that there is a limit somewhere in the system, since it starts paging before all memory is used. 
-
-This is also visible by looking at the digital oceans monitoring tool. Looking at the 1gb machine over the time period of one week, where all tests in this project were performed, it never got over 33% memory usage. 
-
-<img src="../docs/images/ram_usage_1gb2.png" alt="drawing" width="400"/>
+The free command was ran many times during the build of the data-structure, and already after building 10% of the input data, the memory usage stopped increasing and had a stable memory usage the rest of the building-process.
 
 #### Discussion
-As we can see the memory usage never exceeds 17%. This shouldn't be the case since we just ran over 150 million entries equally spread out over 35 GB meaning we would expect to see much larger memory usage.
 
-To figure out why it limits itself to further testing is needed. 
+This means that there is a limit somewhere in the system, since it starts paging before all memory is used. 
+
+We see a pattern for the differences be a multiple of ~64mb. To figure out why it limits itself to further testing is needed. 
+
+This is also visible by looking at the digital oceans monitoring tool. Looking at the 1gb machine over the time period of one week, where all tests in this project were performed, it never got over 33% memory usage. 
+<img src="../docs/images/ram_usage_1gb2.png" alt="drawing" width="400"/>
+
+
 
 ...
 
@@ -697,15 +716,16 @@ Search time --- #624812422 micro seconds, #1485148 of requests ran, #0 skipped
 Search time --- #711256037 micro seconds, #1485148 of requests ran, #0 skipped
 ```
 
-When doing the searches i tracked the memory usage on the droplet.
-Both droplets on with both tree and table searches had a peak memory usage of 120 mb.
-This limit was reacted after only searching though 2 procent of the request. and they it stayed pretty stable.
-While testing it 
-
 ____
 
 
 ## Caching Experiment
+
+### Cache tests
+Special cache miss-tests are performed to track how the cache may impact the performance of data structure. For testing the cache this I used Linux command `perf stat -e task-clock,cycles,instructions,cache-references,cache-misses [input]` on the droplets. Between each step they cache is cleared by using the command `sync; echo 3 > /proc/sys/vm/drop_caches`, to make sure we start from a cold cache and each test is not affected by the previous. 
+
+
+The automated benchmark test script can be found in appendix X, but the overall structure is explained in this section. 
 
 ##### Expectation
 In theory, the cache shouldn't matter if the data-set consists of an infinitely large amount of entries because the cache would be thrashed anyway - But on a more realistic scale (like in this project) this can become a factor when it comes to speed.
@@ -807,7 +827,7 @@ https://rust-lang.github.io/async-book/01_getting_started/02_why_async.html
 # Appendix
 
 
-### Siteimprove Data
+## Appendix A - Siteimprove Data
 ```
 IP v4 entries for isp is 177765
 IP v6 entries for isp is 29846
@@ -827,57 +847,173 @@ IP v6 entries for pulse is 34027618
 ```
 
 
-Appendix B
+## Appendix B - Cache Script
 
 ```bash
 set -e
 
-output='testdata/out/speed/benchmark.txt'
-perf_cmd="perf stat -o $output --append -e task-clock,cycles,instructions,cache-references,cache-misses"
-cargo_pre_cmd='cargo test --release --color=always --package rust_map --bin rust_map'
-cargo_post_cmd='-- --exact --nocapture --ignored'
-
-rm -f $output
-hostname >> $output
-
-printf "\nBUILDING RELEASE --------------------------------------------------------------------------------------------------------------------\n"
 cargo build --release --color=always
-sleep 2
 
-printf "\ncreate_test_data --------------------------------------------------------------------------------------------------------------------\n"
-$cargo_pre_cmd BenchmarkTests_Separate::create_test_data $cargo_post_cmd
-sleep 2
+hn="$(hostname)"
 
-printf "\nshuffling ---------------------------------------------------------------------------------------------------------------------------\n"
-shuf input_data.txt > input_data_shuffled.txt
+printf "\n cache 1000 \n "
+
+./run_benchmark_cache_build.sh 1000 && printf 1
+./run_benchmark_cache_search.sh 1000 "cache/$hn/1000_1.txt" && printf 2
+./run_benchmark_cache_search.sh 1000 "cache/$hn/1000_2.txt" && printf 3
+./run_benchmark_cache_build.sh 1000 && printf 4
+./run_benchmark_cache_search.sh 1000 "cache/$hn/1000_3.txt" && printf 5
+./run_benchmark_cache_search.sh 1000 "cache/$hn/1000_4.txt" && printf 6
+
+printf "\n cache 100000 \n "
+
+./run_benchmark_cache_build.sh 100000 && printf 1
+./run_benchmark_cache_search.sh 100000 "cache/$hn/100000_1.txt" && printf 2
+./run_benchmark_cache_search.sh 100000 "cache/$hn/100000_2.txt" && printf 3
+./run_benchmark_cache_build.sh 100000 && printf 4
+./run_benchmark_cache_search.sh 100000 "cache/$hn/100000_3.txt" && printf 5
+./run_benchmark_cache_search.sh 100000 "cache/$hn/100000_4.txt" && printf 6
+
+printf "\n cache 10000000 \n "
+
+./run_benchmark_cache_build.sh 10000000 && printf 1
+./run_benchmark_cache_search.sh 10000000 "cache/$hn/10000000_1.txt" && printf 2
+./run_benchmark_cache_search.sh 10000000 "cache/$hn/10000000_2.txt" && printf 3
+./run_benchmark_cache_search.sh 10000000 "cache/$hn/10000000_3.txt" && printf 4
+
+printf "\n cache 150000000 \n "
+
+./run_benchmark_cache_build.sh 150000000 && printf 1
+./run_benchmark_cache_search.sh 150000000 "cache/$hn/150000000_1.txt" && printf 2
+./run_benchmark_cache_search.sh 150000000 "cache/$hn/150000000_2.txt" && printf 3
+./run_benchmark_cache_search.sh 150000000 "cache/$hn/150000000_3.txt" && printf 4
+```
+
+```bash
+set -e
+
+run_program='./target/release/rust_map'
+input_data_shuffled="input_data_shuffled.txt"
+
+cargo build --release --color=always
+
+$run_program --generate_data    --print_info                      --payload_size 1 -n $1 
+&>/dev/null && printf - && sleep 0.5
+$run_program --build_BST        --input_file $input_data_shuffled --payload_size 1 -n $1 
+&>/dev/null && printf - && sleep 0.5
+$run_program --build_redblack   --input_file $input_data_shuffled --payload_size 1 -n $1 
+&>/dev/null && printf - && sleep 0.5
+$run_program --build_table      --input_file $input_data_shuffled --payload_size 1 -n $1 
+&>/dev/null && printf - && sleep 0.5
+```
+
+```bash
+set -e
+
+perf_cmd="perf stat -o $2 --append -e task-clock,cycles,instructions,cache-references,cache-misses"
+run_program='./target/release/rust_map'
+input_data_shuffled="input_data_shuffled.txt"
+
+rm -f $2
+hostname > $2
+
+sync; echo 3 > /proc/sys/vm/drop_caches && 
+$perf_cmd $run_program --search_BST       --input_file $input_data_shuffled --payload_size 1 -n $1 
+&>/dev/null && printf _ && sleep 0.5
+sync; echo 3 > /proc/sys/vm/drop_caches && 
+$perf_cmd $run_program --search_redblack  --input_file $input_data_shuffled --payload_size 1 -n $1 
+&>/dev/null && printf _ && sleep 0.5
+sync; echo 3 > /proc/sys/vm/drop_caches && 
+$perf_cmd $run_program --search_table     --input_file $input_data_shuffled --payload_size 1 -n $1 
+&>/dev/null && printf _ && sleep 0.5
+```
+
+## Appendix C - Droplet
+
+```
+1gb25gb
+    description: Computer
+    product: Droplet
+    vendor: DigitalOcean
+    version: 20171212
+    serial: 188818393
+    width: 64 bits
+    capabilities: smbios-2.4 dmi-2.4 vsyscall32
+    configuration: boot=normal family=DigitalOcean_Droplet uuid=EC9DDD1B-6217-40D6-8DA6-B7532A4CDA4F
+  *-core
+       description: Motherboard
+       physical id: 0
+     *-cpu
+          description: CPU
+          product: Intel(R) Xeon(R) Gold 6140 CPU @ 2.30GHz
+          vendor: Intel Corp.
+          physical id: 401
+          bus info: cpu@0
+          slot: CPU 1
+          size: 2GHz
+          capacity: 2GHz
+          width: 64 bits
+          capabilities: fpu fpu_exception wp vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss syscall nx pdpe1gb rdtscp x86-64 constant_tsc arch_perfmon rep_good nopl cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault invpcid_single pti ssbd ibrs ibpb tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 pku ospke md_clear
+     *-memory
+          description: System Memory
+          physical id: 1000
+          size: 1GiB
+          capacity: 1GiB
+          capabilities: ecc
+          configuration: errordetection=multi-bit-ecc
+        *-bank
+             description: DIMM RAM
+             physical id: 0
+             slot: DIMM 0
+             size: 1GiB
+             width: 64 bits
+     *-scsi
+          physical id: 1
+          logical name: scsi2
+        *-disk
+             description: EXT4 volume
+             product: Volume
+             vendor: Linux
+             physical id: 0.0.1
+             bus info: scsi@2:0.0.1
+             logical name: /dev/sda
+             logical name: /mnt/volume_nyc1_01
+             version: 1.0
+             serial: 0947718c-25fb-4f54-a8dd-9f8ad600cf4f
+             size: 100GiB
+             capabilities: 5400rpm journaled extended_attributes large_files huge_files dir_nlink recover 64bit extents ext4 ext2 initialized
+             configuration: ansiversion=5 created=2020-04-16 15:34:15 filesystem=ext4 lastmountpoint=/mnt/volume_nyc1_01 logicalsectorsize=512 modified=2020-04-17 19:12:00 mount.fstype=ext4 mount.options=rw,noatime,discard,data=ordered mounted=2020-04-17 19:12:00 sectorsize=512 state=mounted
+            
+
+```
 
 
+## Apendix D - Program Help
+```
+Rust Memory Map 0.1.0
+Dag Andersen <dagbjerreandersen@gmail.com>
+Searching in memory mapped files
 
-printf "\nbuild_tree --------------------------------------------------------------------------------------------------------------------------\n"
-$cargo_pre_cmd BenchmarkTests_Separate::create_tree $cargo_post_cmd
-sleep 2
+USAGE:
+    rust_map [FLAGS] [OPTIONS]
 
-printf "\nbuild_redblack ----------------------------------------------------------------------------------------------------------------------\n"
-$cargo_pre_cmd BenchmarkTests_Separate::create_redblack $cargo_post_cmd
-sleep 2
+FLAGS:
+        --build_BST          Builds a BST for given input
+        --build_redblack     Builds a Redblack Tree for given input
+        --build_table        Builds a Table for given input
+        --generate_data      Generates random entries instead of getting the input from a file
+    -h, --help               Prints help information
+        --print_info         Prints the setup for this run
+        --search_BST         Searches down the BST with <<number_of_entries> / <gap_size>> number of entries
+        --search_redblack    Searches down the Redblack Tree with <<number_of_entries> / <gap_size>> number of entries
+        --search_table       Searches the Table with <<number_of_entries> / <gap_size>> number of entries
+    -V, --version            Prints version information
 
-printf "\nbuild_table -------------------------------------------------------------------------------------------------------------------------\n"
-$cargo_pre_cmd BenchmarkTests_Separate::create_table $cargo_post_cmd
-sleep 2
+OPTIONS:
+    -g, --gap_size <gap_size>
+            The number of entries it skips while selecting/collecting entries to search for
 
-
-
-
-
-printf "\nsearch_time_tree --------------------------------------------------------------------------------------------------------------------\n"
-$perf_cmd $cargo_pre_cmd BenchmarkTests_Separate::search_time_tree $cargo_post_cmd >> $output
-sleep 2
-
-printf "\nsearch_time_redblack ----------------------------------------------------------------------------------------------------------------\n"
-$perf_cmd $cargo_pre_cmd BenchmarkTests_Separate::search_time_redblack $cargo_post_cmd >> $output
-sleep 2
-
-printf "\nsearch_time_table -------------------------------------------------------------------------------------------------------------------\n"
-$perf_cmd $cargo_pre_cmd BenchmarkTests_Separate::search_time_table $cargo_post_cmd >> $output
-sleep 2
+    -f, --input_file <input_file>                  The file for building the data-structure
+    -n, --number_of_entries <number_of_entries>    The number of entries
+    -p, --payload_size <payload_size>              The amount of bytes for each entry
 ```

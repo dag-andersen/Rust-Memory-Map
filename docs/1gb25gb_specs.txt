@@ -1,0 +1,60 @@
+1gb25gb
+    description: Computer
+    product: Droplet
+    vendor: DigitalOcean
+    version: 20171212
+    serial: 188818393
+    width: 64 bits
+    capabilities: smbios-2.4 dmi-2.4 vsyscall32
+    configuration: boot=normal family=DigitalOcean_Droplet uuid=EC9DDD1B-6217-40D6-8DA6-B7532A4CDA4F
+  *-core
+       description: Motherboard
+       physical id: 0
+     *-firmware
+          description: BIOS
+          vendor: DigitalOcean
+          physical id: 0
+          version: 20171212
+          date: 12/12/2017
+          size: 96KiB
+     *-cpu
+          description: CPU
+          product: Intel(R) Xeon(R) Gold 6140 CPU @ 2.30GHz
+          vendor: Intel Corp.
+          physical id: 401
+          bus info: cpu@0
+          slot: CPU 1
+          size: 2GHz
+          capacity: 2GHz
+          width: 64 bits
+          capabilities: fpu fpu_exception wp vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss syscall nx pdpe1gb rdtscp x86-64 constant_tsc arch_perfmon rep_good nopl cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault invpcid_single pti ssbd ibrs ibpb tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 pku ospke md_clear
+     *-memory
+          description: System Memory
+          physical id: 1000
+          size: 1GiB
+          capacity: 1GiB
+          capabilities: ecc
+          configuration: errordetection=multi-bit-ecc
+        *-bank
+             description: DIMM RAM
+             physical id: 0
+             slot: DIMM 0
+             size: 1GiB
+             width: 64 bits
+     *-scsi
+          physical id: 1
+          logical name: scsi2
+        *-disk
+             description: EXT4 volume
+             product: Volume
+             vendor: Linux
+             physical id: 0.0.1
+             bus info: scsi@2:0.0.1
+             logical name: /dev/sda
+             logical name: /mnt/volume_nyc1_01
+             version: 1.0
+             serial: 0947718c-25fb-4f54-a8dd-9f8ad600cf4f
+             size: 100GiB
+             capabilities: 5400rpm journaled extended_attributes large_files huge_files dir_nlink recover 64bit extents ext4 ext2 initialized
+             configuration: ansiversion=5 created=2020-04-16 15:34:15 filesystem=ext4 lastmountpoint=/mnt/volume_nyc1_01 logicalsectorsize=512 modified=2020-04-17 19:12:00 mount.fstype=ext4 mount.options=rw,noatime,discard,data=ordered mounted=2020-04-17 19:12:00 sectorsize=512 state=mounted
+            
