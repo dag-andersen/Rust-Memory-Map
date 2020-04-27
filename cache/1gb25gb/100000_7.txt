@@ -1,0 +1,40 @@
+1gb25gb
+# started on Sun Apr 26 20:32:47 2020
+
+
+ Performance counter stats for './target/release/rust_map --search_BST --input_file input_data_shuffled.txt --payload_size 1 -n 100000':
+
+         34.430625      task-clock (msec)         #    0.376 CPUs utilized          
+          90226145      cycles                    #    2.621 GHz                    
+         143212798      instructions              #    1.59  insn per cycle         
+            555247      cache-references          #   16.127 M/sec                  
+            122444      cache-misses              #   22.052 % of all cache refs    
+
+       0.091637866 seconds time elapsed
+
+# started on Sun Apr 26 20:32:48 2020
+
+
+ Performance counter stats for './target/release/rust_map --search_redblack --input_file input_data_shuffled.txt --payload_size 1 -n 100000':
+
+         29.888220      task-clock (msec)         #    0.028 CPUs utilized          
+          83081777      cycles                    #    2.780 GHz                    
+         141089237      instructions              #    1.70  insn per cycle         
+            420668      cache-references          #   14.075 M/sec                  
+            129297      cache-misses              #   30.736 % of all cache refs    
+
+       1.075248110 seconds time elapsed
+
+# started on Sun Apr 26 20:32:49 2020
+
+
+ Performance counter stats for './target/release/rust_map --search_table --input_file input_data_shuffled.txt --payload_size 1 -n 100000':
+
+       1005.805445      task-clock (msec)         #    0.118 CPUs utilized          
+        2205042859      cycles                    #    2.192 GHz                    
+        1555177619      instructions              #    0.71  insn per cycle         
+          22074275      cache-references          #   21.947 M/sec                  
+           5344424      cache-misses              #   24.211 % of all cache refs    
+
+       8.558839726 seconds time elapsed
+

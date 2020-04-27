@@ -1,0 +1,40 @@
+dionysos
+# started on Sun Apr 26 21:59:56 2020
+
+
+ Performance counter stats for './target/release/rust_map --search_BST --input_file input_data_shuffled.txt --payload_size 1 -n 1000':
+
+          3.257777      task-clock (msec)         #    0.897 CPUs utilized          
+           6493363      cycles                    #    1.993 GHz                    
+           7401016      instructions              #    1.14  insn per cycle         
+             58842      cache-references          #   18.062 M/sec                  
+             23140      cache-misses              #   39.326 % of all cache refs    
+
+       0.003631422 seconds time elapsed
+
+# started on Sun Apr 26 21:59:57 2020
+
+
+ Performance counter stats for './target/release/rust_map --search_redblack --input_file input_data_shuffled.txt --payload_size 1 -n 1000':
+
+          3.541732      task-clock (msec)         #    0.004 CPUs utilized          
+           6671132      cycles                    #    1.884 GHz                    
+           7492493      instructions              #    1.12  insn per cycle         
+             76701      cache-references          #   21.656 M/sec                  
+             26157      cache-misses              #   34.103 % of all cache refs    
+
+       1.004018230 seconds time elapsed
+
+# started on Sun Apr 26 21:59:58 2020
+
+
+ Performance counter stats for './target/release/rust_map --search_table --input_file input_data_shuffled.txt --payload_size 1 -n 1000':
+
+          4.150524      task-clock (msec)         #    0.004 CPUs utilized          
+           8184330      cycles                    #    1.972 GHz                    
+           9677412      instructions              #    1.18  insn per cycle         
+             92978      cache-references          #   22.402 M/sec                  
+             17145      cache-misses              #   18.440 % of all cache refs    
+
+       1.004723604 seconds time elapsed
+
