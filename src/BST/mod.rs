@@ -1,5 +1,5 @@
 use core::fmt;
-use crate::{Entry, Utils, TREE_PATH, PayloadMap, Table, TREE_PAYLOAD, build_data_structure};
+use crate::{Entry, Utils, BST_PATH, PayloadMap, Table, BST_PAYLOAD, build_data_structure};
 use memmap::MmapMut;
 use std::fs;
 
@@ -9,14 +9,14 @@ pub mod TreePrinter;
 
 const NODE_SIZE : usize = std::mem::size_of::<Node>();
 
-pub fn gen_tree_map() -> MmapMut { gen_tree_map_on_path(TREE_PATH) }
+pub fn gen_tree_map() -> MmapMut { gen_tree_map_on_path(BST_PATH) }
 pub fn gen_tree_map_on_path(path: &str) -> MmapMut { Utils::get_memmap(path, 5_000_000_000) }
 
-pub fn build(input: &str) { build_to_path(input, TREE_PATH) }
+pub fn build(input: &str) { build_to_path(input, BST_PATH) }
 
 pub fn build_to_path(input: &str, map_path: &str) {
     fs::remove_file(map_path);
-    build_data_structure(input, TREE_PAYLOAD, gen_tree_map_on_path(map_path), insert_entry)
+    build_data_structure(input, BST_PAYLOAD, gen_tree_map_on_path(map_path), insert_entry)
 }
 
 pub struct Node {
@@ -44,7 +44,7 @@ pub fn insert_entry(mmap: &mut MmapMut, index: usize, entry: Entry, payload_inde
 
 pub fn find_value(ip: u32) -> Option<String> {
     let mmap = gen_tree_map();
-    let payload_map = PayloadMap::gen_payload_map_from_path(TREE_PAYLOAD);
+    let payload_map = PayloadMap::gen_payload_map_from_path(BST_PAYLOAD);
     find_value_on_map(ip,&mmap, &payload_map)
 }
 

@@ -1,4 +1,5 @@
 daga@dionysos:~$ free -t
+              total        used        free      shared  buff/cache   available
 Mem:      131711472     8849484    16582068        2156   106279920   120770932
 Swap:        999420      831024      168396
 Total:    132710892     9680508    16750464
