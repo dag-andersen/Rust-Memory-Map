@@ -223,9 +223,9 @@ fn main() {
         exit(0)
     }
 
-    if input.is_some() && build_BST { create_BST(input.unwrap()); }
-    if input.is_some() && build_redblack { create_redblack(input.unwrap()); }
-    if input.is_some() && build_table { create_table(input.unwrap()); }
+    if input.is_some() && build_BST         { create_BST(input.unwrap()); }
+    if input.is_some() && build_redblack    { create_redblack(input.unwrap()); }
+    if input.is_some() && build_table       { create_table(input.unwrap()); }
 
     match (search_BST, specific_ip, input) {
         (true,Some(s),_)    => println!("{}",BST::find_value(get_u32_for_ip(s).expect("Invalid IP")).unwrap_or("Nothing found".to_string())),
