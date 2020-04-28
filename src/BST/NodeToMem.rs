@@ -1,5 +1,5 @@
 use memmap::MmapMut;
-use crate::{Utils, TREE_PATH};
+use crate::{Utils, BST_PATH};
 use crate::BST::{NODE_SIZE, Node};
 use std::fs;
 
@@ -23,17 +23,17 @@ pub fn place_node(mmap: & mut MmapMut, index: usize, node: & Node) {
 
 #[test]
 fn test_correct_placement() {
-    fs::remove_file(TREE_PATH);
+    fs::remove_file(BST_PATH);
     let mut name: u64 = 5;
 
     let node1 = super::Node { min_ip: 20, max_ip: 20, left: 0, right: 0, payload_ptr: Default::default() };
     let node2 = super::Node { min_ip: 20, max_ip: 20, left: 0, right: 0, payload_ptr: name };
 
-    let mut first_map = Utils::get_memmap(TREE_PATH, 3000);
+    let mut first_map = Utils::get_memmap(BST_PATH, 3000);
     place_node(& mut first_map, 0, &node1);
     place_node(& mut first_map, 1, &node2);
 
-    let another_map = Utils::get_memmap(TREE_PATH, 3000);
+    let another_map = Utils::get_memmap(BST_PATH, 3000);
     let getnode = get_node(&another_map, 1);
 
     assert_eq!(name, getnode.payload_ptr);

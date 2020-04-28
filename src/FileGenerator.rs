@@ -8,7 +8,7 @@ use rand::seq::SliceRandom;
 use rand::thread_rng;
 use std::cmp::min;
 use std::{fs, io};
-use crate::{thisFileWillBeDeleted, Utils, Entry, test_set_6, TREE_PATH, BST, test_set_5, TABLE_PATH};
+use crate::{thisFileWillBeDeleted, Utils, Entry, test_set_6, BST_PATH, BST, test_set_5, TABLE_PATH};
 use regex::bytes::Regex;
 
 fn generate_random_payload(rng: &ThreadRng, size: usize) -> String {

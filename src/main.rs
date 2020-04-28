@@ -20,9 +20,9 @@ const test_set_3:               &str    = "testdata/in/set3.txt";
 const test_set_4:               &str    = "testdata/in/set4.txt";
 const test_set_5:               &str    = "testdata/in/10_000.txt";
 const test_set_6:               &str    = "testdata/in/50_000.txt";
-const TREE_PRINT_PATH:          &str    = "testdata/out/tree/tree_print.txt";
-const TREE_PATH:                &str    = "testdata/out/tree/map.txt";
-const TREE_PAYLOAD:             &str    = "testdata/out/tree/NAME_TABLE.txt";
+const BST_PRINT_PATH:          &str    = "testdata/out/tree/tree_print.txt";
+const BST_PATH:                &str    = "testdata/out/tree/map.txt";
+const BST_PAYLOAD:             &str    = "testdata/out/tree/NAME_TABLE.txt";
 const REDBLACK_PRINT_PATH:      &str    = "testdata/out/redblack/tree_print.txt";
 const REDBLACK_PATH:            &str    = "testdata/out/redblack/map.txt";
 const REDBLACK_PAYLOAD:         &str    = "testdata/out/redblack/NAME_TABLE.txt";
@@ -88,7 +88,6 @@ pub const shuffle_in_momory:        bool = false;
 fn main() {
     Utils::make_needed_folders();
 
-
     let matches = App::new("Rust Memory Map")
         .version("0.1.0")
         .author("Dag Andersen <dagbjerreandersen@gmail.com>")
@@ -107,7 +106,7 @@ fn main() {
             .short("g")
             .long("gap_size")
             .takes_value(true)
-            .help("The number of entries it skips while selecting/collecting entries to search for"))
+            .help("The number of entries it skips while selecting/collecting which IPs to search for"))
         .arg(Arg::with_name("input_file")
             .short("i")
             .long("input_file")
@@ -119,32 +118,57 @@ fn main() {
             .takes_value(true)
             .help("The specific ip you want to search for"))
         .arg(Arg::with_name("generate_data")
+            .short("G")
             .long("generate_data")
             .help("Generates random entries instead of getting the input from a file"))
         .arg(Arg::with_name("print_info")
             .long("print_info")
             .help("Prints the setup for this run"))
         .arg(Arg::with_name("build_table")
+            .short("t")
             .long("build_table")
             .help("Builds a Table for given input"))
         .arg(Arg::with_name("build_BST")
+            .short("b")
             .long("build_BST")
             .help("Builds a BST for given input"))
         .arg(Arg::with_name("build_redblack")
+            .short("r")
             .long("build_redblack")
             .help("Builds a Redblack Tree for given input"))
         .arg(Arg::with_name("search_table")
+            .short("T")
             .long("search_table")
             .help("Searches the Table with <number_of_entries / gap_size> number of entries"))
         .arg(Arg::with_name("search_BST")
+            .short("B")
             .long("search_BST")
             .help("Searches down the BST with <number_of_entries / gap_size> number of entries"))
         .arg(Arg::with_name("search_redblack")
+            .short("R")
             .long("search_redblack")
             .help("Searches down the Redblack Tree with <number_of_entries / gap_size> number of entries"))
         .get_matches();
 
     let shuffled_file_str = matches.value_of("input_file");
+    let generate_data = matches.is_present("generate_data");
+    let specific_ip = matches.value_of("specific_ip");
+    let build_BST = matches.is_present("build_BST");
+    let build_redblack = matches.is_present("build_redblack");
+    let build_table = matches.is_present("build_table");
+    let search_BST = matches.is_present("search_BST");
+    let search_redblack = matches.is_present("search_redblack");
+    let search_table = matches.is_present("search_table");
+
+    if !search_BST && !search_redblack && !search_table && specific_ip.is_some() {
+        println!("You have so specify which datastructure you want to search in");
+        exit(0)
+    }
+
+    if !search_BST && !search_redblack && !search_table && specific_ip.is_some() {
+        println!("You have so specify which datastructure you want to search in");
+        exit(0)
+    }
 
     let n = match matches.value_of("number_of_entries") {
         None => 150_000_000,
@@ -170,9 +194,8 @@ fn main() {
         println!("Benchmark input: n: {}, range: {:#?}, padding: {:#?}, payload_size: {}, gap:{} \n\n", &n, &range, &padding, payload_size, &gap_size);
     }
 
-    let input = match shuffled_file_str {
-        Some(f) => f,
-        None if matches.is_present("generate_data") => {
+    let input = match (shuffled_file_str, generate_data, specific_ip) {
+        (None,true,_)  => {
             fs::remove_file(input_data);
             fs::remove_file(input_data_shuffled);
             if shuffle_in_momory {
@@ -182,37 +205,44 @@ fn main() {
                 sleep(time::Duration::from_secs(1));
                 shuffle_file(input_data, input_data_shuffled);
             }
-            input_data_shuffled
+            Some(input_data_shuffled)
         },
-        _ => {
+        (None,false,None) => {
             println!("You have to specify a input file or add the flag --generate_data");
             exit(0)
-        }
+        },
+        (Some(f),true,_) => {
+            println!("You cant both generate data and provide an input file");
+            exit(0)
+        },
+        (f,false,_) => f,
     };
 
-    if matches.is_present("build_BST") { create_BST(input); }
-    if matches.is_present("build_redblack") { create_redblack(input); }
-    if matches.is_present("build_table") { create_table(input); }
-
-    if matches.is_present("search_BST") {
-        match matches.value_of("specific_ip") {
-            None => println!("{}",search_time_BST(input,gap_size)),
-            Some(s) => println!("{}",BST::find_value(get_u32_for_ip(s).expect("Invalid IP")).unwrap_or("Nothing found".to_string()))
-        };
+    if (build_BST || build_redblack || build_table) && input.is_none() {
+        println!("You cant build without specifying generating data or providing a file");
+        exit(0)
     }
 
-    if matches.is_present("search_redblack") {
-        match matches.value_of("specific_ip") {
-            None => println!("{}",search_time_redblack(input,gap_size)),
-            Some(s) => println!("{}",RedBlack::find_value(get_u32_for_ip(s).expect("Invalid IP")).unwrap_or("Nothing found".to_string()))
-        };
+    if input.is_some() && build_BST { create_BST(input.unwrap()); }
+    if input.is_some() && build_redblack { create_redblack(input.unwrap()); }
+    if input.is_some() && build_table { create_table(input.unwrap()); }
+
+    match (search_BST, specific_ip, input) {
+        (true,Some(s),_)    => println!("{}",BST::find_value(get_u32_for_ip(s).expect("Invalid IP")).unwrap_or("Nothing found".to_string())),
+        (true,None,Some(i)) => println!("{}",search_time_BST(i,gap_size)),
+        _ => {}
     }
 
-    if matches.is_present("search_table") {
-        match matches.value_of("specific_ip") {
-            None => println!("{}",search_time_table(input,gap_size)),
-            Some(s) => println!("{}",Table::find_value(get_u32_for_ip(s).expect("Invalid IP")).unwrap_or("Nothing found".to_string()))
-        };
+    match (search_redblack, specific_ip, input) {
+        (true,Some(s),_)    => println!("{}",RedBlack::find_value(get_u32_for_ip(s).expect("Invalid IP")).unwrap_or("Nothing found".to_string())),
+        (true,None,Some(i)) => println!("{}",search_time_redblack(i,gap_size)),
+        _ => {}
+    }
+
+    match (search_table, specific_ip, input) {
+        (true,Some(s),_)    => println!("{}",Table::find_value(get_u32_for_ip(s).expect("Invalid IP")).unwrap_or("Nothing found".to_string())),
+        (true,None,Some(i)) => println!("{}",search_time_table(i,gap_size)),
+        _ => {}
     }
 }
 

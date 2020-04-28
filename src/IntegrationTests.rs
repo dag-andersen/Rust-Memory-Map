@@ -1,5 +1,5 @@
 use stopwatch::Stopwatch;
-use crate::{FileGenerator, TREE_PRINT_PATH, TREE_PATH, Utils, TABLE_PATH, u32Size, test_set_5, thisFileWillBeDeleted, Table, test_set_6, PayloadMap, RedBlack, REDBLACK_PAYLOAD, TABLE_PAYLOAD, TREE_PAYLOAD, test_set_1};
+use crate::{FileGenerator, BST_PRINT_PATH, BST_PATH, Utils, TABLE_PATH, u32Size, test_set_5, thisFileWillBeDeleted, Table, test_set_6, PayloadMap, RedBlack, REDBLACK_PAYLOAD, TABLE_PAYLOAD, BST_PAYLOAD, test_set_1};
 use std::fs;
 use std::fs::File;
 use std::io::{LineWriter, Write};
@@ -75,7 +75,7 @@ fn build_and_search_table_with_random_data() {
 
 #[test]
 fn build_and_search_BST_with_random_data() {
-    build_and_search_data_structure_with_random_data(TREE_PAYLOAD, BST::build, BST::gen_tree_map, BST::find_value_on_map)
+    build_and_search_data_structure_with_random_data(BST_PAYLOAD, BST::build, BST::gen_tree_map, BST::find_value_on_map)
 }
 
 #[test]

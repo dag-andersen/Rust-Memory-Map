@@ -1,4 +1,4 @@
-use crate::{TREE_PATH, PayloadMap, Entry, TREE_PAYLOAD};
+use crate::{BST_PATH, PayloadMap, Entry, BST_PAYLOAD};
 use memmap::MmapMut;
 use crate::BST::{Node, NodeToMem};
 use std::fs;
@@ -57,8 +57,8 @@ pub fn find_node_on_map(ip: u32, mmap: &MmapMut) -> Option<u64> {
 
 #[test]
 fn insert_node_and_find_it() {
-    fs::remove_file(TREE_PATH);
-    fs::remove_file(TREE_PAYLOAD);
+    fs::remove_file(BST_PATH);
+    fs::remove_file(BST_PAYLOAD);
 
     let mut tree_map = super::gen_tree_map();
 
@@ -107,14 +107,14 @@ fn insert_node_and_find_it() {
     assert!(out_name2.is_none());
     assert!(out_name3.is_none());
 
-    fs::remove_file(TREE_PATH);
-    fs::remove_file(TREE_PAYLOAD);
+    fs::remove_file(BST_PATH);
+    fs::remove_file(BST_PAYLOAD);
 }
 
 #[test]
 fn insert_node_random_order_and_find_it() {
-    fs::remove_file(TREE_PATH);
-    fs::remove_file(TREE_PAYLOAD);
+    fs::remove_file(BST_PATH);
+    fs::remove_file(BST_PAYLOAD);
 
     let mut tree_map = super::gen_tree_map();
 
@@ -170,6 +170,6 @@ fn insert_node_random_order_and_find_it() {
     assert_eq!(out_name7.unwrap(),name5);
     assert_eq!(out_name8.unwrap(),name6);
 
-    fs::remove_file(TREE_PATH);
-    fs::remove_file(TREE_PAYLOAD);
+    fs::remove_file(BST_PATH);
+    fs::remove_file(BST_PAYLOAD);
 }

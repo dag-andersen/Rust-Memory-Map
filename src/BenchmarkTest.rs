@@ -1,5 +1,5 @@
 use stopwatch::Stopwatch;
-use crate::{FileGenerator, Utils, Table, PayloadMap, RedBlack, REDBLACK_PATH, BST, TREE_PATH, TABLE_PATH, TABLE_PAYLOAD, TREE_PAYLOAD, REDBLACK_PAYLOAD, number_of_entries};
+use crate::{FileGenerator, Utils, Table, PayloadMap, RedBlack, REDBLACK_PATH, BST, BST_PATH, TABLE_PATH, TABLE_PAYLOAD, BST_PAYLOAD, REDBLACK_PAYLOAD, number_of_entries};
 use std::{fs, io};
 use std::fs::{File, OpenOptions};
 use std::io::{LineWriter, Write};
@@ -67,7 +67,7 @@ pub fn search_time_table(input: &str, gap: usize) -> String {
 
 pub fn search_time_BST(input: &str, gap: usize) -> String {
     println!("\n## search_time_BST");
-    search_time(input, gap, TREE_PAYLOAD, BST::gen_tree_map, BST::find_value_on_map)
+    search_time(input, gap, BST_PAYLOAD, BST::gen_tree_map, BST::find_value_on_map)
 }
 
 pub fn search_time_redblack(input: &str, gap: usize) -> String {

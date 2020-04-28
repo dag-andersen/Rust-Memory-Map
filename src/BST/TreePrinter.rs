@@ -1,4 +1,4 @@
-use crate::{Utils, TREE_PATH, BST, Table, PayloadMap, thisFileWillBeDeleted, FileGenerator, TREE_PRINT_PATH, test_set_3, test_set_1, TREE_PAYLOAD};
+use crate::{Utils, BST_PATH, BST, Table, PayloadMap, thisFileWillBeDeleted, FileGenerator, BST_PRINT_PATH, test_set_3, test_set_1, BST_PAYLOAD};
 use std::fs::File;
 use std::io::{LineWriter, Write, BufRead};
 use memmap::MmapMut;
@@ -6,11 +6,11 @@ use crate::BST::{Node, NodeToMem};
 use std::fs;
 
 pub(crate) fn print_tree_to_file(s: &str) {
-    fs::remove_file(TREE_PRINT_PATH);
+    fs::remove_file(BST_PRINT_PATH);
     let file = File::create(s).unwrap();
     let mut line_writer = LineWriter::new(file);
     let tree_map = BST::gen_tree_map();
-    let payload_map = PayloadMap::gen_payload_map_from_path(TREE_PAYLOAD);
+    let payload_map = PayloadMap::gen_payload_map_from_path(BST_PAYLOAD);
     let root = NodeToMem::get_node(&tree_map, 0);
     print_node_to_file(&tree_map, &payload_map, &root, 0, &mut line_writer);
 }
@@ -31,7 +31,7 @@ fn print_node_to_file(mmap: &MmapMut, payload_map: &MmapMut, node: &Node, n: usi
 #[test]
 fn print_tree_and_read_1() {
     let src = thisFileWillBeDeleted;
-    fs::remove_file(TREE_PATH);
+    fs::remove_file(BST_PATH);
     super::build(test_set_1);
     print_tree_to_file(src);
     let mut iter = Utils::get_buffer(src).lines().map(|x| x.unwrap() );
@@ -41,13 +41,13 @@ fn print_tree_and_read_1() {
     assert_eq!(iter.next(), Some("-Hans Hansens Hus".to_string()));
     assert_eq!(iter.next(), Some("Siteimprove".to_string()));
     fs::remove_file(src);
-    fs::remove_file(TREE_PATH);
+    fs::remove_file(BST_PATH);
 }
 
 #[test]
 fn print_tree_and_read_2() {
     let src = thisFileWillBeDeleted;
-    fs::remove_file(TREE_PATH);
+    fs::remove_file(BST_PATH);
     super::build(test_set_3);
     print_tree_to_file(src);
     let mut iter = Utils::get_buffer(src).lines().map(|x| x.unwrap() );
@@ -57,5 +57,5 @@ fn print_tree_and_read_2() {
     assert_eq!(iter.next(), Some("--Hans Hansens Hus".to_string()));
     assert_eq!(iter.next(), Some("Siteimprove".to_string()));
     fs::remove_file(src);
-    fs::remove_file(TREE_PATH);
+    fs::remove_file(BST_PATH);
 }
