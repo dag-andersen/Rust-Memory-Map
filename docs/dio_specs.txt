@@ -1,0 +1,150 @@
+daga@dionysos:~$  sudo lshw
+dionysos
+    description: Rack Mount Chassis
+    product: PowerEdge R640 (SKU=NotProvided;ModelName=PowerEdge R640)
+    vendor: Dell Inc.
+    serial: G7Y2MM2
+    width: 64 bits
+    capabilities: smbios-3.0 dmi-3.0 smp vsyscall32
+    configuration: boot=normal chassis=rackmount family=PowerEdge sku=SKU=NotProvided;ModelName=PowerEdge R640 uuid=44454C4C-3700-1059-8032-C7C04F4D4D32
+  *-core
+       description: Motherboard
+       product: 0CRT1G
+       vendor: Dell Inc.
+       physical id: 0
+       version: A03
+       serial: .G7Y2MM2.CNIVC007B60796.
+     *-firmware
+          description: BIOS
+          vendor: Dell Inc.
+          physical id: 0
+          version: 1.1.7
+          date: 08/10/2017
+          size: 64KiB
+          capacity: 15MiB
+          capabilities: isa pci pnp upgrade shadowing cdboot bootselect edd int13floppytoshiba int13floppy360 int13floppy1200 int13floppy720 int9keyboard int14serial int10video acpi usb biosbootspecification netboot uefi
+     *-cpu:0
+          description: CPU
+          product: Intel(R) Xeon(R) Silver 4109T CPU @ 2.00GHz
+          vendor: Intel Corp.
+          physical id: 400
+          bus info: cpu@0
+          version: Intel(R) Xeon(R) Silver 4109T CPU @ 2.00GHz
+          slot: CPU1
+          size: 2GHz
+          capacity: 4GHz
+          width: 64 bits
+          clock: 1010MHz
+          capabilities: x86-64 fpu fpu_exception wp vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid dca sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault epb cat_l3 cdp_l3 invpcid_single pti intel_ppin ssbd mba ibrs ibpb stibp tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 hle avx2 smep bmi2 erms invpcid rtm cqm mpx rdt_a avx512f avx512dq rdseed adx smap clflushopt clwb intel_pt avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local dtherm arat pln pts pku ospke md_clear flush_l1d
+          configuration: cores=8 enabledcores=8 threads=8
+        *-cache:0
+             description: L1 cache
+             physical id: 700
+             size: 512KiB
+             capacity: 512KiB
+             capabilities: internal write-back unified
+             configuration: level=1
+        *-cache:1
+             description: L2 cache
+             physical id: 701
+             size: 8MiB
+             capacity: 8MiB
+             capabilities: internal write-back unified
+             configuration: level=2
+        *-cache:2
+             description: L3 cache
+             physical id: 702
+             size: 11MiB
+             capacity: 11MiB
+             capabilities: internal write-back unified
+             configuration: level=3
+     *-cpu:1
+          description: CPU
+          product: Intel(R) Xeon(R) Silver 4109T CPU @ 2.00GHz
+          vendor: Intel Corp.
+          physical id: 401
+          bus info: cpu@1
+          version: Intel(R) Xeon(R) Silver 4109T CPU @ 2.00GHz
+          slot: CPU2
+          size: 2GHz
+          capacity: 4GHz
+          width: 64 bits
+          clock: 1010MHz
+          capabilities: x86-64 fpu fpu_exception wp vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid dca sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault epb cat_l3 cdp_l3 invpcid_single pti intel_ppin ssbd mba ibrs ibpb stibp tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 hle avx2 smep bmi2 erms invpcid rtm cqm mpx rdt_a avx512f avx512dq rdseed adx smap clflushopt clwb intel_pt avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local dtherm arat pln pts pku ospke md_clear flush_l1d
+          configuration: cores=8 enabledcores=8 threads=8
+        *-cache:0
+             description: L1 cache
+             physical id: 703
+             size: 512KiB
+             capacity: 512KiB
+             capabilities: internal write-back unified
+             configuration: level=1
+        *-cache:1
+             description: L2 cache
+             physical id: 704
+             size: 8MiB
+             capacity: 8MiB
+             capabilities: internal write-back unified
+             configuration: level=2
+        *-cache:2
+             description: L3 cache
+             physical id: 705
+             size: 11MiB
+             capacity: 11MiB
+             capabilities: internal write-back unified
+             configuration: level=3
+     *-memory
+          description: System Memory
+          physical id: 1000
+          slot: System board or motherboard
+          size: 128GiB
+          capacity: 3TiB
+          capabilities: ecc
+          configuration: errordetection=multi-bit-ecc
+    
+     *-pci:1
+          description: PCI bridge
+          product: Sky Lake-E PCI Express Root Port A
+          vendor: Intel Corporation
+          physical id: 101
+          bus info: pci@0000:17:00.0
+          version: 04
+          width: 32 bits
+          clock: 33MHz
+          capabilities: pci msi pciexpress pm normal_decode bus_master cap_list
+          configuration: driver=pcieport
+          resources: irq:27 ioport:4000(size=4096) memory:9db00000-9dcfffff
+        *-storage
+             description: RAID bus controller
+             product: MegaRAID SAS-3 3108 [Invader]
+             vendor: LSI Logic / Symbios Logic
+             physical id: 0
+             bus info: pci@0000:18:00.0
+             logical name: scsi14
+             version: 02
+             width: 64 bits
+             clock: 33MHz
+             capabilities: storage pm pciexpress vpd msi msix bus_master cap_list
+             configuration: driver=megaraid_sas latency=0
+             resources: irq:46 ioport:4000(size=256) memory:9dc00000-9dc0ffff memory:9db00000-9dbfffff
+           *-disk
+                description: ATA Disk
+                product: SSDSC2BB120G7R
+                physical id: 0.0.0
+                bus info: scsi@14:0.0.0
+                logical name: /dev/sda
+                version: DL42
+                serial: BTDV74210AVX150MGN
+                size: 111GiB (120GB)
+                capacity: 111GiB (120GB)
+                capabilities: partitioned partitioned:dos
+                configuration: ansiversion=6 logicalsectorsize=512 sectorsize=4096 signature=74c3e113
+              *-volume
+                   description: Linux LVM Physical Volume partition
+                   physical id: 1
+                   bus info: scsi@14:0.0.0,1
+                   logical name: /dev/sda1
+                   serial: VgJ440-7753-qYu4-eQ2C-pOIN-t3Uo-ReFVFl
+                   size: 111GiB
+                   capacity: 111GiB
+                   capabilities: primary bootable multi lvm2

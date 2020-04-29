@@ -69,7 +69,6 @@ pub fn make_needed_folders() {
     std::fs::create_dir_all("testdata/out/tree").expect("couldn't create folder");
     std::fs::create_dir_all("testdata/out/redblack").expect("couldn't create folder");
     std::fs::create_dir_all("testdata/out/table").expect("couldn't create folder");
-    std::fs::create_dir_all("testdata/out/speed").expect("couldn't create folder");
 }
 
 #[test]
