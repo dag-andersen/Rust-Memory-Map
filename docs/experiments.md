@@ -52,14 +52,7 @@ Note til philippe: Jeg ved ikke rigtig hvorfor
 1gb-droplet bliver vildt meget langsommere på
 dataset der er 150million, eftersom vi kan se i
 experimentet med memory usage, at begge maskiner har et limit på 64mb memory. 
-
-Noter til mig selv:
-https://stackoverflow.com/questions/43541420/when-and-how-is-mmaped-memory-swapped-in-and-out
-
-https://www.webopedia.com/TERM/P/paging.html
-https://www.webopedia.com/TERM/S/swap.html
 ```
-
 _____
 
 

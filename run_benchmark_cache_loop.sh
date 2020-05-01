@@ -4,6 +4,8 @@ cargo build --release --color=always
 
 hn="$(hostname)"
 
+mkdir -p "cache/$hn"
+
 printf "\n cache 1000 \n "
 
 ./run_benchmark_cache_build.sh 1000 && printf 1
