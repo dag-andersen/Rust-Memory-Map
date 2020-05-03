@@ -1,11 +1,11 @@
 
 HOSTNAME: 1gb25gb
 
-Benchmark input: n: 150000000, range: 10..18, padding: 10..18, payload_size: 50, gap:100 
+Benchmark input: n: 150000000, range: 10..18, padding: 10..18, payload_size: 50, gap:1000 
 
 
 
-## search_time_table
+## search_time_redblack
 |--------------------------------------------------------------------------------------------------|
 ----------------------------------------------------------------------------------------------------
-Search time --- #8179948 micro seconds, #1500000 of requests ran, #1500000 none, #0 wrong
+Search time --- #1112371972 micro seconds, #150000 of requests ran, #0 none, #0 wrong

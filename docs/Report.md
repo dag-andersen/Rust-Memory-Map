@@ -138,12 +138,12 @@ When the owner goes out of scope, the value will be dropped.
 This also eliminates C's issue of double free error. 
 ```
 
-Rust has a concept of lifetimes. This means that if we have an array of items `[T]` and we create a reference to one of those items `&T` then that reference needs to leave scope before the array itself. In other words, the array needs to have a longer lifetime than outside pointers to its elements - otherwise, the rust compiler won't compile because it can't guarantee that the array isn't freed or changed before accessing `T`. This is both a huge challenge when first starting to work with Rust, but also a really great safety. This is great for this project, because we eliminate change of dangling pointers, which can be a pain, when building complex data-structure with a lot of moving pointers. 
+Rust has a concept of lifetimes. This means that if we have an array of items `[T]` and we create a reference to one of these items `&T` then that reference needs to leave scope before the array itself. In other words, the array needs to have a longer lifetime than outside pointers to its elements - otherwise, the Rust compiler will not compile because it cannot guarantee that the array is not freed or changed before accessing `T`. This is both a huge challenge when first starting to work with Rust, but also a great safety. This is great for this project, because we eliminate change of dangling pointers, which can be a pain, when building a complex data structure with a lot of moving pointers. 
 
 Starting this project is was the plan to let nodes refer to each other by using a `&T` when building a tree. But because of these compiler challenges mentioned above, I chose to instead go for an implementation where each node stored a byte-offset to where its children were stored the memory map. 
 
 **Reading from Memory Map**
-Sadly sometimes we can cant use rust's safety, and this is where rust works more like C.
+Sadly, sometimes we can cannot use Rust's safety, and this is where Rust works more like C.
 ```rust
 pub(crate) unsafe fn bytes_to_type<T>(slice: &[u8]) -> &mut T {
     std::slice::from_raw_parts_mut(slice.as_ptr() as *mut T, std::mem::size_of::<T>())
@@ -151,14 +151,14 @@ pub(crate) unsafe fn bytes_to_type<T>(slice: &[u8]) -> &mut T {
         .unwrap()
 }
 ```
-This function returns a reference to a mutable object given a reference to a `u8` array. This function is used to get a reference to a node directly on the memory map. Here we have no guarantee of we are going to get, since it just a pointer and a length that we force to become a reference to type `T`. I this case we don't have any other way since Memory Map only know the concept of bytes.
+This function returns a reference to a mutable object given a reference to a `u8` array. This function is used to get a reference to a node directly on the memory map. Here we have no guarantee of what we are going to get, since it is just a pointer and a length that we force to become a reference to type `T`. I this case we do not have any other way since Memory Map only knows the concept of bytes.
 
 **Error handling**
-C doesn't provide good error handling, because the programmer is expected to prevent errors from occurring in the first place. -wiki source? This means C is much harder and unsafe to code combined with it is very difficult to debug. 
+C does not provide good error handling, because the programmer is expected to prevent errors from occurring in the first place. -wiki source? This means that C is much harder and unsafe to code combined with the fact that it is very difficult to debug. 
 
 https://en.wikibooks.org/wiki/C_Programming/Error_handling
 
-High level languages like java and C# have use mechanisms such as exceptions. Rust doesn’t have exceptions. Instead, rust has two types of error handling `Result<T, E>` and `Option<T>`. Option can be seen as the same as a result but without an error object. 
+High level languages like java and C# have mechanisms such as exceptions. Rust does not have exceptions. Instead, Rust has two types of error handling `Result<T, E>` and `Option<T>`. Option can be seen as the same as a Result but without an error object. 
 ```rust
 pub(crate) fn get_u32_for_ip(v: &str) -> Option<u32> {
     let v: Vec<&str> = v.split('.').collect();
@@ -174,12 +174,12 @@ pub(crate) fn get_u32_for_ip(v: &str) -> Option<u32> {
     Some(acc)
 }
 ```
-Both concepts are used in this function above. Option is used in the form of `Some` and `None` and Result is used in `Ok(n)` and `Err(E)`. This function takes a string of 4 numbers separated by a dot `.` - e.g. `192.2.103.11` - and returns unsigned integer wrapped in an option. In this case, I use Option as a safe way to use a null-pointer. Being able to handle an error with ease is crucial when needing to deliver save code quickly. 
+Both concepts are used in the function above. Option is used in the form of `Some` and `None` and Result is used in `Ok(n)` and `Err(E)`. This function takes a string of four numbers separated by a dot `.` - e.g. `192.2.103.11` - and returns an unsigned integer wrapped in an Option. In this case, I use Option as a safe way to use a null-pointer. Being able to handle an error with ease is crucial when needing to deliver save code quickly. 
 
 ### Rust combined with C
-Rust does not have an official interface/abstraction for using memory maps, but there exist a few open-source libraries created by the community. 
-Rust's package management system is called cargo and use the crates as the packages. This uses a crate called `memmap` (version `0.7.0`). This library was chosen based on the fact that it had the most stars on Github. The abstraction provided by the external libraries is not extensive compared to the using the native C, meaning that the configuration for the map is not as customizable. 
-Rust has the ability to call directly into C files, and you also have the ability to use most of the c standard library inline by using the `libc`- library/crate. This means we can access functions like `mlock` and `mlockall`. `show example`. But rusts memory safety can not guarantee the result of these function so it forces us we need to use the "unsafe" keyword. Overall this means that we can use both rust functions and c functions as we please, but we can't guarantee what is going to happen.
+Rust does not have an official interface/abstraction for using memory maps, but there exists a few open-source libraries created by the community. 
+Rust's package management system is called *cargo* and it uses the crates as the packages. This project uses a crate called `memmap` (version `0.7.0`). This library was chosen because it had the most stars on Github. The abstraction provided by the external libraries is not extensive compared to the one in the C standard library, meaning that the configuration for the map is not as customizable. 
+Rust has the ability to call directly into C files, and you can also use most of the C standard library inline by using the `libc`- library/crate. This means we can access functions like `mlock` and `mlockall`. `show example`. But Rust’s memory safety cannot guarantee the result of these functions so it forces us to use the "unsafe" keyword. Overall, this means that we can use both Rust functions and C functions as we please, but we cannot guarantee what is going to happen.
 
 https://doc.rust-lang.org/nomicon/ffi.html
 
@@ -192,27 +192,27 @@ https://stackoverflow.com/questions/47618823/cannot-borrow-as-mutable-because-it
 
 
 ## Design
-I this project I have went with an implementing of a Binary Search Tree, a redblack tree, and a table. All three implementations have their own module in the source code and have the same interface, so they can be swapped interchangeably. All data-structures are implemented using memory-mapped files. All three implementations use a separate memory-mapped file for storing the payload/values. This memory-mapped file will be referred to as `payload_map`.
-In this implementation, I have chosen to store strings as payload, but this could be swapped out with any other datatype.
+I this project I have chosen an implementation of a Binary Search Tree, a redblack tree, and a table. All three implementations have their own module in the source code and have the same interface, so they can be swapped interchangeably. All data structures are implemented using memory-mapped files. All three implementations use a separate memory-mapped file for storing the payload/values. This memory-mapped file will be referred to as `payload_map`.
+In this all three implementations, I have chosen to store strings as payload, but this could be swapped out with any other data type.
 
-Before diving deeper into the implementations, I want to highlight difference between fixed data-sizes vs dynamic data-sizes. 
+Before diving deeper into the implementations, I want to highlight the difference between fixed data sizes vs dynamic data sizes. 
 
 #### Fixed vs. dynamic data length 
 
 Depending on the problem you want to solve you can either choose to use the same fixed amount of space for each entry or have a dynamic size (meaning you only use the necessary amount of space for each entry). 
 
-This choice is important for deciding how to store the payload and how we store the nodes in the tree, and how big the pointers to the payload needs to be.
+This choice is important for deciding how to store the payload and how we store the nodes in the tree, and how big the pointers to the payload need to be.
 
 Fixed sized data could imply using a struct - meaning that the whole file is cut in equal-sized pieces (structs). This means you can refer to the offset of the struct itself, and not to the byte index of the struct. This is important because the byte-index number will be much larger than the struct offset, meaning it takes more space to store pointers to byte indexes.
 
 <img src="../docs/images/bachelor-05.png" alt="drawing" width="600"/>
 
-Struct offsets are great if you know the data-object always will have the same size, but if the amount of data needed to be stored varies a lot, then we will wast space on internal padding in the structs because they are not filled out. This means we instead can make all data-objects have a dynamic size. This would result in us having to store the size of the data object in the header (because we don't know the size of it) and need to use byte-index to refer to the data. 
+Struct offsets are great if you know the data-object always will have the same size, but if the amount of data needed to be stored varies a lot, then we will waste space on internal padding in the structs because they are not filled out. This means we instead can make all data-objects have a dynamic size. This would result in us having to store the size of the data object in the header (because we do not know the size of it) and need to use byte-index to refer to the data. 
 
 ### Payload Map
 This memory-mapped file contains all entries' value and the length of the values in bytes. A value is retrieved from the map by giving it the byte index of the header of the value. Each lookup runs in constant time and therefore has a time complexity of *O(1)*. 
 
-Each value has a header of one byte, which is used to store the length of the data. The length is necessary because we don't know how far we need to read to get the value. The length of the payload is stored on 1 byte, which means that the payload can be at most be `2^8 = 256` bytes long. This is just a design choice, but could easily be extended by changing all headers would need to be 2 bytes long instead. 
+Each value has a header of one byte, which is used to store the length of the data. The length is necessary because we do not know how far we need to read to get the value. The length of the payload is stored on 1 byte, which means that the payload can be at most `2^8 = 256` bytes long. This is just a design choice but could easily be extended by changing all headers – they would need to be 2 bytes long instead. 
 
 On this picture we can see how *SKAT* would be stored.
 
@@ -223,9 +223,9 @@ The space needed for this file can be calculated from the max payload size and t
 
 ## BST & Redblack Tree
 
-Both the BST and the redblack tree is implemented very similarly. Most functions are exactly the same, but with the exception of the insert-function (`fn insert_node(...)` in the source code) in the redblack tree being pretty extensive and the fact that the redblack has functions for changing the root-node. 
+Both the BST and the redblack tree are implemented very similarly. Most functions are exactly the same, but with the exception of the insert-function (`fn insert_node(...)` in the source code) in the redblack tree being pretty extensive and the fact that the redblack tree has functions for changing the root-node. 
 
-The nodes in the two tree are declared as followed:
+The nodes in the two trees are declared as followed:
 <table><tr><th>
 BST
 </th><th>
@@ -250,10 +250,10 @@ pub struct Node {
 
 >`min_ip` being the lower-bound IP, `max_ip` being the higher-bound IP, `left` being the left child, `right` being the right child, `parent` being the parent node and `payload_ptr` being a pointer to the `payload_map`, and `red` is the indicator of the node being red or black.
 
-The `min_ip` and `max_ip` is a `u32`, because IPv4 is 32-bit. Pointers to other nods is `u32`, because we know that there will be at most 2^32 nodes, when the tree only handles IPv4.
+The `min_ip` and `max_ip` are a `u32`, because IPv4 is 32-bit. Pointers to other nods are `u32`, because we know that there will be at most 2^32 nodes, when the tree only handles IPv4.
 
 **Insertion**
-Each time an entry is added to the tree a new node will be appended at the end of the memory mapped file. Because all nodes have the same size, we can point to their node-offset instead of their byte-offset. The only difference between the two trees is how we store the root-node. In the BST we store the root node on struct offset 0 and in the redblack tree we store a pointer to the rootnode  in the first struct.
+Each time an entry is added to the tree a new node will be appended at the end of the memory mapped file. Because all nodes have the same size, we can point to their node-offset instead of their byte-offset. The only difference between the two trees is how we store the root-node. In the BST we store the root node on struct offset 0 and in the redblack tree we store a pointer to the root-node  in the first struct.
 
 <img src="../docs/images/bachelor-06.png" alt="drawing" width="600"/>
 
@@ -264,17 +264,17 @@ Here we have a simple example of what it would look like if these entries were i
 0.0.0.0 0.0.0.2 Siteimprove
 ```
 ![](../docs/images/bachelor-08.png)
-Here we notice that the BST is not balanced and has Node 0 as root and Redblack is balanced and has Node 2 as root. Reference to another node (left,right,parent) with value 0 is treated as a null-pointer.
+Here we notice that the BST is not balanced and has Node 0 as root and redblack is balanced and has Node 2 as root. Reference to another node (left,right,parent) with value 0 is treated as a null-pointer.
 
 **Space**
-The space complexity of the trees are O(n). Each node is a struct, which size can be calculated by doing the following: 
+The space complexity of the trees is O(n). Each node is a struct, which size can be calculated by doing the following: 
 For each field in the struct ordered by declaration order:
 * Add the size of the field.
 * Round up the current size to the nearest multiple of the next field's alignment.
 
 Finally, round the size of the struct to the nearest multiple of its alignment.
 
-Following this algorithm, the BST nodes have a size of 24 bytes while the redblack nodes have of 32 bytes. Multiplying this with the 150mil entries, give a total file size of 3.6GB for BST and 4.8GB for redblack tree.
+Following this algorithm, the BST nodes have a size of 24 bytes while the redblack nodes have a size of 32 bytes. Multiplying this with the 150mil entries, gives a total file size of 3.6GB for BST and 4.8GB for redblack tree.
 
 https://doc.rust-lang.org/std/mem/fn.size_of.html
 https://www.geeksforgeeks.org/is-sizeof-for-a-struct-equal-to-the-sum-of-sizeof-of-each-member/ 
@@ -293,13 +293,13 @@ Space: 32 bytes · n
 ```
 
 **Handling IpV6**
-Tree structures handles IpV6 well. The only change necessary would be to change the `min_ip` and `max_ip` to from `u32` to `u128` (and declare them at the bottom of the struct instead, because of alignment).
+Tree structures handle IpV6 well. The only change necessary would be to change the `min_ip` and `max_ip` from `u32` to `u128` (and declare them at the bottom of the struct instead, because of alignment).
 
 ## Table
 
-This implementation is based on the simple implementation mentioned in section *Tables*. This file consist of `2^32`(~4,3 million) unsigned longs, `u64`, that functions as a pointer to lookup the value in the `payload_map`.
+This implementation is based on the simple implementation mentioned in section *Tables*. This file consists of `2^32`(~4,3 million) unsigned longs, `u64`, that function as a pointer to lookup the value in the `payload_map`.
 
-An illustration of the data-structure can be seen below. The three entries are the same as shown in the tree previous section.
+An illustration of the data structure can be seen below. The three entries are the same as shown in the previous section.
 ```
 0.0.2.8 0.0.2.8 SKAT
 0.0.0.4 0.0.1.20 PWC
@@ -308,7 +308,7 @@ An illustration of the data-structure can be seen below. The three entries are t
 
 <img src="../docs/images/bachelor-02.png" alt="drawing" width="600"/>
 
-To symbolize a null-pointer (meaning the IP, does not have any payload) we just store 0. This means we need to add 1 to all pointers do differentiate between null-pointers and real pointers that points to to the first value in payload_map at index 0. This is why we e.g. see IP 4 with value 6 points to byte index 5. 
+To symbolize a null-pointer (meaning the IP does not have any payload) we just store 0. This means that we need to add 1 to all pointers to differentiate between null-pointers and real pointers that point to the first value in payload_map at index 0. Therefore we e.g. see IP 4 with value 6 point to byte index 5. 
 
 
 **Space**
@@ -316,19 +316,19 @@ The space needed for this IP table for IPv4 is `(2^32)*64/8/1000/1000/1000 = 34.
 
 **Implementation overview:**
 ``` 
-Lookup speed: constant time. 1 lookups. O(1). 
+Lookup speed: Constant time. 1 lookups. O(1). 
 Insertion: O(r), where r is the range of the entry.
 space: 2^32 * 64 = 34.4 gb
 ```
 
 **Handling IpV6**
-In practice this implementation won't work with IpV6. IpV6 is 128 bit instead of IpV4's 32 bit. The amount of possible IPs is `2^128 = 3,40e38`, and if all have to store a `u64`-pointer it result in a file a `2^128b · 64 / 8 / 1000 / 1000 = 2.7 · 10^30 gb` file.
+In practice this implementation will not work with IpV6. IpV6 is 128 bits instead of IpV4's 32 bits. The amount of possible IPs is `2^128 = 3,40e38`, and if all have to store a `u64`-pointer it results in a `2^128b · 64 / 8 / 1000 / 1000 = 2.7 · 10^30 gb` file.
 
 # Testing, Debugging, and Profiling
 
-To ensure the data structures functions correctly we have test it in controlled environment. An important note is that the tests has to be run with the flag `--test-threads 1`, to make sure they run sequential, because many functions use the same file, and this eliminates risk race-conditions. 
+To ensure the data structures function correctly we have tested them in a controlled environment. An important note is that the tests have to be run with the flag `--test-threads 1`, to make sure they run sequentially, because many functions use the same file, and this eliminates the risk of race conditions. 
 
-The tests can be categorized into unit tests and integration tests.
+The tests can be categorized into unit tests and integration tests, respectively.
 
 ### Unit tests
 
@@ -336,9 +336,9 @@ Most files and functions are tested using unit tests. All unit tests can be foun
 
 **Verifying tree structure**
 
-The unit tests also include test that check that the trees was build was built correctly. Both the BST and redblack tree can be printed to standard-out or a file, and both have a test to verify that the tree is printed correctly. 
+The unit tests also include tests that check that the trees were built correctly. Both the BST and redblack tree can be printed to standard-out or a file, and both have a test to verify that the tree is printed correctly. 
 
-Underneath we see the printout to the left and the abstraction to the right of a redblack tree, Where `O` is a black node and `X` is a red node. These tests are on fixed data set (meaning it is not random generated), which means we can check if every single line matches with what we expect. The test-data for generating this can be found in appendix X.
+Below we see the printout to the left and the abstraction to the right of a redblack tree, where `O` is a black node and `X` is a red node. These tests are on a fixed data set (meaning it is not randomly generated), which means we can check if every single line match with what we expect. The test data for generating this can be found in appendix X.
 
 <table><tr><td><pre>
 ------X Huawei
@@ -355,7 +355,7 @@ O Siteimprove
 <img src="../docs/images/bachelor-07.png" alt="drawing" width="400"/>
 </table>
 
-The test above works great on small data-sets, but I doesn't scale, so I have added another test, that checks that the redblack tree is build correctly. The function can be seen below.
+The test above works great on small data sets, but it does not scale, so I have added another test, that checks that the redblack tree is built correctly. The function can be seen below.
 
 ```rust
 fn is_tree_corrupt(mmap: &MmapMut, parent_red: bool, node: &Node) -> bool {
@@ -365,77 +365,77 @@ fn is_tree_corrupt(mmap: &MmapMut, parent_red: bool, node: &Node) -> bool {
     return right_is_corrupt || left_is_corrupt
 }
 ```
-This function traverses the redblack tree and checks if both a child and its parent is red, which is illegal state, and should have triggered a rebalance. This function will return `true` if the tree is corrupted and `false` otherwise. In the source code, a positive and negative test is performed on 50.000 random inserted elements, to ensure that the tree redblack tree was build correctly. This test doesn't detect if any nodes are disconnected from the tree (meaning they are not reachable from the root), but many other test detect that.
+This function traverses the redblack tree and checks if both a child and its parent is red, which is an illegal state, and should have triggered a rebalance. This function will return `true` if the tree is corrupted and `false` otherwise. In the source code, a positive and negative test is performed on 50.000 randomly inserted elements, to ensure that the redblack tree was built correctly. This test does not detect if any nodes are disconnected from the tree (meaning they are not reachable from the root), but many other tests detect that.
 
 ### Integration Tests 
-Since all three data-structures has the same interface, they can all be tested by using exactly the same functions. 
+Since all three data structures have the same interface, they can all be tested by using exactly the same functions. 
 The integration tests include:
-* Hardcoded input and the requited IPs are also hardcoded
-* Hardcoded input but the selected Ip-requests are a random subset from the hardcoded input
-* Random generated input, and the selected Ip-requests are a random subset of the input.
+* Hardcoded input and the required IPs are also hardcoded
+* Hardcoded input but the selected IP requests are a random subset from the hardcoded input
+* Randomly generated input, and the selected IP requests are a random subset of the input.
 
 The Integration tests go through a setup, build, and lookup phase. 
 
 **Setup - Generating test files**
 This first phase generates lines of two IP addresses and one text string (e.g.: `125.74.3.0 125.74.3.10 Siteimprove`) and writes them to a file. All lines are shuffled by using the Linux command `shuf`. 
-> Note: First I tried shuffling all entries in memory inside rust using a `Vec<&str>` and writing them to a file afterward, but this was slower and was more memory intensive than using the Linux command. Both methods require that all entries can be stored in ram at the same time. This means that the shuffling can't happens on a machine with low resources, if the data-set is large. 
-The shuffling is only for testing but has not use in production, so this is not a concern for the project.
+> Note: First, I tried shuffling all entries in memory inside Rust using a `Vec<&str>` and writing them to a file afterward, but this was slower and was more memory intensive than using the Linux command. Both methods require that all entries can be stored in memory at the same time. This means that the shuffling cannot happen on a machine with low resources, if the data set is large. 
+The shuffling is only for testing but has no use in production, so this is not a concern for the project.
 
 **Build data structure**
-The program iterate over each line reading them one by one with regex. Both the tested data-structure and payload_map needs to be built at the same time, meaning each entry is sat into both at the same time because the data-structure needs to know the byte-offset of the currently inserted entry. This step is deterministic and will always provide the same output for the same input file. This phase it the most expensive in terms of time.
-> Note: All three data-structures produce the same `payload_map`, so they could, in theory, share the same payload-file, but implementation wise they all have their own to de-couple the data-structures. 
+The program iterates over each line reading them one by one with regex. Both the tested data structure and payload_map need to be built at the same time, meaning each entry is inserted into both at the same time because the data structure needs to know the byte-offset of the currently inserted entry. This step is deterministic and will always provide the same output for the same input file. This phase it the most expensive in terms of time.
+> Note: All three data structures produce the same `payload_map`, so they could, in theory, share the same payload-file, but implementation wise they all have their own in order to de-couple the data structures. 
 
 **Lookup**
-Testing lookup speed is done by selecting some IP-requests and running them on the data-structure. The random requests are collected by iterating over the shuffled list of entries and picking every n'th entry. For each entry, a random IP is picked between the upper and lower bound. All the chosen entries are then shuffled again. The actual searching is done by looping over the chosen IPs, and sequentially searching through the data structure and checks that it returns the correct payload. When finished it will print the time it took to do all the lookups. This number is then used to calculate the average lookup time. 
+Testing lookup speed is done by selecting some IP requests and running them on the data structure. The random requests are collected by iterating over the shuffled list of entries and picking every n'th entry. For each entry, a random IP is picked between the upper and lower bound. All the chosen entries are then shuffled again. The actual searching is done by looping over the chosen IPs, and sequentially searching through the data structure and checking that it returns the correct payload. When finished it will print the time it took to do all the lookups. This number is then used to calculate the average lookup time. 
 
 ### Debugging
-Debugging the system was mostly done with printlines and by stepping through the code with a debugger. It can be pretty difficult to visualize how exactly each byte is placed in memory maps. The method I used to see it was to print the memory map in bytes. I used this statement `println!("{:?}", &name_table[0..100]);`, which prints out each byte in the range of 0 to 100 of the memory-mapped file: `[0,0,0,123,90,6 ... ]`. This way I can print the map before and after each operation and compare them, and check if it works as intended. 
+Debugging the system was mostly done with printlines and by stepping through the code with a debugger. It can be difficult to visualize how exactly each byte is placed in memory maps. The method I used to see it was to print the memory map in bytes. I used this statement `println!("{:?}", &name_table[0..100]);`, which prints out each byte in the range of 0 to 100 of the memory-mapped file: `[0,0,0,123,90,6 ... ]`. This way I can print the map before and after each operation and compare them, and check if it works as intended. 
 
-When building the redblack tree there is a assert-check while balancing that checks that a child's parent-pointer is the same as it's grandparents' child pointer. This is catch mistakes, should the redblack tree end up being corrupted. This was crucial in the development process. I had a periodic issue where the redblack tree was being built correctly.
+When building the redblack tree there is an assert-check while balancing that checks that a child's parent-pointer is the same as its grandparents' child pointer. This is catch mistakes, should the redblack tree end up being corrupted. This was crucial in the development process. I had a periodic issue where the redblack tree was being built correctly.
 <img src="../docs/images/bachelor-09.png" alt="drawing" width="49%"/>
-In the end I found out that I had made an assumption, which was wrong. The assumption was that the nodes always had a different color when `swapColor(node1,nod2)` was called (`line 119, Redblack/Tree.rs`), which isn't true. After fixing this, I didn't have any corrupted builds. 
+In the end I found out that I had made an assumption, that was wrong. The assumption was that the nodes always had a different color when `swapColor(node1,nod2)` was called (`line 119, Redblack/Tree.rs`), which is not true. After fixing this, I did not have any corrupted builds. 
 
 ### Profiling 
 
-A huge part of the performance optimization came from the build-in profiler-tool in _Jetbrain's Clion_ (Jetbrain's low-level-programming IDE). In particular its _Flame Chart_ and _Call Tree_ were very helpful. This was mainly used for seeing how much time the process spend in each scope/stack-frame/function to find bottlenecks. The profiler use _sampling_. A sampling profiler tracks the call stack at regular intervals using operating system interrupts. Sampling profiles are typically less accurate and specific, but allow the program to run at near full speed.
+A huge part of the performance optimization came from the build-in profiler-tool in _Jetbrain's Clion_ (Jetbrain's low-level-programming IDE). In particular, its _Flame Chart_ and _Call Tree_ was very helpful. This was mainly used for seeing how much time the process spent in each scope/stack-frame/function to find bottlenecks. The profiler uses _sampling_. A sampling profiler tracks the call stack at regular intervals using operating system interrupts. Sampling profiles are typically less accurate and specific but allow the program to run at near full speed.
 
 https://www.jetbrains.com/help/clion/cpu-profiler.html
 https://en.wikipedia.org/wiki/Profiling_(computer_programming)
 
-This was most useful at the beginning both for learning rust and for detecting bottleneck early on. E.g in an earlier version of the project a new Regex object was initialized every time it read a line for standard input. In the profiler it was an obvious bottleneck - and was therefore changed to only getting initialized once and just parse a pointer to it round in the system. This is a simple thing but has a huge impact on performance. On the left image, we see how 56% of the time was spent initializing a Regex object, but it only took 14.7% after the change.
+This was most useful at the beginning both for learning Rust and for detecting bottlenecks early on. E.g in an earlier version of the project a new Regex object was initialized every time it read a line for standard input. In the profiler, it was an obvious bottleneck - and was therefore changed to only getting initialized once and just parse a pointer to it around in the system. This is a simple thing but has a huge impact on performance. On the left image, we see how 56% of the time was spent initializing a Regex object, but it only took 14.7% of the time after the change.
 
 <img src="../docs/images/profiler/CallTree1000pre.png" alt="drawing" width="49%"/> <img src="../docs/images/profiler/CallTree1000post.png" alt="drawing" width="49%"/>
 
-Still after doing that we can see in the profiler that almost half the time of building a table of 50.000 entries where spend on parsing the string to two `u32` and a `string`. This can be seen by comparing the length `Utils::get_entry_for_line` with the full stack-frame of `build_data_structure` in the image below.
+Still, after doing that, we can see in the profiler that almost half the time of building a table of 50.000 entries were spent on parsing the string to two `u32` and a `string`. This can be seen by comparing the length `Utils::get_entry_for_line` with the full stack-frame of `build_data_structure` in the image below.
 <img src="../docs/images/50k_profiler_table.png" alt="drawing"/>
 
-The height of the trees is also visible in the profiler in the flame graph. The image below is from a profile run on a function that builds both Redblack, table, and BST with 100.000 entries and it with a frequency of 5000 samples per second. Since it ran with 100.000 entries we can expect at a minimum height of the tree to be `log(100.000)=16`. In the flame graph, we can count how many stack-frames deep a the redblack's `insert_node` functions goes. The last `insert_leaf_on_node`-stack-frame is 18 layers deep, which means that the height of the tree is 19 (+1 because the inserted leaf also counts). This matches our expectations of a balanced tree.
-Furthermore, we can see that the BST height is almost double the height of the redblack tree. This also matches our expectations of unbalanced tree height to have a height of `2·log(n)`, proved by Knuth mentioned in a previous section.
+The height of the trees is also visible in the profiler in the flame graph. The image below is from a profile run on a function that builds both Redblack, table, and BST with 100.000 entries with a frequency of 5000 samples per second. Since it ran with 100.000 entries we can expect a minimum height of the tree to be `log(100.000)=16`. In the flame graph, we can count how many stack-frames deep the redblack's `insert_node` functions go. The last `insert_leaf_on_node`-stack-frame is 18 layers deep, which means that the height of the tree is 19 (+1 because the inserted leaf also counts). This matches our expectations of a balanced tree.
+Furthermore, we can see that the BST height is almost double the height of the redblack tree. This also matches our expectations of an unbalanced tree height to have a height of `2·log(n)`, proved by Knuth mentioned in a previous section.
 
 <måske brug ord som "call stack" https://en.wikipedia.org/wiki/Tail_call>
 
 <img src="../docs/images/profiler/100 5 arrows.png" alt="drawing" />
 
->Note: The BST may even be taller/deeper, since the profiler tasks samples on a given interval, so if a stack-frame is added and removed to the call stack in the middle of two samples it would not be displayed. 
+>Note: The BST may even be taller/deeper, since the profiler takes samples with a given interval, so if a stack-frame is added and removed to the call stack in the middle of two samples it would not be displayed. 
 
-Another interesting finding was that rust only optimized to tail-end recursion when running it in release mode (running it with the `--release`-flag). Below we can see that there only exists one `insert_leaf_on_node`-stack-frame at the time, meaning that the optimizer created tail-end recursion. 
+Another interesting finding was that Rust only optimized to tail-end recursion when running it in release mode (running it with the `--release`-flag). Below we can see that there exists only one `insert_leaf_on_node`-stack-frame at the time, meaning that the optimizer created tail-end recursion. 
 
 <img src="../docs/images/profiler/release.png" alt="drawing" width="45%"/> <img src="../docs/images/profiler/nonrelease.png" alt="drawing" width="45%"/>
 
 # Running the program
 
-The program is ran through the command line. This version of the program can either generate data self or read it from a file. What the program is suppose to do is specified with flags and options. The full list of flags and options can be found in appendix X.
+The program is run through the command line. This version of the program can either generate data itself or read it from a file. What the program is supposed to do is specified with flags and options. The full list of flags and options can be found in appendix X.
 
 Here we have some examples:
-* Building the redblack tree from a file and searching for a specific ip:
+* Building the redblack tree from a file and searching for a specific IP:
 `./rust_map --build_redblack --search_redblack --input_file MyFile.txt --specific_ip "160.5.211.97"`
-* Searching in both BST and Redblack for for a specific ip on already built data-structures:
+* Searching in both BST and Redblack for a specific IP on already built data structures:
 `./rust_map --search_BST --search_redblack --specific_ip "160.5.211.97"`
-* To generate a data-set of *n* entries, building a table, and search through 2% (1/50) of the data-set:
+* To generate a data set of *n* entries, building a table, and search through 2% (1/50) of the data set:
 `./rust_map --generate_data --build_redblack --search_redblack -n 100000 --gap_size 50`
 
-Some flags and options have a invalid combination. The program will tell you what is wrong and help you provide the right input. Here we have two examples of example of an invalid input:
-* `./rust_map --build_redblack` where you don't specifying a input file `--input_file MyFile.txt` and does not use the flag `--generate_data`, because then the program does not have anything to build off. 
+Some flags and options have an invalid combination. The program will tell you what is wrong and help you provide the right input. Here we have two examples of an invalid input:
+* `./rust_map --build_redblack` where you do not specify an input file `--input_file MyFile.txt` and do not use the flag `--generate_data`, because then the program does not have anything to build off. 
 * `./target/release/rust_map --specific_ip "160.5.211.97"`, where you tell it to search for that specific IP, but does not tell it which data structure to search in.
 
 # Experiments
@@ -491,11 +491,11 @@ These speed tests were run right after the building of the model without shuttin
 | Table         | 6       | 3.6       | 3.4       | 1.001      |
 
 **1gb Droplet**
-| model         | 1k        | 100k    | 10 mil*    | 150 mil*  |
+| model         | 1k        | 100k    | 10 mil*   | 150 mil*  |
 | :------------ |----------:|--------:|----------:|----------:| 
-| BST           | 1.5       | 0.8     | 8.8       | 1402      |
-| Redblack      | 1.5       | 0.8     | 7.7       | xxx       |
-| Table         | 5.5       | 4.5     | 2103      | xxx       |
+| BST           | 1.5       | 0.8     | 8.8       | 6800      |
+| Redblack      | 1.5       | 0.8     | 7.7       | 7500       |
+| Table         | 5.5       | 4.5     | 2103      | 5900       |
 
 > `*` The 1gb25gb can't build these data sizes (as explained in the next experiment) meaning that model has to be built on Dionysos and copied to the 1gb droplet. This means that the cache was cold, and no pages were loaded into memory before the speed test was run. 
 
