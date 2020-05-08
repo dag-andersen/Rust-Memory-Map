@@ -1,8 +1,12 @@
 use core::fmt;
-use crate::{Entry, Utils, REDBLACK_PATH, PayloadMap, Table, REDBLACK_PAYLOAD, build_data_structure};
+use crate::{Entry, Utils, PayloadMap, Table, build_data_structure};
 use memmap::MmapMut;
 use crate::RedBlack::Tree::root_index;
 use std::fs;
+
+pub const PRINT_PATH:      &str    = "testdata/out/redblack/tree_print.txt";
+pub const PATH:            &str    = "testdata/out/redblack/map.txt";
+pub const PAYLOAD:         &str    = "testdata/out/redblack/NAME_TABLE.txt";
 
 mod NodeToMem;
 mod Tree;
@@ -11,19 +15,23 @@ pub mod TreePrinter;
 const NODE_SIZE : usize = std::mem::size_of::<Node>();
 
 pub fn reset_root_index() { Tree::reset_root_index() }
-pub fn save_root_node(map_path: &str) { Tree::save_root_node(map_path) }
-pub fn load_root_node(map_path: &str) { Tree::load_root_node(map_path) }
 
-pub fn gen_tree_map() -> MmapMut { gen_tree_map_on_path(REDBLACK_PATH) }
+pub fn save_root_node() { Tree::save_root_node(PATH) }
+pub fn save_root_node_to_path(map_path: &str) { Tree::save_root_node(map_path) }
+
+pub fn load_root_node() { unsafe { root_index = Tree::get_root_node(PATH)} }
+pub fn load_root_node_from_path(map_path: &str) { unsafe { root_index = Tree::get_root_node(map_path)} }
+
+pub fn gen_tree_map() -> MmapMut { gen_tree_map_on_path(PATH) }
 pub fn gen_tree_map_on_path(path: &str) -> MmapMut { Utils::get_memmap(path, 7_500_000_000) }
 
-pub fn build(input: &str) { build_to_path(input, REDBLACK_PATH) }
+pub fn build(input: &str) { build_to_path(input, PATH) }
 
 fn build_to_path(input: &str, map_path: &str) {
     reset_root_index();
     fs::remove_file(map_path);
-    build_data_structure(input, REDBLACK_PAYLOAD, gen_tree_map_on_path(map_path), insert_entry);
-    save_root_node(map_path);
+    build_data_structure(input, PAYLOAD, gen_tree_map_on_path(map_path), insert_entry);
+    save_root_node_to_path(map_path);
 }
 
 pub struct Node {
@@ -53,7 +61,7 @@ pub fn insert_entry(mmap: &mut MmapMut, index: usize, entry: Entry, payload_inde
 
 pub fn find_value(ip: u32) -> Option<String> {
     let mmap = gen_tree_map();
-    let payload_map = PayloadMap::gen_payload_map_from_path(REDBLACK_PAYLOAD);
+    let payload_map = PayloadMap::gen_payload_map_from_path(PAYLOAD);
     find_value_on_map(ip,&mmap, &payload_map)
 }
 

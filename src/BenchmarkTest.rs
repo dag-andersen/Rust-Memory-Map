@@ -1,5 +1,5 @@
 use stopwatch::Stopwatch;
-use crate::{FileGenerator, Utils, Table, PayloadMap, RedBlack, REDBLACK_PATH, BST, BST_PATH, TABLE_PATH, TABLE_PAYLOAD, BST_PAYLOAD, REDBLACK_PAYLOAD, number_of_entries};
+use crate::{FileGenerator, Utils, Table, PayloadMap, RedBlack, BST, number_of_entries};
 use std::{fs, io};
 use std::fs::{File, OpenOptions};
 use std::io::{LineWriter, Write};
@@ -62,18 +62,19 @@ pub fn create_redblack(input: &str) {
 pub fn search_time_table(input: &str, gap: usize) -> String {
     sleep(time::Duration::from_secs(1));
     println!("\n## search_time_table");
-    search_time(input, gap, TABLE_PAYLOAD, Table::gen_ip_table, Table::find_value_on_map)
+    search_time(input, gap, Table::PAYLOAD, Table::gen_ip_table, Table::find_value_on_map)
 }
 
 pub fn search_time_BST(input: &str, gap: usize) -> String {
+    sleep(time::Duration::from_secs(1));
     println!("\n## search_time_BST");
-    search_time(input, gap, BST_PAYLOAD, BST::gen_tree_map, BST::find_value_on_map)
+    search_time(input, gap, BST::PAYLOAD, BST::gen_tree_map, BST::find_value_on_map)
 }
 
 pub fn search_time_redblack(input: &str, gap: usize) -> String {
-    sleep(time::Duration::from_secs(1));
+    RedBlack::load_root_node();
     println!("\n## search_time_redblack");
-    search_time(input, gap, REDBLACK_PAYLOAD, RedBlack::gen_tree_map, RedBlack::find_value_on_map)
+    search_time(input, gap, RedBlack::PAYLOAD, RedBlack::gen_tree_map, RedBlack::find_value_on_map)
 }
 
 pub fn search_time(
@@ -88,7 +89,7 @@ pub fn search_time(
     assert!(length > 0);
 
     let structure = structure();
-    let name_table = PayloadMap::gen_payload_map_from_path(payload_path);
+    let payload_map = PayloadMap::gen_payload_map_from_path(payload_path);
     let mut noneFound = 0;
     let mut wrongFound = 0;
 
@@ -98,7 +99,7 @@ pub fn search_time(
     let mut i = 0;
     let mut sw = Stopwatch::start_new();
     for (ip, name) in requests {
-        let value = finder(ip, &structure, &name_table);
+        let value = finder(ip, &structure, &payload_map);
         if value.is_some() {
             let value = value.unwrap();
             if name != value {

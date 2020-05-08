@@ -20,14 +20,6 @@ const test_set_3:               &str    = "testdata/in/set3.txt";
 const test_set_4:               &str    = "testdata/in/set4.txt";
 const test_set_5:               &str    = "testdata/in/10_000.txt";
 const test_set_6:               &str    = "testdata/in/50_000.txt";
-const BST_PRINT_PATH:          &str    = "testdata/out/tree/tree_print.txt";
-const BST_PATH:                &str    = "testdata/out/tree/map.txt";
-const BST_PAYLOAD:             &str    = "testdata/out/tree/NAME_TABLE.txt";
-const REDBLACK_PRINT_PATH:      &str    = "testdata/out/redblack/tree_print.txt";
-const REDBLACK_PATH:            &str    = "testdata/out/redblack/map.txt";
-const REDBLACK_PAYLOAD:         &str    = "testdata/out/redblack/NAME_TABLE.txt";
-const TABLE_PATH:               &str    = "testdata/out/table/IP_TABLE.txt";
-const TABLE_PAYLOAD:            &str    = "testdata/out/table/NAME_TABLE.txt";
 
 const thisFileWillBeDeleted: &str = "thisFileWillBeDeleted";
 

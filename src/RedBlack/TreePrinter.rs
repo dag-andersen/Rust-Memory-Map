@@ -1,4 +1,4 @@
-use crate::{Utils, RedBlack, Table, PayloadMap, thisFileWillBeDeleted, FileGenerator, test_set_3, test_set_1, REDBLACK_PATH, REDBLACK_PAYLOAD, REDBLACK_PRINT_PATH, test_set_4};
+use crate::{Utils, RedBlack, Table, PayloadMap, thisFileWillBeDeleted, FileGenerator, test_set_3, test_set_1, test_set_4};
 use std::fs::File;
 use std::io::{LineWriter, Write, BufRead};
 use memmap::MmapMut;
@@ -8,11 +8,11 @@ use std::fs;
 use crate::RedBlack::NodeToMem::get_node;
 
 pub(crate) fn print_tree_to_file(s: &str) {
-    fs::remove_file(REDBLACK_PRINT_PATH);
+    fs::remove_file(super::PRINT_PATH);
     let file = File::create(s).unwrap();
     let mut line_writer = LineWriter::new(file);
     let tree_map = RedBlack::gen_tree_map();
-    let payload_map = PayloadMap::gen_payload_map_from_path(REDBLACK_PAYLOAD);
+    let payload_map = PayloadMap::gen_payload_map_from_path(super::PAYLOAD);
     let root = get_node(&tree_map, unsafe { root_index });
     print_node_to_file(&tree_map, &payload_map, &root, 0, &mut line_writer);
 }
@@ -34,7 +34,7 @@ fn print_node_to_file(mmap: &MmapMut, payload_map: &MmapMut, node: &Node, n: usi
 #[test]
 fn print_tree_and_read_1() {
     let src = thisFileWillBeDeleted;
-    fs::remove_file(REDBLACK_PATH);
+    fs::remove_file(super::PATH);
     super::build(test_set_1);
     print_tree_to_file(src);
     let mut iter = Utils::get_buffer(src).lines().map(|x| x.unwrap() );
@@ -44,13 +44,13 @@ fn print_tree_and_read_1() {
     assert_eq!(iter.next(), Some("O Hans Hansens Hus".to_string()));
     assert_eq!(iter.next(), Some("---O Siteimprove".to_string()));
     fs::remove_file(src);
-    fs::remove_file(REDBLACK_PATH);
+    fs::remove_file(super::PATH);
 }
 
 #[test]
 fn print_tree_and_read_2() {
     let src = thisFileWillBeDeleted;
-    fs::remove_file(REDBLACK_PATH);
+    fs::remove_file(super::PATH);
     super::build(test_set_3);
     print_tree_to_file(src);
     let mut iter = Utils::get_buffer(src).lines().map(|x| x.unwrap() );
@@ -60,5 +60,5 @@ fn print_tree_and_read_2() {
     assert_eq!(iter.next(), Some("O Hans Hansens Hus".to_string()));
     assert_eq!(iter.next(), Some("---O Siteimprove".to_string()));
     fs::remove_file(src);
-    fs::remove_file(REDBLACK_PATH);
+    fs::remove_file(super::PATH);
 }

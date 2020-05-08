@@ -1,5 +1,5 @@
-use crate::{TABLE_PATH, u32Size, Entry, FileGenerator, Table, PayloadMap, TABLE_PAYLOAD, u64Size};
-use crate::Table::{IpTable};
+use crate::{u32Size, Entry, FileGenerator, Table, PayloadMap, u64Size};
+use crate::Table::{IpTable, PATH, PAYLOAD};
 use crate::Utils;
 use memmap::MmapMut;
 use std::fs;
@@ -23,8 +23,8 @@ pub fn get_payload_ptr(ip: u32, ip_table: &MmapMut) -> Option<u64> {
 
 #[test]
 fn place_entry_and_get_payload() {
-    fs::remove_file(TABLE_PATH);
-    fs::remove_file(TABLE_PAYLOAD);
+    fs::remove_file(PATH);
+    fs::remove_file(PAYLOAD);
 
     let mut ip_table = super::gen_ip_table_small();
 
@@ -52,6 +52,6 @@ fn place_entry_and_get_payload() {
     assert!(get_payload_ptr(650, &ip_table).is_some());
     assert_eq!(get_payload_ptr(50, &ip_table).unwrap(), value);
 
-    fs::remove_file(TABLE_PATH);
-    fs::remove_file(TABLE_PAYLOAD);
+    fs::remove_file(PATH);
+    fs::remove_file(PAYLOAD);
 }

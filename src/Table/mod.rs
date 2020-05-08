@@ -1,25 +1,28 @@
 use core::fmt;
-use crate::{Entry, Utils, TABLE_PATH, PayloadMap, TABLE_PAYLOAD, build_data_structure};
+use crate::{Entry, Utils, PayloadMap, build_data_structure};
 use memmap::MmapMut;
 use std::fs;
 use crate::Table;
 
 mod IpTable;
 
-pub fn gen_ip_table() -> MmapMut { gen_ip_table_from_path(TABLE_PATH) }
-pub fn gen_ip_table_from_path(path: &str) -> MmapMut { Utils::get_memmap(path, 40_000_000_000) }
-pub fn gen_ip_table_small() -> MmapMut { Utils::get_memmap(TABLE_PATH, 500_000_000) }
+pub const PATH:               &str    = "testdata/out/table/IP_TABLE.txt";
+pub const PAYLOAD:            &str    = "testdata/out/table/NAME_TABLE.txt";
 
-pub fn build(input: &str) { build_to_path(input, TABLE_PATH) }
+pub fn gen_ip_table() -> MmapMut { gen_ip_table_from_path(PATH) }
+pub fn gen_ip_table_from_path(path: &str) -> MmapMut { Utils::get_memmap(path, 40_000_000_000) }
+pub fn gen_ip_table_small() -> MmapMut { Utils::get_memmap(PATH, 500_000_000) }
+
+pub fn build(input: &str) { build_to_path(input, PATH) }
 
 fn build_to_path(input: &str, ip_table: &str) {
     fs::remove_file(ip_table);
-    build_data_structure(input, TABLE_PAYLOAD, Table::gen_ip_table_from_path(ip_table), Table::insert_entry)
+    build_data_structure(input, PAYLOAD, Table::gen_ip_table_from_path(ip_table), Table::insert_entry)
 }
 
 pub fn build_to_path_small(input: &str) {
-    fs::remove_file(TABLE_PATH);
-    build_data_structure(input, TABLE_PAYLOAD, Table::gen_ip_table_small(), Table::insert_entry)
+    fs::remove_file(PATH);
+    build_data_structure(input, PAYLOAD, Table::gen_ip_table_small(), Table::insert_entry)
 }
 
 pub fn insert_entry(ip_table: &mut MmapMut, index: usize, entry: Entry, courser: u64) {
@@ -27,13 +30,13 @@ pub fn insert_entry(ip_table: &mut MmapMut, index: usize, entry: Entry, courser:
 }
 
 pub fn find_value(ip: u32) -> Option<String> {
-    let payload_map = PayloadMap::gen_payload_map_from_path(TABLE_PAYLOAD);
+    let payload_map = PayloadMap::gen_payload_map_from_path(PAYLOAD);
     let ip_table = gen_ip_table();
     find_value_on_map(ip, &ip_table,&payload_map)
 }
 
 pub fn find_value_small(ip: u32) -> Option<String> {
-    let payload_map = PayloadMap::gen_payload_map_from_path(TABLE_PAYLOAD);
+    let payload_map = PayloadMap::gen_payload_map_from_path(PAYLOAD);
     let ip_table = gen_ip_table_small();
     find_value_on_map(ip, &ip_table,&payload_map)
 }

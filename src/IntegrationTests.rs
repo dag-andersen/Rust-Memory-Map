@@ -1,5 +1,5 @@
 use stopwatch::Stopwatch;
-use crate::{FileGenerator, BST_PRINT_PATH, BST_PATH, Utils, TABLE_PATH, u32Size, test_set_5, thisFileWillBeDeleted, Table, test_set_6, PayloadMap, RedBlack, REDBLACK_PAYLOAD, TABLE_PAYLOAD, BST_PAYLOAD, test_set_1};
+use crate::{FileGenerator, Utils, u32Size, test_set_5, thisFileWillBeDeleted, Table, test_set_6, PayloadMap, RedBlack, test_set_1};
 use std::fs;
 use std::fs::File;
 use std::io::{LineWriter, Write};
@@ -70,17 +70,17 @@ fn find_random_gen_request_in_hardcoded_data(builder: fn(&str), finder: fn(u32) 
 
 #[test]
 fn build_and_search_table_with_random_data() {
-    build_and_search_data_structure_with_random_data(TABLE_PAYLOAD, Table::build_to_path_small, Table::gen_ip_table_small, Table::find_value_on_map)
+    build_and_search_data_structure_with_random_data(Table::PAYLOAD, Table::build_to_path_small, Table::gen_ip_table_small, Table::find_value_on_map)
 }
 
 #[test]
 fn build_and_search_BST_with_random_data() {
-    build_and_search_data_structure_with_random_data(BST_PAYLOAD, BST::build, BST::gen_tree_map, BST::find_value_on_map)
+    build_and_search_data_structure_with_random_data(BST::PAYLOAD, BST::build, BST::gen_tree_map, BST::find_value_on_map)
 }
 
 #[test]
 fn build_and_search_redblack_with_random_data() {
-    build_and_search_data_structure_with_random_data(REDBLACK_PAYLOAD, RedBlack::build, RedBlack::gen_tree_map, RedBlack::find_value_on_map)
+    build_and_search_data_structure_with_random_data(RedBlack::PAYLOAD, RedBlack::build, RedBlack::gen_tree_map, RedBlack::find_value_on_map)
 }
 
 fn build_and_search_data_structure_with_random_data(payload_path: &str, builder: fn(&str), structure: fn() -> MmapMut, finder: fn(u32, &MmapMut, &MmapMut) -> Option<String>) {

@@ -1,4 +1,4 @@
-use crate::{PayloadMap, Entry, RedBlack, REDBLACK_PATH, Utils, usizeSize, thisFileWillBeDeleted, REDBLACK_PAYLOAD, test_set_5};
+use crate::{PayloadMap, Entry, RedBlack, Utils, usizeSize, thisFileWillBeDeleted, test_set_5, FileGenerator};
 use memmap::MmapMut;
 use crate::RedBlack::{Node, NODE_SIZE, NodeToMem};
 use std::ops::Deref;
@@ -14,9 +14,9 @@ pub fn save_root_node(map_path: &str) {
     Utils::place_item_raw(&mut mmap, 0, &unsafe { root_index })
 }
 
-pub fn load_root_node(map_path: &str) {
+pub fn get_root_node(map_path: &str) -> usize {
     let mut mmap = super::gen_tree_map_on_path(map_path);
-    unsafe { root_index = *Utils::bytes_to_type(&mmap[..usizeSize]) }
+    *unsafe { Utils::bytes_to_type(&mmap[..usizeSize]) }
 }
 
 pub fn insert_node(mmap: &mut MmapMut, index: usize, node: &mut Node) {
@@ -197,15 +197,15 @@ fn save_and_load_root_node() {
     save_root_node(thisFileWillBeDeleted);
     unsafe { root_index = 10 }
     assert_eq!(unsafe { root_index }, 10);
-    load_root_node(thisFileWillBeDeleted);
+    super::load_root_node_from_path(thisFileWillBeDeleted);
     assert_eq!(unsafe { root_index }, 5)
 }
 
 #[test]
 fn insert_node_and_find_it() {
     RedBlack::reset_root_index();
-    fs::remove_file(REDBLACK_PATH);
-    fs::remove_file(REDBLACK_PAYLOAD);
+    fs::remove_file(super::PATH);
+    fs::remove_file(super::PAYLOAD);
 
     let mut tree_map = super::gen_tree_map();
 
@@ -254,15 +254,15 @@ fn insert_node_and_find_it() {
     assert!(out_name2.is_none());
     assert!(out_name3.is_none());
 
-    fs::remove_file(REDBLACK_PATH);
-    fs::remove_file(REDBLACK_PAYLOAD);
+    fs::remove_file(super::PATH);
+    fs::remove_file(super::PAYLOAD);
 }
 
 #[test]
 fn insert_node_random_order_and_find_it() {
     unsafe { root_index = 1 };
-    fs::remove_file(REDBLACK_PATH);
-    fs::remove_file(REDBLACK_PAYLOAD);
+    fs::remove_file(super::PATH);
+    fs::remove_file(super::PAYLOAD);
 
     let mut tree_map = super::gen_tree_map();
 
@@ -318,8 +318,8 @@ fn insert_node_random_order_and_find_it() {
     assert_eq!(out_name7.unwrap(),name5);
     assert_eq!(out_name8.unwrap(),name6);
 
-    fs::remove_file(REDBLACK_PATH);
-    fs::remove_file(REDBLACK_PAYLOAD);
+    fs::remove_file(super::PATH);
+    fs::remove_file(super::PAYLOAD);
 }
 
 #[test]
