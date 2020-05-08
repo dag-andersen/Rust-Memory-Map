@@ -27,18 +27,18 @@ pub fn insert_entry(ip_table: &mut MmapMut, index: usize, entry: Entry, courser:
 }
 
 pub fn find_value(ip: u32) -> Option<String> {
-    let name_table = PayloadMap::gen_payload_map_from_path(TABLE_PAYLOAD);
+    let payload_map = PayloadMap::gen_payload_map_from_path(TABLE_PAYLOAD);
     let ip_table = gen_ip_table();
-    find_value_on_map(ip, &ip_table,&name_table)
+    find_value_on_map(ip, &ip_table,&payload_map)
 }
 
 pub fn find_value_small(ip: u32) -> Option<String> {
-    let name_table = PayloadMap::gen_payload_map_from_path(TABLE_PAYLOAD);
+    let payload_map = PayloadMap::gen_payload_map_from_path(TABLE_PAYLOAD);
     let ip_table = gen_ip_table_small();
-    find_value_on_map(ip, &ip_table,&name_table)
+    find_value_on_map(ip, &ip_table,&payload_map)
 }
 
-pub fn find_value_on_map(ip: u32, ip_table: &MmapMut, name_table: &MmapMut) -> Option<String> {
+pub fn find_value_on_map(ip: u32, ip_table: &MmapMut, payload_map: &MmapMut) -> Option<String> {
     let index = IpTable::get_payload_ptr(ip, ip_table)?;
-    PayloadMap::get_payload(&name_table, index)
+    PayloadMap::get_payload(&payload_map, index)
 }

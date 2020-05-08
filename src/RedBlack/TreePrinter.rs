@@ -12,22 +12,22 @@ pub(crate) fn print_tree_to_file(s: &str) {
     let file = File::create(s).unwrap();
     let mut line_writer = LineWriter::new(file);
     let tree_map = RedBlack::gen_tree_map();
-    let name_table = PayloadMap::gen_payload_map_from_path(REDBLACK_PAYLOAD);
+    let payload_map = PayloadMap::gen_payload_map_from_path(REDBLACK_PAYLOAD);
     let root = get_node(&tree_map, unsafe { root_index });
-    print_node_to_file(&tree_map, &name_table, &root, 0, &mut line_writer);
+    print_node_to_file(&tree_map, &payload_map, &root, 0, &mut line_writer);
 }
 
-fn print_node_to_file(mmap: &MmapMut, name_table: &MmapMut, node: &Node, n: usize, writer: &mut LineWriter<File>) {
+fn print_node_to_file(mmap: &MmapMut, payload_map: &MmapMut, node: &Node, n: usize, writer: &mut LineWriter<File>) {
     if node.right != 0 {
-        print_node_to_file(mmap, name_table, &NodeToMem::get_node(&mmap, node.right as usize), n + 1, writer);
+        print_node_to_file(mmap, payload_map, &NodeToMem::get_node(&mmap, node.right as usize), n + 1, writer);
     }
     let indention: String = (0..n).map(|_| "---").collect();
     writer.write_all(indention.as_bytes());
     writer.write_all(if node.red { "X " } else { "O " }.as_bytes());
-    writer.write_all(PayloadMap::get_payload(&name_table, node.payload_ptr - 1).unwrap().as_bytes());
+    writer.write_all(PayloadMap::get_payload(&payload_map, node.payload_ptr - 1).unwrap().as_bytes());
     writer.write_all("\n".as_bytes());
     if node.left != 0 {
-        print_node_to_file(mmap, name_table, &NodeToMem::get_node(&mmap, node.left as usize), n + 1, writer);
+        print_node_to_file(mmap, payload_map, &NodeToMem::get_node(&mmap, node.left as usize), n + 1, writer);
     }
 }
 

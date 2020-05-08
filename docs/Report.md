@@ -253,7 +253,7 @@ pub struct Node {
 The `min_ip` and `max_ip` are a `u32`, because IPv4 is 32-bit. Pointers to other nods are `u32`, because we know that there will be at most 2^32 nodes, when the tree only handles IPv4.
 
 **Insertion**
-Each time an entry is added to the tree a new node will be appended at the end of the memory mapped file. Because all nodes have the same size, we can point to their node-offset instead of their byte-offset. The only difference between the two trees is how we store the root-node. In the BST we store the root node on struct offset 0 and in the redblack tree we store a pointer to the root-node  in the first struct.
+Each time an entry is added to the tree a new node will be appended at the end of the memory mapped file. Because all nodes have the same size, we can point to their node-offset instead of their byte-offset. The only difference between the two trees is how we store the root-node. In the BST we store the root node on struct offset 0 and in the redblack tree we store a pointer to the root-node in the first struct.
 
 <img src="../docs/images/bachelor-06.png" alt="drawing" width="600"/>
 

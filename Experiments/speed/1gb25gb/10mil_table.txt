@@ -1,0 +1,48 @@
+root@1gb25gb:/mnt/volume_nyc1_01# ./target/release/rust_map -T --print_info -n 10000000 --input_file input_data_shuffled.txt -g 100
+
+HOSTNAME: 1gb25gb
+
+Benchmark input: n: 10000000, range: 10..18, padding: 411..419, payload_size: 50, gap:100
+
+
+
+## search_time_table
+|--------------------------------------------------------------------------------------------------|
+----------------------------------------------------------------------------------------------------
+Search time --- #2262783972 micro seconds, #1000000 of requests ran, #0 none, #0 wrong
+root@1gb25gb:/mnt/volume_nyc1_01# ./target/release/rust_map -T --print_info -n 10000000 --input_file input_data_shuffled.txt -g 100
+
+HOSTNAME: 1gb25gb
+
+Benchmark input: n: 10000000, range: 10..18, padding: 411..419, payload_size: 50, gap:100
+
+
+
+## search_time_table
+|--------------------------------------------------------------------------------------------------|
+----------------------------------------------------------------------------------------------------
+Search time --- #2122599798 micro seconds, #1000000 of requests ran, #0 none, #0 wrong
+root@1gb25gb:/mnt/volume_nyc1_01# ./target/release/rust_map -T --print_info -n 10000000 --input_file input_data_shuffled.txt -g 100
+
+HOSTNAME: 1gb25gb
+
+Benchmark input: n: 10000000, range: 10..18, padding: 411..419, payload_size: 50, gap:100
+
+
+
+## search_time_table
+|--------------------------------------------------------------------------------------------------|
+----------------------------------------------------------------------------------------------------
+Search time --- #210323049 micro seconds, #1000000 of requests ran, #0 none, #0 wrong
+root@1gb25gb:/mnt/volume_nyc1_01# ./target/release/rust_map -T --print_info -n 10000000 --input_file input_data_shuffled.txt -g 100
+
+HOSTNAME: 1gb25gb
+
+Benchmark input: n: 10000000, range: 10..18, padding: 411..419, payload_size: 50, gap:100
+
+
+
+## search_time_table
+|--------------------------------------------------------------------------------------------------|
+----------------------------------------------------------------------------------------------------
+Search time --- #214048712 micro seconds, #1000000 of requests ran, #0 none, #0 wrong

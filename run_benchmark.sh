@@ -5,9 +5,9 @@ cargo build --release --color=always
 printf "\n search_BST \n "
 
 input_data_shuffled="input_data_shuffled.txt"
+hn="$(hostname)"
 mkdir -p "speed/$hn"
 
-hn="$(hostname)"
 
 ./target/release/rust_map -n 1000 --print_info --generate_data --build_BST --search_BST > "speed/$hn/1000_BST_1.txt" && printf 1
 ./target/release/rust_map -n 1000 --print_info --generate_data --build_BST --search_BST > "speed/$hn/1000_BST_2.txt" && printf 2

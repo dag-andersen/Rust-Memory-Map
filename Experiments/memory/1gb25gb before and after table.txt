@@ -1,0 +1,57 @@
+FØR
+
+root@1gb25gb2v:~# sync; echo 3 > /proc/sys/vm/drop_caches
+root@1gb25gb2v:~# free --wide
+              total        used        free      shared     buffers       cache   available
+Mem:        1009176      101232      856120         616        2764       49060      810480
+Swap:             0           0           0
+root@1gb25gb2v:~# screen -r Speed
+[detached from 4859.Speed]
+
+EFTER!
+
+root@1gb25gb2v:~# screen -r Speed
+[detached from 4859.Speed]
+root@1gb25gb2v:~# free --wide
+              total        used        free      shared     buffers       cache   available
+Mem:        1009176      205060      279296         616        3624      521196      664740
+Swap:             0           0           0
+root@1gb25gb2v:~# free --wide
+              total        used        free      shared     buffers       cache   available
+Mem:        1009176      222848       70328         616        1044      714956      644040
+Swap:             0           0           0
+root@1gb25gb2v:~# screen -r Speed
+[detached from 4859.Speed]
+root@1gb25gb2v:~# free --wide
+              total        used        free      shared     buffers       cache   available
+Mem:        1009176      231988       81212         616         764      695212      633224
+Swap:             0           0           0
+root@1gb25gb2v:~# free --wide
+              total        used        free      shared     buffers       cache   available
+Mem:        1009176      245092       69288         616         812      693984      617376
+Swap:             0           0           0
+root@1gb25gb2v:~# free --wide
+              total        used        free      shared     buffers       cache   available
+Mem:        1009176      256860       75892         616        1268      675156      605648
+root@1gb25gb2v:~# free --wide
+              total        used        free      shared     buffers       cache   available
+Mem:        1009176      261800       79024         616         744      667608      600640
+Swap:             0           0           0
+root@1gb25gb2v:~# free --wide
+              total        used        free      shared     buffers       cache   available
+Mem:        1009176      261776       63480         616        3128      680792      601068
+Swap:             0           0           0
+root@1gb25gb2v:~# free --wide
+              total        used        free      shared     buffers       cache   available
+Mem:        1009176      261652       68536         616         580      678408      601160
+Swap:             0           0           0
+root@1gb25gb2v:~# free --wide
+              total        used        free      shared     buffers       cache   available
+Mem:        1009176      261964       80792         616         504      665916      600740
+Swap:             0           0           0
+root@1gb25gb2v:~# screen -r Speed
+[detached from 4859.Speed]
+root@1gb25gb2v:~# free --wide
+              total        used        free      shared     buffers       cache   available
+Mem:        1009176      261924       77772         616        1328      668152        724
+Swap:             0           0           0

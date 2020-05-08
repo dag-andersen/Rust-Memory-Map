@@ -48,9 +48,9 @@ pub fn find_value(ip: u32) -> Option<String> {
     find_value_on_map(ip,&mmap, &payload_map)
 }
 
-pub fn find_value_on_map(ip: u32, mmap: &MmapMut, name_table: &MmapMut) -> Option<String> {
+pub fn find_value_on_map(ip: u32, mmap: &MmapMut, payload_map: &MmapMut) -> Option<String> {
     match Tree::find_node_on_map(ip, mmap)? {
         0 => None,
-        i => PayloadMap::get_payload(&name_table, i - 1)
+        i => PayloadMap::get_payload(&payload_map, i - 1)
     }
 }

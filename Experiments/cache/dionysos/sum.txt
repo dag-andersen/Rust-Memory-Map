@@ -1,0 +1,85 @@
+1000
+             23662      cache-misses              #   39.634 % of all cache refs
+             24103      cache-misses              #   33.263 % of all cache refs
+             30730      cache-misses              #   34.554 % of all cache refs
+
+             17989      cache-misses              #   29.288 % of all cache refs
+             23503      cache-misses              #   32.857 % of all cache refs
+             30487      cache-misses              #   37.077 % of all cache refs
+
+             22571      cache-misses              #   37.861 % of all cache refs
+             26015      cache-misses              #   36.308 % of all cache refs
+             29504      cache-misses              #   33.110 % of all cache refs
+
+             23370      cache-misses              #   37.664 % of all cache refs
+             22443      cache-misses              #   32.230 % of all cache refs
+             31304      cache-misses              #   35.739 % of all cache refs
+
+39.634 + 29.288 + 37.861 + 37.664 = 36.1%
+33.263 + 32.857 + 36.308 + 35.739 = 34.5%
+34.554 + 37.077 + 33.110 + 35.739 = 35.1%
+
+
+100k
+            117436      cache-misses              #   54.047 % of all cache refs
+             90635      cache-misses              #   50.819 % of all cache refs
+            935651      cache-misses              #   80.138 % of all cache refs
+
+            121632      cache-misses              #   56.340 % of all cache refs
+             91688      cache-misses              #   51.276 % of all cache refs
+            942435      cache-misses              #   79.751 % of all cache refs
+
+            118886      cache-misses              #   54.978 % of all cache refs
+            120266      cache-misses              #   54.073 % of all cache refs
+            937983      cache-misses              #   80.074 % of all cache refs
+
+            116887      cache-misses              #   53.538 % of all cache refs
+            121422      cache-misses              #   53.737 % of all cache refs
+            938799      cache-misses              #   79.399 % of all cache refs
+
+            118004      cache-misses              #   54.573 % of all cache refs
+            122077      cache-misses              #   54.422 % of all cache refs
+            950086      cache-misses              #   79.910 % of all cache refs
+
+54.047 + 56.340 + 54.978 + 53.538 + 54.573 = 54.7
+50.819 + 51.276 + 54.073 + 53.737 + 54.422 = 52.9
+80.138 + 79.751 + 80.074 + 79.399 + 79.910 = 79.9
+
+
+10 mil
+          23549166      cache-misses              #   62.669 % of all cache refs
+           8763749      cache-misses              #   76.584 % of all cache refs
+          65601362      cache-misses              #   84.795 % of all cache refs
+
+          22616115      cache-misses              #   60.667 % of all cache refs
+           8809210      cache-misses              #   76.203 % of all cache refs
+          50782243      cache-misses              #   83.105 % of all cache refs
+
+          22928759      cache-misses              #   60.876 % of all cache refs
+           8815188      cache-misses              #   76.302 % of all cache refs
+          51601848      cache-misses              #   83.082 % of all cache refs
+
+62.669 + 60.667 + 60.876 = 61.4
+76.584 + 76.203 + 76.302 = 76.4
+84.795 + 83.105 + 83.082 = 83.7
+
+
+150 mil
+         677396022      cache-misses              #   69.278 % of all cache refs
+         176289334      cache-misses              #   76.491 % of all cache refs
+         265081107      cache-misses              #   79.291 % of all cache refs
+
+         588216816      cache-misses              #   67.693 % of all cache refs
+         170652552      cache-misses              #   76.140 % of all cache refs
+         251207188      cache-misses              #   78.921 % of all cache refs
+
+         570959412      cache-misses              #   67.538 % of all cache refs
+         176704452      cache-misses              #   76.532 % of all cache refs
+         244926066      cache-misses              #   78.608 % of all cache refs
+
+69.278 + 67.693 + 67.538 = 68.2
+76.491 + 76.140 + 76.532 = 76.4
+79.291 + 78.921 + 78.608 = 78.9
+
+
+
