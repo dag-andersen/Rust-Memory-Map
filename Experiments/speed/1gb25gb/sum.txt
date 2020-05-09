@@ -66,7 +66,7 @@ Search time --- #534 micro seconds, #100 of requests ran, #0 none, #0 wrong
 17780 + 18088 + 17459 + 18028 + 18390 = 17949
 546 + 572 + 555 + 554 + 534 = 552
 
-
+--------------------------------------------------------
 
 100k BST
 
@@ -130,6 +130,10 @@ Search time --- #45378 micro seconds, #10000 of requests ran, #0 none, #0 wrong
 43431 + 47573 + 44040 + 45422 + 45422 = 45178 -> 4.52
 
 
+
+
+--------------------------------------------------------
+
 10 mil BST
 
 Search time --- #8243929 micro seconds, #100000 of requests ran, #0 none, #0 wrong
@@ -146,6 +150,24 @@ Search time --- #16606509 micro seconds, #1111111 of requests ran, #0 none, #0 w
 
 
 
+------
+Search time --- #314169753 micro seconds, #1000000 of requests ran, #0 none, #0 wrong
+Search time --- #343838906 micro seconds, #1000000 of requests ran, #0 none, #0 wrong
+Search time --- #308119140 micro seconds, #1000000 of requests ran, #0 none, #0 wrong
+Search time --- #330259159 micro seconds, #1000000 of requests ran, #0 none, #0 wrong
+
+314169753 + 343838906 + 308119140 + 330259159 = 324.096.739,5 -> 324,10
+
+
+10 mil redblack
+
+Search time --- #1307533162 micro seconds, #1000000 of requests ran, #0 none, #0 wrong
+Search time --- #1270593549 micro seconds, #1000000 of requests ran, #0 none, #0 wrong
+Search time --- #1274524694 micro seconds, #1000000 of requests ran, #0 none, #0 wrong
+
+
+1307533162 + 1270593549 + 1274524694 -> 1.284,22
+
 10 mil table
 
 Search time --- #2262783972 micro seconds, #1000000 of requests ran, #0 none, #0 wrong
@@ -154,9 +176,12 @@ Search time --- #2103623049 micro seconds, #1000000 of requests ran, #0 none, #0
 Search time --- #2140484712 micro seconds, #1000000 of requests ran, #0 none, #0 wrong
 
 
-2262783972 + 2122599798 + 2103623049 + 2140484712 = 2.157.372.882,75 -> 2157
+2262783972 + 2122599798 + 2103623049 + 2140484712 = 2.157.372.882,75 -> 2157.37
 
 
+
+
+--------------------------------------------------------
 
 
 
@@ -167,7 +192,7 @@ Search time --- #1018686235 micro seconds, #150000 of requests ran, #0 none, #0 
 Search time --- #1001162767 micro seconds, #150000 of requests ran, #0 none, #0 wrong
 
 
-
+1009530956 + 1018686235 + 1001162767 => 1.009.793.319,333333333333333 -> 6731.96
 
 ----
 
@@ -178,7 +203,30 @@ Search time --- #2462671601 micro seconds, #150000 of requests ran, #0 none, #0 
 Search time --- #2506528429 micro seconds, #150000 of requests ran, #0 none, #0 wrong
 
 
-2534434169 + 2475059796 + 2533721079 + 2462671601 + 2506528429 = 2.502.483.014,8 -> 16.683
+2534434169 + 2475059796 + 2533721079 + 2462671601 + 2506528429 = 2.502.483.014,8 -> 16683
+
+
+150 mil redblack
+
+Search time --- #1119077341 micro seconds, #150000 of requests ran, #0 none, #0 wrong
+Search time --- #1118882666 micro seconds, #150000 of requests ran, #0 none, #0 wrong
+Search time --- #1104152576 micro seconds, #150000 of requests ran, #0 none, #0 wrong
+Search time --- #1108783136 micro seconds, #150000 of requests ran, #0 none, #0 wrong
+Search time --- #1112371972 micro seconds, #150000 of requests ran, #0 none, #0 wrong
+
+1119077341 + 1118882666 + 1104152576 + 1108783136 + 1112371972 = 1.112.653.538,2 -> 7417.70
+
+
+
+
+
+Search time --- #2959749978 micro seconds, #150000 of requests ran, #0 none, #0 wrong
+Search time --- #2958032923 micro seconds, #150000 of requests ran, #0 none, #0 wrong
+Search time --- #2940031331 micro seconds, #150000 of requests ran, #0 none, #0 wrong
+
+2959749978 + 2958032923 + 2940031331 = 8857824232 -> 2952604744 -> 19684
+
+
 
 
 150 table
@@ -189,4 +237,4 @@ Search time --- #921146820 micro seconds, #150000 of requests ran, #0 none, #0 w
 Search time --- #866487598 micro seconds, #150000 of requests ran, #0 none, #0 wrong
 Search time --- #922111919 micro seconds, #150000 of requests ran, #0 none, #0 wrong
 
-904708546 + 883491764 + 921146820 + 866487598 + 922111919 = 899.589.329 = 5.997
+904708546 + 883491764 + 921146820 + 866487598 + 922111919 = 899.589.329 = 5997.26

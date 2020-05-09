@@ -1,0 +1,78 @@
+daga@dionysos:~$ sudo sh -c "/bin/echo 3 > /proc/sys/vm/drop_caches"
+daga@dionysos:~$ free -w
+              total        used        free      shared     buffers       cache   available
+Mem:      131711472     9783420   120553956         920        2664     1371432   120104704 <---
+Swap:        999420      239360      760060
+daga@dionysos:~$ free -w
+              total        used        free      shared     buffers       cache   available
+Mem:      131711472     9842316   117986548         920       11332     3871276   119829504
+Swap:        999420      239360      760060
+daga@dionysos:~$ free -w
+              total        used        free      shared     buffers       cache   available
+Mem:      131711472     9843924   111414836         920       29892    10422820   119770748 <---
+Swap:        999420      239360      760060
+daga@dionysos:~$ free -w
+              total        used        free      shared     buffers       cache   available
+Mem:      131711472     9845368    99372260         920       94328    22399516   119769308
+Swap:        999420      239360      760060
+daga@dionysos:~$ free -w
+              total        used        free      shared     buffers       cache   available
+Mem:      131711472     9843920    88206920         920       97112    33563520   119770812
+Swap:        999420      239360      760060
+daga@dionysos:~$ free -w
+              total        used        free      shared     buffers       cache   available
+Mem:      131711472     9848460    86001940         920       99760    35761312   119766728
+Swap:        999420      239360      760060
+daga@dionysos:~$ getconf PAGE_SIZE
+4096
+daga@dionysos:~$ getconf PAGE_SIZE
+4096
+daga@dionysos:~$ free -w
+              total        used        free      shared     buffers       cache   available
+Mem:      131711472     9845764    85414412         920      100400    36350896   119769076
+Swap:        999420      239360      760060
+daga@dionysos:~$ free -w
+              total        used        free      shared     buffers       cache   available
+Mem:      131711472     9848552    84991696         920      100756    36770468   119766216
+Swap:        999420      239360      760060
+daga@dionysos:~$ free -w
+              total        used        free      shared     buffers       cache   available
+Mem:      131711472     9846320    84240016         920      101328    37523808   119768624
+Swap:        999420      239360      760060
+daga@dionysos:~$ free -w
+              total        used        free      shared     buffers       cache   available
+Mem:      131711472     9845232    83783816         920      101680    37980744   119769492
+Swap:        999420      239360      760060
+daga@dionysos:~$ free -w
+              total        used        free      shared     buffers       cache   available
+Mem:      131711472     9846180    83582072         920      101848    38181372   119768592 <---
+Swap:        999420      239360      760060
+daga@dionysos:~$ free -w
+              total        used        free      shared     buffers       cache   available
+Mem:      131711472     9785316    83115020         920      102264    38708872   119829492
+Swap:        999420      239360      760060
+daga@dionysos:~$ sudo sh -c "/bin/echo 3 > /proc/sys/vm/drop_caches"
+[sudo] password for daga:
+daga@dionysos:~$ free -w
+              total        used        free      shared     buffers       cache   available <---
+Mem:      131711472     9782132   120553276         920        3040     1373024   120104984
+Swap:        999420      239360      760060
+
+
+
+9846180 - 9782132 = 64
+
+before and after 2procent
+9783420 - 9843924 = 60504
+
+
+120104704
+119768592
+119829492
+120104984
+
+
+120104984 - 119768592
+
+
+38708872 - 1371432 = 37337440kb 

@@ -1,0 +1,40 @@
+## search_time_redblack
+|--------------------------------------------------------------------------------------------------|
+----------------------------------------------------------------------------------------------------
+Search time --- #3513901541 micro seconds, #150000 of requests ran, #0 none, #0 wrong
+
+## search_time_redblack
+|--------------------------------------------------------------------------------------------------|
+----------------------------------------------------------------------------------------------------
+Search time --- #3207527356 micro seconds, #150000 of requests ran, #0 none, #0 wrong
+
+## search_time_redblack
+|--------------------------------------------------------------------------------------------------|
+----------------------------------------------------------------------------------------------------
+Search time --- #3049730886 micro seconds, #150000 of requests ran, #0 none, #0 wrong
+
+## search_time_redblack
+|--------------------------------------------------------------------------------------------------|
+----------------------------------------------------------------------------------------------------
+Search time --- #2879743407 micro seconds, #150000 of requests ran, #0 none, #0 wrong
+root@1gb25gb2v:/mnt/vol1gbv2# cargo build --release && ./target/release/rust_map --input_file input_data_shuffled.txt -R --gap_size 1000 && ./target/release/rust_map --input_file input_data_shuffled.txt -R --gap_size 1000 && ./target/release/rust_map --input_file input_data_shuffled.txt -R --gap_size 1000 && ./target/release/rust_map --input_file input_data_shuffled.txt -R --gap_size 1000
+    Finished release [optimized] target(s) in 0.26s
+
+
+---- slet alt over denne linje? Hvorfor denne fil? når der e ren over?
+
+
+## search_time_redblack
+|--------------------------------------------------------------------------------------------------|
+----------------------------------------------------------------------------------------------------
+Search time --- #2959749978 micro seconds, #150000 of requests ran, #0 none, #0 wrong
+
+## search_time_redblack
+|--------------------------------------------------------------------------------------------------|
+-----------------------------------------1;2C^[[1;2D-----------------------------------------------------------
+Search time --- #2958032923 micro seconds, #150000 of requests ran, #0 none, #0 wrong
+
+## search_time_redblack
+|--------------------------------------------------------------------------------------------------|
+----------------------------------------------------------------------------------------------------
+Search time --- #2940031331 micro seconds, #150000 of requests ran, #0 none, #0 wrong

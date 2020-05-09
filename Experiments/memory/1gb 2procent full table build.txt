@@ -1,0 +1,47 @@
+root@1gb25gb2v:~# sh -c "/bin/echo 3 > /proc/sys/vm/drop_caches"
+root@1gb25gb2v:~# free -w
+              total        used        free      shared     buffers       cache   available
+Mem:        1009176      106296      747928         624        3684      151268      753740
+Swap:             0           0           0
+root@1gb25gb2v:~# sudo sh -c "/bin/echo 3 > /proc/sys/vm/drop_caches"
+root@1gb25gb2v:~# free -w
+              total        used        free      shared     buffers       cache   available
+Mem:        1009176      105924      845440         624        2188       55624      803140 <--
+Swap:             0           0           0
+root@1gb25gb2v:~# free -w
+              total        used        free      shared     buffers       cache   available
+Mem:        1009176      166268      518976         624        5332      318600      687448
+Swap:             0           0           0
+root@1gb25gb2v:~# free -w
+              total        used        free      shared     buffers       cache   available
+Mem:        1009176      169012       74588         624       13728      751848      656712
+Swap:             0           0           0
+root@1gb25gb2v:~# free -w
+              total        used        free      shared     buffers       cache   available
+Mem:        1009176      167880       66088         624       21264      753944      657776
+Swap:             0           0           0
+root@1gb25gb2v:~# free -w
+              total        used        free      shared     buffers       cache   available
+Mem:        1009176      167936       80236         624       31072      729932      658016
+Swap:             0           0           0
+root@1gb25gb2v:~# free -w
+              total        used        free      shared     buffers       cache   available
+Mem:        1009176      167804       66808         624       34700      739864      658680
+Swap:             0           0           0
+root@1gb25gb2v:~# free -w
+              total        used        free      shared     buffers       cache   available
+Mem:        1009176      168416       67752         624       36008      737000      657924
+Swap:             0           0           0
+root@1gb25gb2v:~# free -w
+              total        used        free      shared     buffers       cache   available
+Mem:        1009176      168104       65204         624       38916      736952      658388
+Swap:             0           0           0
+
+
+753740 - 658388
+
+105924 - 168104
+
+
+
+753944 - 55624 = 698320kb
