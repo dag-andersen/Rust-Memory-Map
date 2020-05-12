@@ -18,8 +18,10 @@ testdata/out/*
 
 .idea
 .vscode
-
 .vagrant
+.fake
+.ionide
+
 
 **/workspace.xml
 workspace.xml
@@ -27,5 +29,10 @@ workspace.xml
 Dag Supervision Agreement.pdf
 
 
-.fake
-.ionide
+1gb25gb/
+
+ITU-stuff/
+
+dionysos/
+
+2gb50gb/
