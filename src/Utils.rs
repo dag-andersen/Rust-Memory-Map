@@ -15,8 +15,8 @@ pub(crate) fn get_entry_for_line(ip_regex: &Regex, name_regex: &Regex, l: &Strin
     Some(Entry { min_ip, max_ip, payload: String::from(&l.as_str()[name_match.range()]) })
 }
 
-pub(crate) fn get_u32_for_ip(v: &str) -> Option<u32> {
-    let v: Vec<&str> = v.split('.').collect();
+pub(crate) fn get_u32_for_ip(s: &str) -> Option<u32> {
+    let v: Vec<&str> = s.split('.').collect();
     let len = v.len();
     if len != 4 { return None }
     let mut acc: u32 = 0;

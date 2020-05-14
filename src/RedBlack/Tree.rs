@@ -21,7 +21,6 @@ pub fn get_root_node(map_path: &str) -> usize {
 
 pub fn insert_node(mmap: &mut MmapMut, index: usize, node: &mut Node) {
     NodeToMem::place_node(mmap, index, node);
-    //mmap.flush();
     if index == 0 {
         panic!("Tried to insert on index 0")
     } else if index != 1 {

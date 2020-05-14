@@ -81,8 +81,8 @@ fn main() {
     Utils::make_needed_folders();
 
     let matches = App::new("Rust Memory Map")
-        .version("0.1.0")
-        .author("Dag Andersen <dagbjerreandersen@gmail.com>")
+        .version("1.0.0")
+        .author("Dag Andersen <daga@itu.dk>")
         .about("Searching in memory mapped files")
         .arg(Arg::with_name("number_of_entries")
             .short("n")
@@ -93,7 +93,7 @@ fn main() {
             .short("p")
             .long("payload_size")
             .takes_value(true)
-            .help("The amount of bytes for each entry"))
+            .help("The number of bytes for each entry"))
         .arg(Arg::with_name("gap_size")
             .short("g")
             .long("gap_size")
@@ -103,12 +103,12 @@ fn main() {
             .short("i")
             .long("input_file")
             .takes_value(true)
-            .help("The file for building the data-structure"))
+            .help("The file for building the data structure"))
         .arg(Arg::with_name("specific_ip")
             .short("s")
             .long("specific_ip")
             .takes_value(true)
-            .help("The specific ip you want to search for"))
+            .help("The specific IP you want to search for"))
         .arg(Arg::with_name("generate_data")
             .short("G")
             .long("generate_data")
@@ -153,12 +153,12 @@ fn main() {
     let search_table = matches.is_present("search_table");
 
     if !search_BST && !search_redblack && !search_table && specific_ip.is_some() {
-        println!("You have so specify which datastructure you want to search in");
+        println!("You have so specify which data structure you want to search in");
         exit(0)
     }
 
     if !search_BST && !search_redblack && !search_table && specific_ip.is_some() {
-        println!("You have so specify which datastructure you want to search in");
+        println!("You have so specify which data structure you want to search in");
         exit(0)
     }
 
