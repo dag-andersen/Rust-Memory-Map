@@ -6,7 +6,7 @@ Swap:             0           0           0
 root@1gb25gb2v:~# sudo sh -c "/bin/echo 3 > /proc/sys/vm/drop_caches"
 root@1gb25gb2v:~# free -w
               total        used        free      shared     buffers       cache   available
-Mem:        1009176      105924      845440         624        2188       55624      803140 <--
+Mem:        1009176      105924      845440         624        2188       55624      803140    <--- Number taken from here
 Swap:             0           0           0
 root@1gb25gb2v:~# free -w
               total        used        free      shared     buffers       cache   available
@@ -18,7 +18,7 @@ Mem:        1009176      169012       74588         624       13728      751848 
 Swap:             0           0           0
 root@1gb25gb2v:~# free -w
               total        used        free      shared     buffers       cache   available
-Mem:        1009176      167880       66088         624       21264      753944      657776
+Mem:        1009176      167880       66088         624       21264      753944      657776    <--- Number taken from here
 Swap:             0           0           0
 root@1gb25gb2v:~# free -w
               total        used        free      shared     buffers       cache   available
@@ -34,14 +34,14 @@ Mem:        1009176      168416       67752         624       36008      737000 
 Swap:             0           0           0
 root@1gb25gb2v:~# free -w
               total        used        free      shared     buffers       cache   available
-Mem:        1009176      168104       65204         624       38916      736952      658388
+Mem:        1009176      168104       65204         624       38916      736952      658388    <--- Number taken from here
 Swap:             0           0           0
 
 
-753740 - 658388
 
-105924 - 168104
+# Memory usage calculations
+before and after 2 percent
+168104 - 105924 = 62180
 
-
-
-753944 - 55624 = 698320kb
+# Page Cache Calculations
+753944 - 55624 = 698320
