@@ -55,9 +55,9 @@ Mem:      131711472     9782132   120553276         920        3040     1373024 
 Swap:        999420      239360      760060
 
 
+// Before and after 2 percent of the input data was processed
 
 # Memory usage calculations
-before and after 2 percent
 9783420 - 9843924 = 60504
 
 # Page Cache Calculations
