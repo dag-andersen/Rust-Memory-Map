@@ -72,7 +72,7 @@ OPTIONS:
 The raw data from the 4 experiments can be found here: [Experiments](Experiments)
 
 ### Cache Experiment
-To reproduce the results of [_Experiment #2_](Experiments/Experiment_2) - run the this [_shell script_](run_benchmark_cache_loop.sh) in the root of the repo.
+To reproduce the results of [_Experiment #2_](Experiments/Experiment_2) - run the this [_shell script_](run_benchmark_cache_loop.sh) in the root of the repo. The results will be located in a folder named `cache` located in the root.
 
 ### Lookup and build Experiment
-To reproduce the results of [_Experiment #3_ and _Experiment #4_](Experiments/Experiment_2) - run the this [_shell script_](run_benchmark_build_and_search.sh) in the root of the repo.
+To reproduce the results of [_Experiment #3_ and _Experiment #4_](Experiments/Experiment_2) - run the this [_shell script_](run_benchmark_build_and_search.sh) in the root of the repo. The results will be located in a folder named `speed` located in the root.
