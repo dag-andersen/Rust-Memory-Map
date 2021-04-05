@@ -5,7 +5,6 @@
 
 ---
 
-
 # Abstract
 <details>
   <summary>expand</summary>
@@ -180,7 +179,43 @@ The maximum space needed for this file can be calculated from the max payload si
 ## 4.2 BST & Red-black Tree
 Both the BST and the Red-Black Tree are implemented similarly. Most functions are exactly the same, but with the exception of the insert-function (`fn insert_node(...)` in the source code) in the Red-black Tree being more extensive and the fact that the Red-black Tree has functions for changing the root-node.
 
-// insert shit here
+<table>
+<tr>
+    <th>BST</th>
+    <th>Red-black</th>
+</tr>
+
+<tr>
+<td>
+
+```rust
+pub struct Node {
+    pub min_ip: u32,
+    pub max_ip: u32,
+    pub left: u32,
+    pub right: u32,
+    pub payload_ptr: u64,
+}
+```
+
+</td>
+<td>
+
+```rust
+pub struct Node {
+    pub red: bool,
+    pub min_ip: u32,
+    pub max_ip: u32,
+    pub left: u32,
+    pub right: u32,
+    pub parent: u32,
+    pub payload_ptr: u64,
+}
+```
+
+</td>
+</tr>
+</table>
 
 
 > `min_ip` is the lower bound of the IP range, `max_ip` is the upper bound of the IP range, `left` is the struct offset of the left child, ``right`` is the struct offset of the right child, parent is the struct offset of the parent, `payload_ptr` is the byte index of the payload that the node refers to. `min_ip` and `max_ip` are a `u32`, because IPv4 is 32-bit. Pointers to other nodes are `u32`, because we know that there will be at most 2^32 nodes, when the tree only handles IPv4.
@@ -374,9 +409,33 @@ The unit tests include tests that check that the trees were built correctly. Bot
 
 In the table below we see the printout to the left and the abstraction to the right of a Red-black Tree, where *O* is a black node and *X* is a red node. These tests run on a fixed data set (as opposed to randomly generated), which means we can check if every single line matches with what we expect. The test data for printing this output can be found in the repository.
 
+<table>
+<tr>
+    <th>Standard-output</th>
+    <th>Visual abstraction</th>
+</tr>
 
-// some shjit
+<tr>
+<td>
 
+```
+------X Huawei
+---O Samsung
+------X Google
+O Siteimprove
+------X PwC
+---O SKAT
+------X Apple
+```
+
+</td>
+<td>
+
+![Visual abstraction](images/bachelor-07.png)
+
+</td>
+</tr>
+</table>
 
 The test above works on small data sets, but it does not scale, so I have added another test, that checks that the Red-black Tree is built correctly. The function can be seen below.
 ```Rust
@@ -438,29 +497,30 @@ A huge part of the performance optimization came from the built-in profiler-tool
 #### Call Tree
 This was most useful at the beginning both for learning Rust and for detecting bottlenecks early on. E.g. in an earlier version of the project a new Regex-object was initialized every time it read a line from standard input. In the _Call Tree_, it was an obvious bottleneck - and was therefore changed to only getting initialized once and instead parsing a pointer to it around in the functions. This is a simple change but has a huge impact on performance.
 
-
-// table shit
+<p float="left">
+  <img src="images/profiler/CallTree1000Pre.png" width="49%" /> 
+  <img src="images/profiler/CallTree1000Post.png" width="49%" />
+</p>
 
 > On the left image of the _Call Tree_, we see how 56.5% of the time was spent initializing a Regex object, but on the right image it only took 14.7% of the time after the change was made.
 
 #### Flame Graph
 Still, after changing that, we can see in the profiler that almost half the time was spent on parsing the input-string to two `u32` and a payload-`string` when building a table with 50.000 entries. This can be seen by comparing the width of the block, `Utils::get_entry_for_line`, with the full width of `build_data_structure`-block in Figure 8 below. Each block represents a stack-frame and the width of each block corresponds to the function’s CPU time used.
 
-
-// table shit
-
+![Figure 2](images/50k_profiler_table.png)
 
 The height of the trees is also visible in the profiler in the flame graph. Figure 9 below is an image from a profile run on a function that builds both the Red-black Tree, the table, and the BST with 100.000 entries with a frequency of 5000 samples pr. second. Since it ran with 100.000 entries we can expect a minimum height of the trees to be *log(100.000)=16*. In the flame graph, we can count how many stack-frames deep the Red-black Tree’s `insert_node` functions go. The last `insert_leaf_on_node`-stack-frame is *18* layers deep, which means that the height of the tree is *19* (*+1* because the inserted leaf also counts). This matches our expectations of a balanced tree. Furthermore, we can see that the BST height is almost double the height of the Red-black Tree. This also matches our expectations of an unbalanced tree height to have a height of *2·log(n)*, mentioned in _section 3.2.2 Red-black Tree_.
 
 ![Figure 2](images/profiler/100_5_arrows_2.png)
-
 
 > Note: The BST may even be taller/deeper, since the profiler takes samples with a given interval, so if a stack-frame is added and removed to the call stack in the middle of two samples it would not be registered.
 
 Another interesting finding was that Rust optimizes to _tail-end recursion_ when running it in release
 mode (compiling with the `--release`-flag).
 
-// table shit
+| Not in release mode | In release mode |
+|:-----------:|:-------------:|
+| ![Figure 2](images/profiler/nonrelease.png) | ![Figure 2](images/profiler/release.png) |
 
 In Figure 10 above we can see that there exists only one `insert_leaf_on_node`-stack-frame at
 the time in release mode, revealing that the compiler has optimized to tail-end recursion.
@@ -501,10 +561,10 @@ The focus of this project is to search on the Droplet with 1 GB memory, so this 
 
 I shared Dionysos with another person, so I cannot guarantee what else was running on the computer, while I was experimenting, but we tried to coordinate as much as possible so this should have minimal impact.
 
+## 7.3 Experiment #1: Memory Usage
 <details>
   <summary>expand</summary>
 
-## 7.3 Experiment #1: Memory Usage
 ### Expectation
 Memory is an important factor when working with memory mapped files. I would expect the kernel to keep loading in pages as long as there is free memory left in main memory - and only start offloading pages when main memory is close to full.
 
