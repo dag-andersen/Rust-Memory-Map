@@ -3,33 +3,40 @@
 ## daga@itu.dk
 ## Supervisor: Philippe Bonnet
 
-
 ---
 
-# Abstract
 
+# Abstract
+<details>
+  <summary>expand</summary>
 This project focuses on how to efficiently search through key-value pairs on a machine with low resources. The data is a data set of 150 key-value pairs, where the keys are ranges between two values. The goal is to have an average lookup time of max 40 milliseconds, have a pre-processing time of max 24 hours, use at max 4 GB RAM and use at max 100GB disk space. This paper goes through the design and implementation of a BST, a Red-black Tree, and a table in Rust. All three implementations are compared and evaluated based on four experiments on memory usage, caching, search speed, and build speed. The experiments are performed on both a high and a low resources machine. Based on the experiments we can conclude that the implementations of all three data structures fulfil the requirements.
 
 This project originates from an actual technical challenge Siteimprove had in their backend.
 
----
+</details>
 
 # 1 Introduction / Motivation
 
+<details>
+  <summary>expand</summary>
 There are many ways and techniques of searching through huge data sets. There is not one technique that fits all cases. The most efficient search all comes down to what kind of data you have.
 
 Searching in memory is fast compared to searching on disk. So, what do you do when you want to quickly search through a huge data set that cannot be stored in memory? On a small scale, the easy answer is to just buy a more powerful machine with more memory, but this is maybe not always what you want. Should you choose to run your application on a virtual machine on a cloud provider like DigitalOcean - then renting a machine with high resources quickly becomes expensive. If the data cannot be stored in memory it needs to be stored on persistent storage.
 
 If the data set contains normal key-value pairs the usual choice is to store them in tables. If the keys are not singular values, but instead a range between two values, then the problem/implementation choice is more complicated. 
 
----
+</details>
 
 # 2 Problem formulation
+
+<details>
+  <summary>expand</summary>
 
 Problem formulation as stated in the project description:
 - Analyze the requirements from Siteimprove in terms of persistent log and key-value store
 - Describe and analyze existing data structures and algorithms for persistent log and key-value stores
 - Design/implement/evaluate a persistent log and key-value store in Rust on modern hardware
+
 
 ## 2.1 Method
 The method is experimental. I will design, implement, and evaluate prototypes. The prototypes will be implemented in Rust and will be evaluated based on experiments.
@@ -83,13 +90,14 @@ Assumptions for data
 - Memory:                At most 4GB.
 ```
 
+</details>
 
 
 
-
-
----
 # 3 Data structures
+
+<details>
+  <summary>expand</summary>
 
 There are many ways of searching through key-value pairs. The data for this project consists of ranges, which means that the choice of database type is not obvious and depends on different factors. It depends on range-size, gap-size (between each range), payload-size pr. entry, how many keys there can exist in total (if there is a finite number of possible keys), and the number of entries - and of course how complicated an implementation you want.
 
@@ -129,8 +137,13 @@ One important point to make is that it is not always beneficial to use a balance
 
 In addition, the Red-black Tree can be implemented with an insertion-function that only needs to handle four base cases, which makes it a good choice for projects like this.
 
----
+</details>
+
 # 4 Design and Implementation
+
+<details>
+  <summary>expand</summary>
+
 In this project, I have chosen an implementation of a Binary Search Tree (BST), a Red-black Tree, and
 a table. All three implementations have their own module in the source code and have the same interface, so they can be swapped interchangeably. All data structures are implemented using memory mapped files. All three implementations use a separate memory mapped file for storing the payload. This memory mapped file with the payload will be referred to as `payload_map`. In all three implementations, I have chosen to store strings as payload, but this could be swapped out with any other data type.
 
@@ -148,7 +161,6 @@ An illustration of this concept can be seen below in Figure 2.
 ![Figure 2](images/bachelor-05.png)
 
 Struct offsets are favorable if you know that the data-object will always have the same size, but if the amount of data needed to be stored varies a lot, then we will waste space on internal fragmentation/adding in the structs because they are not “filled out”. Instead we can make all data-objects have a dynamic size. We will then have to store the size of the data-object as a header and need to use byte index to refer to the data.
-
 
 
 ## 4.1 Payload Map
@@ -322,9 +334,12 @@ what we are going to get, since it is just a pointer and a length that we force 
 to type T. In this case we do not have any other way of reading data from the memory map, because
 it only knows the concept of bytes.
 
+</details>
 
----
 # 5 Running the program
+
+<details>
+  <summary>expand</summary>
 The program is run through the command-line. This version of the program can either generate data itself or read it from a file. What the program is supposed to do is specified with _flags_ and _options_ through the command-line. The full list of flags and options available can be found in appendix A.
 
 Here we have some examples of how it works:
@@ -340,9 +355,13 @@ Some flags and options are an invalid combination. The program will tell you wha
 - `./rust_map --build_redblack` where you do not specify an input file (`--input_file MyFile.txt`) and do not generate a new dataset (`--generate_data`). This is an invalid combination, because then the program does not have anything to build off.
 - `./target/release/rust_map --specific_ip "160.5.211.97"`, where you tell it to search for that specific IP, but does not tell it which data structure to search in.
 
----
+</details>
 
 # 6 Testing, Debugging, and Profiling
+
+<details>
+  <summary>expand</summary>
+
 ## 6.1 Tests
 To ensure the implementations of data structures function correctly I have tested them using unit tests and integration tests. An important note is that the tests have to be run with the flag `--test-threads 1`, to make sure they run sequentially, because many functions use the same memory mapped files, and this eliminates the risk of race conditions.
 
@@ -446,9 +465,13 @@ mode (compiling with the `--release`-flag).
 In Figure 10 above we can see that there exists only one `insert_leaf_on_node`-stack-frame at
 the time in release mode, revealing that the compiler has optimized to tail-end recursion.
 
+</details>
 
---- 
 # 7 Experiments and Evaluation
+
+<details>
+  <summary>expand</summary>
+
 In the previous sections, I have explained the design and implementation of the three data structures: A table, a BST, and a Red-black Tree. To evaluate and compare these data structures and to see which ones live up to the requirements of the project I have made four experiments:
 - Experiment #1: Memory Usage
 - Experiment #2: Cashing
@@ -478,6 +501,8 @@ The focus of this project is to search on the Droplet with 1 GB memory, so this 
 
 I shared Dionysos with another person, so I cannot guarantee what else was running on the computer, while I was experimenting, but we tried to coordinate as much as possible so this should have minimal impact.
 
+<details>
+  <summary>expand</summary>
 
 ## 7.3 Experiment #1: Memory Usage
 ### Expectation
@@ -527,7 +552,13 @@ The size of page cache is difficult to predict and control, because it is entire
 
 Overall, my expectation was wrong. The kernel loads pages into the page cache, which is controlled entirely by the operating system and the operating system does not count/display the memory dynamically allocated by the page cache as used memory.
 
+</details>
+
 ## 7.4 Experiment #2: Caching
+
+<details>
+  <summary>expand</summary>
+
 A Cache-miss experiment is performed to track how the cache may impact the performance of data structure. For testing the cache, I used the Linux command `perf stat -e task-clock, cycles, instructions, cache-references, cache-misses [input]` on the machines. Between each step the cache is cleared by using the command `sync; echo 3 > /proc/sys/vm/drop_caches`, to make sure we start from a cold cache and that each test is not affected by the previous one.
 
 ### Expectation
@@ -574,8 +605,14 @@ Starting with Dionysos, the Red-black Tree has more cache misses compared to the
 For the Droplet, the data is more inconsistent. This may be because the Droplet is a virtual machine stored on a DigitalOcean data center, where all their customers have their own hosted virtual machine on the same machines. This can cause inconsistencies in the resources provided to our Droplet.
 
 
+</details>
+
 
 ## 7.5 Experiment #3: Search Time
+
+<details>
+  <summary>expand</summary>
+
 ### Expectation
 We would assume that the table has the fastest search/lookup time, followed by the Red-black Tree, followed by the BST. A lookup in the table runs in constant time because it only needs to do two lookups (once in the `ip_table` and once in `payload_map`). Both trees should have a *O(log(n))* lookup time complexity, but I would expect the BST to be slower than the Red-black Tree because it is not balanced and therefore needs more key comparers to reach deeper nodes.
 
@@ -614,9 +651,12 @@ We notice that both machines perform relatively evenly on smaller data sizes (1k
 
 It is also important to note that when the data set is smaller, the statistical power is lower. E.g. when we do 1000 entries and 10% lookup, only 100 requests are run which is a much lower sample size than 15.000.000, which we have with full 150 million entries. We just have to keep this in mind when reading the results.
 
-
+</details>
 
 ## 7.6 Experiment #4: Build Time
+
+<details>
+  <summary>expand</summary>
 
 ### Expectation
 For this project, there were no system requirements for the machine that should build the data structure. The only requirement was that it had to be built in less than a day. This experiment has been run on Dionysos.
@@ -664,8 +704,15 @@ The longest build time is the Red-black Tree with a build time of 3.2 hours, whi
 
 The best performing data structure seems to be the BST. This is probably due to a combination of only two writes to memory and good use of locality. From this experiment, we can conclude that the Red-black Tree is the least scalable solution, with this specific implementation.
 
----
+</details>
+
+</details>
+
 # 8 Conclusion
+
+<details>
+  <summary>expand</summary>
+
 The project has gone through the design, the implementation, and the evaluation of three data structures: a BST, a Red-black Tree, and a table.
 
 The overall conclusion is, that all three data structures - the BST, the Red-black Tree, and the table - live up to the requirements of at max 24 hours pre-processing/build time, at max 40 milliseconds lookup time, at max 4GB memory usage, and at max 100GB disk space usage when given 150 million IPv4 entries with up to 256 bytes of payload.
@@ -684,14 +731,5 @@ Against my expectation, the BST and the Red-black Tree perform similarly on both
 
 As described in _section 2.2_, Siteimprove also needs to handle at least 35.000 IPv6 addresses. This will not work with a table, since a disk of 2^128 u64-pointers (2.7 · 10^30 GB file) is not realistic, but it can easily be achieved with the Red-black Tree and the BST. Either by letting each node contain two `u128` instead of two `u32` for IPs or just have a separate memory mapped file for all IPv6 entries to reduce internal fragmentation (for storing an IPv4 address in a block of `u128`). I would suggest doing a mix of both a tree and a table. Having a table for the IPv4 and having a tree for IPv6.
 
-
-
-
-
-
-
-
-
-
-
+</details>
 
