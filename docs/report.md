@@ -35,7 +35,7 @@ Problem formulation as stated in the project description:
 The method is experimental. I will design, implement, and evaluate prototypes. The prototypes will be implemented in Rust and will be evaluated based on experiments.
 
 
-# 2.2 Problem explained in detail
+## 2.2 Problem explained in detail
 Siteimprove needs a web-service that can lookup information for a given IP address. The structure wrapped around the service (e.g. handling http request), is already implemented, so they need the new algorithm for the actual data storage and lookup. Siteimprove's service is implemented in Rust, and therefore they want the search algorithms to be implemented in Rust (or a language like C with a _foreign function interface_ (FFI), that can be called from a Rust application).
 
 The primary focus is fast lookup so their customers can get a response/result as fast as possible. Pre-processing time is not relevant as long as it does not take more than a day. The data structure needs to be built once a week and does not need to handle new entry insertions after initial pre-processing.
@@ -50,7 +50,7 @@ Siteimprove has no need for persistent logging.
 
 
 
-# 2.2.1 Data
+### 2.2.1 Data
 The data is expected to be read via _standard input_, from a file, or read from a stream. Each entry consists of two IP addresses and some associated data/payload. The first IP determines the lower bound of the range and the second is the upper bound.
 
 The payload pr. entry can vary in size, but the max payload size is 2^8 /256 bytes. It is not possible to access the real data due to confidentiality. The number of entries is not constant, so the system needs to be able to handle an arbitrary number of entries across the full IP range.
@@ -66,7 +66,7 @@ Assumptions for data
 
 
 
-# 2.2.2 Siteimprove’s requirements
+### 2.2.2 Siteimprove’s requirements
 
 
 ```
@@ -96,17 +96,17 @@ There are many ways of searching through key-value pairs. The data for this proj
 This project focuses on tables and tree structures.
 
 
-# 3.1 Tables
+## 3.1 Tables
 A simple implementation of a table is to just create a full table for all IP addresses holding a value (the payload) for each IP. Obviously, this results in massive data duplication because a value is stored repeatedly for each key in the associated range. This can easily be improved by storing the value in another table and only storing a pointer to it. Now the value is only stored once, but instead the pointer to it is duplicated for each key. An illustration of this concept is shown in Figure 1.
 
 ![Figure 1](images/bachelor-04.png)
 
 One of the downsides to this is that the full IP range is stored in the table even though you may only have very few entries. The solution is generally to create some kind of hashtable, where each key is hashed and points to another data structure (like a linkedlist) where the values are stored, but this is beyond the scope of this project.
 
-# 3.2 Binary Trees
+## 3.2 Binary Trees
 To prevent having a lot of duplicated pointers, another option is to store each entry as a node in a tree. A binary tree is a tree where each node has one parent and up to two children. A tree corresponding to the _binary search algorithm_ achieves the theoretical minimum number of key comparisons that is necessary to find a value. Binary search has a time complexity of *O(log n)* and we should aim for a tree structure with the same time complexity.
 
-# 3.2.1 Binary Search Tree (BST)
+### 3.2.1 Binary Search Tree (BST)
 BST is a type of binary tree in which the left child of a node has a value less than the parent and the right child has a value greater than the parent. On average, a BST with *n* nodes has a height of *O(logn)*. However, in the worst case, a BST can have a height of *O(n)*.
 
 One of the choices you have to make is to decide if you want to store the payload in/next to the  node itself or the node should store a pointer to the payload somewhere else.
@@ -122,7 +122,7 @@ Another interesting point is to decide on how you want to store the IP addresses
 
 Another approach could be to store only the lower-bound and then store the delta to the upper-bound. This is useful if you know that the ranges will be small, meaning you could get away with storing the upper bound on fewer than 4 bytes (32 bits). This is only a useful optimization if you know how the ranges and gaps are distributed, but since we do not know that in this project we have chosen the simple solution of storing the full IP address for both upper and lower bound.
 
-# 3.2.2 Red-black Tree
+### 3.2.2 Red-black Tree
 An extension of the Binary Search Tree is the Red-black Tree. A Red-black Tree is a self-balancing binary search tree. This prevents the tree from being imbalanced in exchange for longer build time and bigger nodes.
 
 One important point to make is that it is not always beneficial to use a balanced tree. As Donald E. Knuth proves in _The art of computer programming_, the search time for the balanced tree does not perform much better than a non-balanced tree on random data. An unbalanced tree has a worst- case search time of *O(n)*, but this is very rare and most trees are well balanced. A Red-black Tree has a *~Log(n)* search time and a BST has a *~2·log(n)* search time. Therefore, both data structures have a search time complexity of *O(log(n))*. The increasing price of rebalancing the Red-black Tree on large random data inserts, may not always be worth the lower height.
@@ -130,15 +130,13 @@ One important point to make is that it is not always beneficial to use a balance
 In addition, the Red-black Tree can be implemented with an insertion-function that only needs to handle four base cases, which makes it a good choice for projects like this.
 
 ---
-
-
 # 4 Design and Implementation
 In this project, I have chosen an implementation of a Binary Search Tree (BST), a Red-black Tree, and
 a table. All three implementations have their own module in the source code and have the same interface, so they can be swapped interchangeably. All data structures are implemented using memory mapped files. All three implementations use a separate memory mapped file for storing the payload. This memory mapped file with the payload will be referred to as `payload_map`. In all three implementations, I have chosen to store strings as payload, but this could be swapped out with any other data type.
 
 Before diving deeper into the implementations, I want to highlight the difference between fixed data sizes vs. dynamic data sizes.
 
-### Fixed vs. dynamic data length
+#### Fixed vs. dynamic data length
 Depending on the problem you want to solve you can either choose to use the same fixed amount of space for each entry or have a dynamic size (only using the necessary amount of space for each entry). This decision is important because it determines how to store the payload and how we store the nodes in the tree, and how big the pointers to the payload need to be.
 
 Fixed sized data could imply using structs, so the whole file is cut in equal-sized pieces (structs). You can then refer to the offset of the struct itself, and not only to the byte index of the struct. This is important because the byte index number will be much larger than the struct offset, resulting in more space is needed to store pointers to byte indexes.
@@ -153,7 +151,7 @@ Struct offsets are favorable if you know that the data-object will always have t
 
 
 
-# 4.1 Payload Map
+## 4.1 Payload Map
 The memory mapped file, `payload_map`, contains all entries' value/payload and the length of the values in bytes as a header. Payload varies in length, so we have to use byte indexes when referring to payload. A value is retrieved from the `payload_map` by giving it the byte index of the header of the value. Each lookup runs in constant time and therefore has a time complexity of *O(1)*.
 
 Each value has a header of one byte, which is used to store the length of the data. This means that the payload can be at most 2^8 = 256 bytes long. This is just a design choice but could easily be extended by changing all headers to be 2 bytes long instead.
@@ -167,7 +165,7 @@ would be stored in `payload_map`.
 #### Space
 The maximum space needed for this file can be calculated from the max payload size and the number of entries: *(2^8 + 1) · n*, where *n* is the number of entries. The *+1* is the header-size of one byte. If we have 150.000.000 entries with 256 bytes each, we can calculate the largest possible file to be 38.4GB. The space complexity is *O(n)*, where *n* is the number of entries.
 
-# 4.2 BST & Red-black Tree
+## 4.2 BST & Red-black Tree
 Both the BST and the Red-Black Tree are implemented similarly. Most functions are exactly the same, but with the exception of the insert-function (`fn insert_node(...)` in the source code) in the Red-black Tree being more extensive and the fact that the Red-black Tree has functions for changing the root-node.
 
 // insert shit here
@@ -228,7 +226,7 @@ max_ip from `u32` to `u128` (and instead declare them at the bottom of the struc
 alignment).
 
 
-# 4.3 Table
+## 4.3 Table
 This implementation is based on the implementation mentioned in section 3.1 Tables. This file consists of 2^32 (~4,3 million) unsigned longs, `u64`, that function as a pointer to lookup the value in the `payload_map`. This table I will refer to as `ip_table`.
 
 In Figure 6, a simple example is shown of what it would look like if the three entries below were inserted in the Table. The three entries are the same as shown in the previous section (section 4.2).
@@ -256,17 +254,17 @@ Space complexity: O(1)
 Space: 2^32 · 64 bit = 34.4 GB
 ```
 
-# Handling IpV6
+#### Handling IpV6
 In practice this implementation will not work with IPv6. IPv6 is 128-bit instead of IPv4's 32-bit. The
 number of possible IPs in IPv6 is 2^128 = 3,40 · 10 38 , and if all have to store a `u64`-pointer it results in a 2.7 · 10 30 GB file (_2^128 · 64/8/1000/1000_).
 
 
-# 4.4 Why use Rust?
+## 4.4 Why use Rust?
 Rust is a multi-paradigm programming language, which supports imperative procedural, object- oriented, pure functional styles, and generic programming. It is a compiled programming language and it uses LLVM on the backend.
 
 Rust has no runtime or garbage collector, which makes it good for performance and consistency, since it removes concepts like _Pause-Time Garbage Collection_. Rust performs similar to C, and hence makes a good choice for performance.
 
-# 4.4.1 Safety
+### 4.4.1 Safety
 #### Memory safety
 One of the main reasons for using Rust is its safety. In general, Rust does not allow null-pointers, dangling pointers, or race conditions. This is done among others by a combination of the concepts of ownership and lifetime, which are enforced at compile time.
 
@@ -302,14 +300,14 @@ pub(crate) fn get_u32_for_ip(s: &str) -> Option<u32> {
 
 Option is used in the form of Some and None and Result is used in Ok(n) and Err(e). This function takes a string of four numbers separated by a dot . - e.g. 192.2.103.11 - and returns an unsigned integer wrapped in an Option. In this case, I use Option as a safe way to use a null-pointer. Being able to handle an error with ease is crucial when you need to deliver safe code quickly.
 
-# 4.4.2 Memory Map Abstraction
+### 4.4.2 Memory Map Abstraction
 Rust does not have an official interface/abstraction for using memory maps, but there exist a few open-source libraries created by the community.
 Rust's package management system is called _cargo_ and it uses _crates_ as packages. This project uses a crate called `memmap` (version 0.7.0) 13 as an abstraction for memory mapped files. This library was chosen because it had the most stars on GitHub. The abstraction provided by this external library is not extensive compared to the one available in C, so the configuration for the memory map is not as customizable.
 
 Rust has the ability to call functions in C files, and you can also use most of the C standard library inline by using the `libc`-library/crate. This means we can access functions like `mlock` and `mlockall`, should this be needed - but Rust’s memory safety cannot guarantee the result of these functions so it forces us to use the "`unsafe`" keyword. Overall, this means that we can use both Rust functions and C functions as we please, but we cannot guarantee what is going to happen.
 
 
-### Reading from Memory Map
+#### Reading from Memory Map
 This abstraction of a memory mapped file only knows the concept of bytes. The memory map can be
 seen as one long byte-array.
 Sometimes we cannot use Rust's safety, and this is where Rust works more like C.
@@ -326,7 +324,6 @@ it only knows the concept of bytes.
 
 
 ---
-
 # 5 Running the program
 The program is run through the command-line. This version of the program can either generate data itself or read it from a file. What the program is supposed to do is specified with _flags_ and _options_ through the command-line. The full list of flags and options available can be found in appendix A.
 
@@ -349,7 +346,7 @@ Some flags and options are an invalid combination. The program will tell you wha
 ## 6.1 Tests
 To ensure the implementations of data structures function correctly I have tested them using unit tests and integration tests. An important note is that the tests have to be run with the flag `--test-threads 1`, to make sure they run sequentially, because many functions use the same memory mapped files, and this eliminates the risk of race conditions.
 
-## 6.1.1 Unit tests
+### 6.1.1 Unit tests
 Most files and functions are tested using unit tests. All unit tests can be found in source-code in the same file as the function they are testing. The unit tests include both _positive tests_ and _negative tests_. Below I have chosen to highlight some of the more special tests.
 
 
@@ -375,7 +372,7 @@ fn is_tree_corrupt(mmap: &MmapMut, parent_red: bool, node: &Node) -> bool {
 ```
 This function traverses the Red-black Tree and checks if both a child and its parent are _red_, which is an illegal state, and should have triggered a rebalance. This function will return `true` if the tree is corrupted and `false` otherwise. In the source code, a positive and negative test is performed on 50.000 randomly inserted elements, to ensure that the Red-black Tree was built correctly. This test does not detect if any nodes are disconnected from the tree (nodes not reachable from the root), but other tests detect that.
 
-# 6.1.2 Integration Tests
+### 6.1.2 Integration Tests
 Since all three implementations of the data structures have the same interface, they can all be tested by using exactly the same functions.
 The integration tests include:
 -  Hardcoded input data and the requested IPs are also hardcoded
@@ -406,7 +403,7 @@ Testing lookup is done by selecting a set of IP requests and looking them up in 
 
 
 
-# 6.2 Debugging
+## 6.2 Debugging
 Debugging the system was mostly done with print-lines and by stepping through the code with a debugger. It can be difficult to visualize how exactly each byte is placed in memory maps. The method I used to visualize it was to print the memory map in bytes to _standard output_. I used this statement `println!("{:?}", &payload_map[0..100]);`, which prints out each byte in the range of 0 to 100 of the memory mapped file: `[0,0,0,123,90,6 ... ]`. This way I could print the map before and after each operation and compare them, and check if it worked as intended.
 
 When building the Red-black Tree there is an assert-check while balancing that checks that a child's parent-pointer is the same as its grandparents' child pointer (a visual representation can be seen in Figure 7). This will detect errors, should the Red-black Tree end up being corrupted. This was crucial in the development process. I had a periodic issue where the Red-black Tree was being built incorrectly.
@@ -451,7 +448,6 @@ the time in release mode, revealing that the compiler has optimized to tail-end 
 
 
 --- 
-
 # 7 Experiments and Evaluation
 In the previous sections, I have explained the design and implementation of the three data structures: A table, a BST, and a Red-black Tree. To evaluate and compare these data structures and to see which ones live up to the requirements of the project I have made four experiments:
 - Experiment #1: Memory Usage
@@ -483,25 +479,30 @@ The focus of this project is to search on the Droplet with 1 GB memory, so this 
 I shared Dionysos with another person, so I cannot guarantee what else was running on the computer, while I was experimenting, but we tried to coordinate as much as possible so this should have minimal impact.
 
 
-# 7.3 Experiment #1: Memory Usage
-#### Expectation
+## 7.3 Experiment #1: Memory Usage
+### Expectation
 Memory is an important factor when working with memory mapped files. I would expect the kernel to keep loading in pages as long as there is free memory left in main memory - and only start offloading pages when main memory is close to full.
 
 A page is 4kb, which means that if we in a memory mapped file access data at least once every 4kb, we will load all pages in the whole file. So, if we build the table with 150 million entries and a gap of 10-18 bytes, we will have to load in all 34.4 GB (2^32 · 64 bits). This is of course not possible on a 1 GB memory machine, so the system must start offloading pages again. The victim page is chosen by the page fault handler in the memory system. If it keeps loading and offloading the same page it is known as _thrashing_, since it keeps asking for something and throwing it away even though it needs it again soon. This is a challenge for the table when IP requests are random because the kernel cannot predict what to keep in memory.
 
 Overall, the expectation is that the kernel will keep loading in pages until all memory is used. 
 
-#### Results
+### Results
 To test this, I built a table on the two machines, with 150 entries, and checked the memory usage, before and during the building of the table. Here we would expect it to use all memory available and after start loading and offloading pages. To track the memory usage, I used the Linux command free, that prints the current memory usage before and while the program was running.
 
 
-// table
+**Memory Usage**
+| Structure     | Droplet       | Dionysos  | 
+| ------------- |--------------:| ---------:|
+| Idle          | 106mb         | 9783mb    |
+| Running       | 168mb         | 9844mb    |
+| Difference    | 62mb          | 61mb      |
 
 > _Idle_ means when the machine is doing nothing, _Running_ is when the program is running, and _Difference_ is the delta between running and idle
 
 The free-command was run many times during the build of the data structure, and already after building 2% of the input data, the memory usage stopped increasing and had a stable memory usage during the rest of the building process.
 
-#### Discussion
+### Discussion
 In the results above, we see that both machines both use 61mb-62mb, which shows that the memory usage did not keep growing. This suggests that something does not work as expected and it starts paging before all memory is used. This can also be seen by looking at the digital oceans monitoring tool (Figure 11). Looking at Droplet during one of the weeks, where the experiments were performed, it never got over 33% memory usage.
 
 ![Figure 2](images/ram_usage_1gb2.png)
@@ -510,7 +511,12 @@ In a follow-up experiment I tracked how much the page cache filled up by using t
 command, but with `-w`-flag enabled to see how much was cached in the page cache.
 Running the same experiment with the `-w`-flag enabled printed in the following results:
 
-// table
+**Page Cache**
+| Structure     | Droplet       | Dionysos  | 
+| ------------- |--------------:| ---------:|
+| Idle          | 56mb          | 1371mg    |
+| Running       | 754mb         | 38709mb   |
+| Difference    | 698mb         | 37337mb   |
 
 
 The Droplet’ cache size stopped increasing after loading in only 2 percent of the data, and stayed stable for the rest of the run. This tells us that the Droplet started paging after 2 percent was built. On the other hand, Dionysos’ page cache kept increasing until it was done building the whole table. As described in section 4.3 the table takes up 34.4GB. This shows us that Dionysos loaded in all pages for the full table in the page cache, and never swapped out any pages, because there was always more unused memory left for the page cache to use.
@@ -521,10 +527,10 @@ The size of page cache is difficult to predict and control, because it is entire
 
 Overall, my expectation was wrong. The kernel loads pages into the page cache, which is controlled entirely by the operating system and the operating system does not count/display the memory dynamically allocated by the page cache as used memory.
 
-# 7.4 Experiment #2: Caching
+## 7.4 Experiment #2: Caching
 A Cache-miss experiment is performed to track how the cache may impact the performance of data structure. For testing the cache, I used the Linux command `perf stat -e task-clock, cycles, instructions, cache-references, cache-misses [input]` on the machines. Between each step the cache is cleared by using the command `sync; echo 3 > /proc/sys/vm/drop_caches`, to make sure we start from a cold cache and that each test is not affected by the previous one.
 
-## Expectation
+### Expectation
 In theory, the cache should not matter if the data set consists of an infinitely large amount of entries because the cache would be thrashed anyway. But on a more realistic scale (like in this project) this can become a factor when it comes to speed.
 
 The immediate thought would be that the trees would have better caching performance than the table, since the nodes closer to the root would be read much more often than the rest of the tree (_temporal locality_). This should result in the data stored in the upper nodes most likely will be retrieved from the cache.
@@ -541,38 +547,61 @@ For this implementation, it is difficult to isolate the cache-miss counting only
 
 Both the _generation search input_ and _looking up the payload_ are the same steps for all three data structures, suggesting they can be seen as a constant factor in the experiment. This means that generating and looking in `payloads_map` should be stable for all results. This experiment was performed with a payload size of _1 byte_ to make sure that almost all access in the `payload_map` was cached.
 
-## Results
+### Results
 The tests for this experiment have been run on both Dionysos and the Droplet. The script for producing the results can be found in the root of the repository. The table below shows cache-miss percentages printed by the `perf stat`-command.
 
-// table
+**Dionysos**
+| Structure     | 1k            | 100k      | 10mil     | 150mil        |
+| ------------- |--------------:| ---------:| ---------:| -------------:| 
+| BST           | 36.1 %        | 54.7 %    | 61.4 %    | 68.2 %        |
+| Red-black     | 34.5 %        | 52.9 %    | 76.4 %    | 76.4 %        |
+| Table         | 35.1 %        | 79.9 %    | 83.7 %    | 78.9 %        |
+
+**Droplet**
+| Structure     | 1k            | 100k      | 10mil     | 150mil        |
+| ------------- |--------------:| ---------:| ---------:| -------------:| 
+| BST           | 29.9 %        | 26.4 %    | 42.2 %    | 30.1 %        |
+| Red-black     | 40.4 %        | 29.2 %    | 25.0 %    | 42.3 %        |
+| Table         | 48.8%         | 25.0 %    | 9.0 %     | 40.6 %        |
 
 > Occasionally it occurred that the cache miss randomly dropped to 1% for data sizes of 10mill and 150mill. This occurred 5% of the time. These results are not in-calculated in the results above.
 
 
 
-## Discussion
+### Discussion
 Starting with Dionysos, the Red-black Tree has more cache misses compared to the BST for 10mill entries and 150mill entries. Again, this can be explained by the BST's better use of spatial locality. On the other hand, for 1k and 100k the Red-black Tree has less cache-misses than the BST. This may be caused by the fact that there are less entries overall and therefore a higher percentage of the nodes is already loaded and therefore a lower tree height may be more important than spatial locality. For 100k, 10mill, and 150mill the table has the highest cache miss percentage, which is expected because all requests are random, so it cannot predict what to keep in memory.
 
 For the Droplet, the data is more inconsistent. This may be because the Droplet is a virtual machine stored on a DigitalOcean data center, where all their customers have their own hosted virtual machine on the same machines. This can cause inconsistencies in the resources provided to our Droplet.
 
 
 
-# 7.5 Experiment #3: Search Time
-## Expectation
+## 7.5 Experiment #3: Search Time
+### Expectation
 We would assume that the table has the fastest search/lookup time, followed by the Red-black Tree, followed by the BST. A lookup in the table runs in constant time because it only needs to do two lookups (once in the `ip_table` and once in `payload_map`). Both trees should have a *O(log(n))* lookup time complexity, but I would expect the BST to be slower than the Red-black Tree because it is not balanced and therefore needs more key comparers to reach deeper nodes.
 
 Based on the result of _Experiment #1_, I would expect Dionysos to be faster than the Droplet, because it can store more pages in the page cache.
 
-## Results
+### Results
 This experiment has been run on both Dionysos and the Droplet. All tests are run with: `range: 10..18, payload_size: 50, gap: 10`. The numbers in the table below are the average lookup time pr. requested IP. All numbers are in microseconds.
 These speed tests were run right after the building of the data structure without clearing the page cache. This was done to maximize speed by having as many pages already in memory as possible. The script for producing the results can be found in the root of the repository.
 
+**Dionysos**
+| Structure     | 1k            | 100k      | 10mil     | 150mil        |
+| ------------- |--------------:| ---------:| ---------:| -------------:| 
+| BST           | 2.50          | 0.88      | 2.17      | 3.71          |
+| Red-black     | 2.78          | 1.00      | 1.75      | 3.25          |
+| Table         | 7.09          | 3.85      | 3.44      | 0.95          |
 
-// table
+**Droplet**
+| Structure     | 1k            | 100k      | 10mil**   | 150mil**      |
+| ------------- |--------------:| ---------:| ---------:| -------------:| 
+| BST           | 1.45          | 0.85      | 324,10    | 6731.96       |
+| Red-black     | 1.47          | 0.84      | 1284,22   | 7417.70       |
+| Table         | 5.52          | 4.52      | 2157.37   | 5997.26       |
 
 > ** The Droplet cannot build these data sizes (as explained in the next experiment, _Experiment #4_), so it had to be built on Dionysos and copied to the Droplet. This means that the cache was cold, and no pages were loaded into memory before the speed test was run.
 
-## Discussion
+### Discussion
 Starting with Dionysos, we can see that the table is the fastest on the 150mill data set, which was what we expected, because it runs in constant time and only has two lookups pr. entry.
 
 One thing that is interesting is that on both machines both trees follow along well. One could expect that the Red-black Tree would have double the speed of the BST, because of the lower height, but this is not the case. The Red-black Tree may have fewer key-comparisons/node-accesses than the BST, but nodes are more spread out in the file because of rebalancing (as described in the previous experiment, _Experiment 2_). This results in poor use of _spatial locality_ by the Red-black Tree, which results in more page misses and slower search speed. Another reason that the BST and the Red-black Tree have similar performance, could be that the nodes in the Red-black Tree are bigger and therefore fewer nodes can be stored on the same page. This means that the Red-black Tree will also get more page faults because less nodes can be loaded at the same time. This also has an impact on the performance, but this should be minimal, though.
@@ -587,30 +616,42 @@ It is also important to note that when the data set is smaller, the statistical 
 
 
 
-# 7.6 Experiment #4: Build Time
+## 7.6 Experiment #4: Build Time
 
-## Expectation
+### Expectation
 For this project, there were no system requirements for the machine that should build the data structure. The only requirement was that it had to be built in less than a day. This experiment has been run on Dionysos.
 
-### Table
+#### Table
 The table should primarily be limited by write speed. It should insert each entry in linear time *O(r)*, where r is the range of entry, since the insertion time does not grow with the number of entries, but it has to repeatedly store a pointer to the `payload_map`, for each IP in the range. In these experiments, we have a range ranging between 10 and 18, so the table must insert 10-18 pointers per entry. Therefore, the insertion time complexity can be seen as constant *O(1)*. I would expect the table to be fastest on a large data set, because of the constant insertion time compared to the trees' *log(n)* insertion time.
 
-### BST
+#### BST
 The BST only writes twice to memory. Once for placing the node/struct in the map and once redirecting its parent’s pointer. But the slowing part is that the algorithm must search down the tree every time leaving it with *O(Log(n))* insertion time. I would expect the BST to be the fastest on smaller data sets because all nodes are stored next to each other in the file (great use of locality) and most nodes would probably be loaded in the page cache.
 
-### Red-black Tree
+#### Red-black Tree
 The Red-black Tree is more difficult to predict because it also must balance the tree. Balancing the tree requires reads and writes to multiple nodes above the newly inserted node, and potentially many more if a rotation is needed. In this implementation, it does not save a reference to the nodes it encounters down the search, so when balancing it must re-access/request the node in the memory map. This should not be an issue when the balancing is only one rotation, but this will be an increasing problem when the tree grows, and bigger rotations happen.
 Furthermore, as described in _Experiment #2_, we must remember that the nodes in the Red-black Tree are stored more spread out compared to the BST, with less use of locality.
 Overall, I would expect the Red-black Tree to be the slowest in all cases, because of the huge amount of node accesses.
 
-## Results
+### Results
 This experiment was done by running the script found in the root of the repository 27 . All numbers are in microseconds. All tests are run with: `range: 10..18, payload_size: 50`.
 
-// tables
+**Build time per data structure**
+| Structure     | 1k            | 100k      | 10mil     | 150mil        |
+| ------------- |--------------:| ---------:| ---------:| -------------:| 
+| BST           | 3917          | 206485    | 29928726  | 835904134     |
+| Red-black     | 62624         | 6276430   | 647125934 | 11516763374   |
+| Table         | 21924         | 1202969   | 155465193 | 960806939     |
+
+**Average insertion time per entry per data structure**
+| Structure     | 1k            | 100k      | 10mil     | 150mil        |
+| ------------- |--------------:| ---------:| ---------:| -------------:| 
+| BST           | 3.91          | 2.06      | 2.99      | 5.57          |
+| Red-black     | 62.62         | 62.76     | 64.71     | 76.78         |
+| Table         | 21.92         | 12.03     | 15.55     | 6.41          |
 
 An interesting thing to notice was that the searching actually speeds up on Dionysus when building the trees, but not on the Droplet. This is because Dionysos can keep loading in pages so more and more pages will be cached, but this is not the case for the Droplet, so it doesn't speed up.
 
-## Discussion
+### Discussion
 The first thing we notice is that the Red-black Tree is the worst performing data structure, just as we had expected.
 
 As described in the previous experiment, _Experiment #3_, building the data structures also makes use of the progress bar made from flushed print-lines. Again, this has a meaningful overhead on small data sizes, which is probably why we see a decrease from 1k to 100k in average insertion time for both the table and the BST.
