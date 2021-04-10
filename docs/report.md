@@ -1,9 +1,4 @@
 # Designing/implementing/evaluating an external map in Rust on modern hardware
-## Dag Bjerre Andersen
-## daga@itu.dk
-## Supervisor: Philippe Bonnet
-
----
 
 # Abstract
 <details>
@@ -104,11 +99,12 @@ This project focuses on tables and tree structures.
 
 
 ## 3.1 Tables
-A simple implementation of a table is to just create a full table for all IP addresses holding a value (the payload) for each IP. Obviously, this results in massive data duplication because a value is stored repeatedly for each key in the associated range. This can easily be improved by storing the value in another table and only storing a pointer to it. Now the value is only stored once, but instead the pointer to it is duplicated for each key. An illustration of this concept is shown in Figure 1.
+A simple implementation of a table is to just create a full table for all IP addresses holding a value (the payload) for each IP. Obviously, this results in massive data duplication because a value is stored repeatedly for each key in the associated range. This can easily be improved by storing the value in another table and only storing a pointer to it. Now the value is only stored once, but instead the pointer to it is duplicated for each key. An illustration of this concept is shown in the figure below.
 
-![Figure 1](images/bachelor-04.png)
+<img width="500" src="images/bachelor-04.png">
 
 One of the downsides to this is that the full IP range is stored in the table even though you may only have very few entries. The solution is generally to create some kind of hashtable, where each key is hashed and points to another data structure (like a linkedlist) where the values are stored, but this is beyond the scope of this project.
+
 
 ## 3.2 Binary Trees
 To prevent having a lot of duplicated pointers, another option is to store each entry as a node in a tree. A binary tree is a tree where each node has one parent and up to two children. A tree corresponding to the _binary search algorithm_ achieves the theoretical minimum number of key comparisons that is necessary to find a value. Binary search has a time complexity of *O(log n)* and we should aim for a tree structure with the same time complexity.
@@ -155,9 +151,9 @@ Fixed sized data could imply using structs, so the whole file is cut in equal-si
 
 In this project, I will refer to “struct offset” as the offset of the first byte in the struct, and I will refer to the “byte index” as the offset of a byte.
 
-An illustration of this concept can be seen below in Figure 2.
+An illustration of this concept can be seen below in the figure below.
 
-![Figure 2](images/bachelor-05.png)
+<img width="700" src="images/bachelor-05.png">
 
 Struct offsets are favorable if you know that the data-object will always have the same size, but if the amount of data needed to be stored varies a lot, then we will waste space on internal fragmentation/adding in the structs because they are not “filled out”. Instead we can make all data-objects have a dynamic size. We will then have to store the size of the data-object as a header and need to use byte index to refer to the data.
 
@@ -167,17 +163,15 @@ The memory mapped file, `payload_map`, contains all entries' value/payload and t
 
 Each value has a header of one byte, which is used to store the length of the data. This means that the payload can be at most 2^8 = 256 bytes long. This is just a design choice but could easily be extended by changing all headers to be 2 bytes long instead.
 
-In Figure 3 to the right it is shown how `SKAT`
-would be stored in `payload_map`.
+In the figure it is shown how `SKAT` would be stored in `payload_map`.
 
-![Figure 2](images/bachelor-03.png)
-
+<img width="500" src="images/bachelor-03.png">
 
 #### Space
 The maximum space needed for this file can be calculated from the max payload size and the number of entries: *(2^8 + 1) · n*, where *n* is the number of entries. The *+1* is the header-size of one byte. If we have 150.000.000 entries with 256 bytes each, we can calculate the largest possible file to be 38.4GB. The space complexity is *O(n)*, where *n* is the number of entries.
 
 ## 4.2 BST & Red-black Tree
-Both the BST and the Red-Black Tree are implemented similarly. Most functions are exactly the same, but with the exception of the insert-function (`fn insert_node(...)` in the source code) in the Red-black Tree being more extensive and the fact that the Red-black Tree has functions for changing the root-node.
+Both the BST and the Red-Black Tree are implemented similarly. Most functions are exactly the same, but with the exception of the insert-function ([`fn insert_node(...)`][4] in the source code) in the Red-black Tree being more extensive and the fact that the Red-black Tree has functions for changing the root-node.
 
 <table>
 <tr>
@@ -221,18 +215,21 @@ pub struct Node {
 > `min_ip` is the lower bound of the IP range, `max_ip` is the upper bound of the IP range, `left` is the struct offset of the left child, ``right`` is the struct offset of the right child, parent is the struct offset of the parent, `payload_ptr` is the byte index of the payload that the node refers to. `min_ip` and `max_ip` are a `u32`, because IPv4 is 32-bit. Pointers to other nodes are `u32`, because we know that there will be at most 2^32 nodes, when the tree only handles IPv4.
 
 #### Insertion
-Each time an entry is added to the tree a new node will be appended at the end of the memory mapped file. Because all nodes have the same size, we can point to their node offset instead of their byte index. The only difference between the two trees is how we store the root-node. In the BST, we store the root node on struct offset 0 and in the Red-black Tree we store a pointer to the root-node in the first struct (as illustrated in Figure 4).
+Each time an entry is added to the tree a new node will be appended at the end of the memory mapped file. Because all nodes have the same size, we can point to their node offset instead of their byte index. The only difference between the two trees is how we store the root-node. In the BST, we store the root node on struct offset 0 and in the Red-black Tree we store a pointer to the root-node in the first struct (as illustrated in the figure).
 
-![Figure 2](images/bachelor-06.png)
+<img width="600" src="images/bachelor-06.png">
 
-In Figure 5, a simple example is shown of what it would look like if these three entries below were inserted in both the BST and the Red-black Tree.
+
+In the figure below, a simple example is shown of what it would look like if these three entries below were inserted in both the BST and the Red-black Tree.
 
 ```
 0.0.2.8 0.0.2.8     SKAT
 0.0.0.4 0.0.1.20    PWC
 0.0.0.0 0.0.0.2     Siteimprove
 ```
-![Figure 2](images/bachelor-08.png)
+
+<img width="100%" src="images/bachelor-08.png">
+
 
 
 Here we notice that the BST is not balanced and has _Node 0_ as root and the Red-black Tree is balanced and has _Node 2_ as root. Pointers to other nodes (left, right, parent) with value 0 are treated as a null-pointers.
@@ -276,7 +273,7 @@ alignment).
 ## 4.3 Table
 This implementation is based on the implementation mentioned in section 3.1 Tables. This file consists of 2^32 (~4,3 million) unsigned longs, `u64`, that function as a pointer to lookup the value in the `payload_map`. This table I will refer to as `ip_table`.
 
-In Figure 6, a simple example is shown of what it would look like if the three entries below were inserted in the Table. The three entries are the same as shown in the previous section (section 4.2).
+In the figure below, a simple example is shown of what it would look like if the three entries below were inserted in the Table. The three entries are the same as shown in the previous section (section 4.2).
 
 ```
 0.0.2.8 0.0.2.8 SKAT
@@ -284,11 +281,9 @@ In Figure 6, a simple example is shown of what it would look like if the three e
 0.0.0.0 0.0.0.2 Siteimprove
 ```
 
-![Figure 2](images/bachelor-02.png)
+<img width="700" src="images/bachelor-02.png">
 
-
-To symbolize a null-pointer (when IPs do not have any payload) we just store 0. This means that we need to add 1 to all pointers to differentiate between null-pointers and real pointers that point to the first value in `payload_map` at index 0. Therefore, we see in the Figure 6 above that *IP 4* with value *6* points to byte index *5*.
-
+To symbolize a null-pointer (when IPs do not have any payload) we just store 0. This means that we need to add 1 to all pointers to differentiate between null-pointers and real pointers that point to the first value in `payload_map` at index 0. Therefore, we see in the figure above that *IP 4* with value *6* points to byte index *5*.
 
 Space
 The space needed for this IP table for IPv4 is 34.4 GB (_2^32 · 64/8/1000/1000/1000_) and the size of the space needed does not scale with the amount of entries inserted. The space complexity is *O(1)*.
@@ -430,9 +425,7 @@ O Siteimprove
 
 </td>
 <td>
-
-![Visual abstraction](images/bachelor-07.png)
-
+    <img width="500" src="images/bachelor-07.png">
 </td>
 </tr>
 </table>
@@ -484,9 +477,9 @@ Testing lookup is done by selecting a set of IP requests and looking them up in 
 ## 6.2 Debugging
 Debugging the system was mostly done with print-lines and by stepping through the code with a debugger. It can be difficult to visualize how exactly each byte is placed in memory maps. The method I used to visualize it was to print the memory map in bytes to _standard output_. I used this statement `println!("{:?}", &payload_map[0..100]);`, which prints out each byte in the range of 0 to 100 of the memory mapped file: `[0,0,0,123,90,6 ... ]`. This way I could print the map before and after each operation and compare them, and check if it worked as intended.
 
-When building the Red-black Tree there is an assert-check while balancing that checks that a child's parent-pointer is the same as its grandparents' child pointer (a visual representation can be seen in Figure 7). This will detect errors, should the Red-black Tree end up being corrupted. This was crucial in the development process. I had a periodic issue where the Red-black Tree was being built incorrectly.
+When building the Red-black Tree there is an assert-check while balancing that checks that a child's parent-pointer is the same as its grandparents' child pointer (a visual representation can be seen in the figure below). This will detect errors, should the Red-black Tree end up being corrupted. This was crucial in the development process. I had a periodic issue where the Red-black Tree was being built incorrectly.
 
-![Figure 2](images/bachelor-09.png)
+<img width="400" src="images/bachelor-09.png">
 
 Eventually, I found out that the issue was caused by an assumption I had made, which was wrong. The assumption was that the nodes always had a different color when `swapColor(node1,node2)` was called, which is not true. After fixing this, I did not have any corrupted builds.
 
@@ -505,13 +498,13 @@ This was most useful at the beginning both for learning Rust and for detecting b
 > On the left image of the _Call Tree_, we see how 56.5% of the time was spent initializing a Regex object, but on the right image it only took 14.7% of the time after the change was made.
 
 #### Flame Graph
-Still, after changing that, we can see in the profiler that almost half the time was spent on parsing the input-string to two `u32` and a payload-`string` when building a table with 50.000 entries. This can be seen by comparing the width of the block, `Utils::get_entry_for_line`, with the full width of `build_data_structure`-block in Figure 8 below. Each block represents a stack-frame and the width of each block corresponds to the function’s CPU time used.
+Still, after changing that, we can see in the profiler that almost half the time was spent on parsing the input-string to two `u32` and a payload-`string` when building a table with 50.000 entries. This can be seen by comparing the width of the block, `Utils::get_entry_for_line`, with the full width of `build_data_structure`-block in the figure below. Each block represents a stack-frame and the width of each block corresponds to the function’s CPU time used.
 
-![Figure 2](images/50k_profiler_table.png)
+![](images/50k_profiler_table.png)
 
-The height of the trees is also visible in the profiler in the flame graph. Figure 9 below is an image from a profile run on a function that builds both the Red-black Tree, the table, and the BST with 100.000 entries with a frequency of 5000 samples pr. second. Since it ran with 100.000 entries we can expect a minimum height of the trees to be *log(100.000)=16*. In the flame graph, we can count how many stack-frames deep the Red-black Tree’s `insert_node` functions go. The last `insert_leaf_on_node`-stack-frame is *18* layers deep, which means that the height of the tree is *19* (*+1* because the inserted leaf also counts). This matches our expectations of a balanced tree. Furthermore, we can see that the BST height is almost double the height of the Red-black Tree. This also matches our expectations of an unbalanced tree height to have a height of *2·log(n)*, mentioned in _section 3.2.2 Red-black Tree_.
+The height of the trees is also visible in the profiler in the flame graph. The figure below is an image from a profile run on a function that builds both the Red-black Tree, the table, and the BST with 100.000 entries with a frequency of 5000 samples pr. second. Since it ran with 100.000 entries we can expect a minimum height of the trees to be *log(100.000)=16*. In the flame graph, we can count how many stack-frames deep the Red-black Tree’s `insert_node` functions go. The last `insert_leaf_on_node`-stack-frame is *18* layers deep, which means that the height of the tree is *19* (*+1* because the inserted leaf also counts). This matches our expectations of a balanced tree. Furthermore, we can see that the BST height is almost double the height of the Red-black Tree. This also matches our expectations of an unbalanced tree height to have a height of *2·log(n)*, mentioned in _section 3.2.2 Red-black Tree_.
 
-![Figure 2](images/profiler/100_5_arrows_2.png)
+![](images/profiler/100_5_arrows_2.png)
 
 > Note: The BST may even be taller/deeper, since the profiler takes samples with a given interval, so if a stack-frame is added and removed to the call stack in the middle of two samples it would not be registered.
 
@@ -520,9 +513,9 @@ mode (compiling with the `--release`-flag).
 
 | Not in release mode | In release mode |
 |:-----------:|:-------------:|
-| ![Figure 2](images/profiler/nonrelease.png) | ![Figure 2](images/profiler/release.png) |
+| ![](images/profiler/nonrelease.png) | ![](images/profiler/release.png) |
 
-In Figure 10 above we can see that there exists only one `insert_leaf_on_node`-stack-frame at
+In the figure above we can see that there exists only one `insert_leaf_on_node`-stack-frame at
 the time in release mode, revealing that the compiler has optimized to tail-end recursion.
 
 </details>
@@ -588,9 +581,10 @@ To test this, I built a table on the two machines, with 150 entries, and checked
 The free-command was run many times during the build of the data structure, and already after building 2% of the input data, the memory usage stopped increasing and had a stable memory usage during the rest of the building process.
 
 ### Discussion
-In the results above, we see that both machines both use 61mb-62mb, which shows that the memory usage did not keep growing. This suggests that something does not work as expected and it starts paging before all memory is used. This can also be seen by looking at the digital oceans monitoring tool (Figure 11). Looking at Droplet during one of the weeks, where the experiments were performed, it never got over 33% memory usage.
+In the results above, we see that both machines both use 61mb-62mb, which shows that the memory usage did not keep growing. This suggests that something does not work as expected and it starts paging before all memory is used. This can also be seen by looking at the digital oceans monitoring tool (figure below). Looking at Droplet during one of the weeks, where the experiments were performed, it never got over 33% memory usage.
 
-![Figure 2](images/ram_usage_1gb2.png)
+<img width="500" src="images/ram_usage_1gb2.png">
+
 
 In a follow-up experiment I tracked how much the page cache filled up by using the same `free`-
 command, but with `-w`-flag enabled to see how much was cached in the page cache.
@@ -628,7 +622,8 @@ The immediate thought would be that the trees would have better caching performa
 
 In addition to that I would assume the BST to make better use of _spatial locality_, because when you are searching down the BST, you search in one direction through the file, and the nodes are often close to each other in the file. 
 
-![Figure 2](images/bachelor-10.png)
+<img width="1000" src="images/bachelor-10.png">
+
 
 E.g. in the BST the root is always at node offset 0, and all nodes in the tree will always be to the right from their parent on the same page or the following pages. On the other hand, the Red-black Tree‘s root could, in theory, be in the middle of the file, and its children could be far apart. This means that the Red-black Tree has a bigger chance of cache misses and page faults.
 We expect the percentage difference between the trees to increase the bigger the data set, because the Red-black Tree’s nodes will increasingly be spread out more.
@@ -656,7 +651,6 @@ The tests for this experiment have been run on both Dionysos and the Droplet. Th
 | Table         | 48.8%         | 25.0 %    | 9.0 %     | 40.6 %        |
 
 > Occasionally it occurred that the cache miss randomly dropped to 1% for data sizes of 10mill and 150mill. This occurred 5% of the time. These results are not in-calculated in the results above.
-
 
 
 ### Discussion

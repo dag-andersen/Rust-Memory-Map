@@ -3,6 +3,7 @@
 ## The Report
 [Report PDF edition](docs/Bachelor_Report.pdf)
 
+[Report Markdown edition (without sources)](docs/report.md)
 
 ## The program
 ### Compiling
